@@ -5,3 +5,4 @@ Game educativo de elétrica, energia e renováveis (SENAI), no modo história do
 - **Jogar:** abra `index.html` (ou o link do GitHub Pages, quando ativado).
 - **Desenvolver:** leia [docs/NEUROLYTICS-handoff.md](docs/NEUROLYTICS-handoff.md): regras de conteúdo (NBR 5410, público jovem), estrutura de pastas e pendências.
 - **Testar local:** `python3 -m http.server` e abra `http://localhost:8000`.
+- **Protótipos (sem servidor, dados de exemplo):** [login do aluno](prototipos/login-aluno.html) e [painel Adm](prototipos/admin.html).

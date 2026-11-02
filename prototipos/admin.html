@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Painel Adm · Modo Eletricista</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito:wght@400;600;800;900&display=swap">
+<link rel="stylesheet" href="../css/estilo.css">
+<link rel="stylesheet" href="proto.css">
+</head>
+<body>
+<!-- PROTÓTIPO VISUAL com dados de exemplo. Nada é salvo; no produto real os dados virão do Supabase. -->
+<div class="wrap adm">
+  <header class="admtop">
+    <h1>Painel <span style="color:var(--amber)">Adm</span></h1>
+    <span class="chip">Modo Eletricista</span>
+    <span class="sp"></span>
+    <span class="small">Liz · administradora</span>
+    <button class="btn ghost sm">Sair</button>
+  </header>
+
+  <section class="kpis">
+    <div class="tile"><small>Acessos ativos</small><b id="k-ativos">0</b></div>
+    <div class="tile" style="border-color:var(--amber)"><small>Vencem em 7 dias</small><b id="k-vence">0</b></div>
+    <div class="tile"><small>Turmas</small><b id="k-turmas">0</b></div>
+    <div class="tile"><small>Jogaram esta semana</small><b id="k-semana">0</b></div>
+  </section>
+
+  <nav class="tabs" role="tablist">
+    <button class="btn" aria-pressed="true" data-tab="turmas">🏫 Turmas</button>
+    <button class="btn" aria-pressed="false" data-tab="alunos">🎒 Alunos</button>
+    <button class="btn" aria-pressed="false" data-tab="acessos">🎫 Acessos individuais</button>
+  </nav>
+
+  <section id="tab-turmas" class="panel">
+    <div class="tools">
+      <div class="field"><input placeholder="Buscar escola, turma ou professor" oninput="filtra(this.value,'turmas')"></div>
+      <button class="btn main" onclick="novaTurma()">+ Nova turma</button>
+    </div>
+    <div class="tblwrap"><table class="tbl"><thead><tr><th>Escola</th><th>Turma</th><th>Professor</th><th>Alunos</th><th>Progresso médio</th><th>Válido até</th><th>Situação</th><th></th></tr></thead><tbody id="tb-turmas"></tbody></table></div>
+  </section>
+
+  <section id="tab-alunos" class="panel hidden">
+    <div class="tools">
+      <div class="field"><input placeholder="Buscar apelido ou código" oninput="filtra(this.value,'alunos')"></div>
+      <div class="field" style="flex:0 0 220px"><select onchange="filtraTurma(this.value)"><option value="">Todas as turmas</option></select></div>
+    </div>
+    <div class="tblwrap"><table class="tbl"><thead><tr><th>Apelido</th><th>Turma</th><th>Código</th><th>Nível</th><th>Fases</th><th>Último acesso</th><th>Válido até</th><th></th></tr></thead><tbody id="tb-alunos"></tbody></table></div>
+    <p class="note">LGPD: para alunos guardamos só apelido, turma e progresso. Sem CPF, foto ou data de nascimento.</p>
+  </section>
+
+  <section id="tab-acessos" class="panel hidden">
+    <div class="tools">
+      <div class="field"><input placeholder="Buscar e-mail" oninput="filtra(this.value,'acessos')"></div>
+      <button class="btn">+ Liberar acesso manual</button>
+    </div>
+    <div class="tblwrap"><table class="tbl"><thead><tr><th>Conta (e-mail)</th><th>Tipo</th><th>Pagamento</th><th>Início</th><th>Válido até</th><th>Situação</th><th></th></tr></thead><tbody id="tb-acessos"></tbody></table></div>
+    <p class="note">Pagamentos virão do Mercado Pago (Pix ou cartão). Preços ainda não definidos.</p>
+  </section>
+</div>
+
+<dialog id="dlg">
+  <form method="dialog" id="f-turma">
+    <h2>Nova turma</h2>
+    <div class="field"><label class="eyebrow" for="t-escola">Escola</label><input id="t-escola" placeholder="Ex.: Escola Exemplo" required></div>
+    <div class="field"><label class="eyebrow" for="t-nome">Turma</label><input id="t-nome" placeholder="Ex.: Elétrica 2027.1" required></div>
+    <div class="field"><label class="eyebrow" for="t-prof">E-mail do professor</label><input id="t-prof" type="email" placeholder="professor@escola.com"></div>
+    <div class="row">
+      <div class="field" style="flex:1"><label class="eyebrow" for="t-vagas">Vagas</label><input id="t-vagas" type="number" min="1" max="60" value="30"></div>
+      <div class="field" style="flex:1"><label class="eyebrow" for="t-dur">Duração</label><select id="t-dur"><option>3 meses</option><option>6 meses</option></select></div>
+    </div>
+    <div class="row"><button class="btn ghost" value="cancel" formnovalidate>Cancelar</button><button class="btn main" value="ok" id="criar">Criar e gerar códigos</button></div>
+  </form>
+  <div id="gerados" class="hidden" style="display:flex;flex-direction:column;gap:12px">
+    <h2>Códigos da turma</h2>
+    <p class="small">Entregue um código para cada aluno. Ele digita o código na tela de entrada, sem e-mail.</p>
+    <div class="codes" id="codes"></div>
+    <div class="row"><button class="btn ghost" onclick="dlg.close()">Fechar</button><button class="btn main">🖨️ Imprimir cartões</button></div>
+  </div>
+</dialog>
+
+<script>
+/* Dados de exemplo, inventados para o protótipo */
+const hoje=new Date('2026-11-02');
+const dia=n=>{const d=new Date(hoje);d.setDate(d.getDate()+n);return d.toLocaleDateString('pt-BR')};
+const TURMAS=[
+  {escola:'Escola Exemplo',turma:'Turma 7',prof:'prof.carla@exemplo.com',alunos:28,vagas:30,prog:64,ate:92},
+  {escola:'Escola Exemplo',turma:'Turma 8',prof:'prof.carla@exemplo.com',alunos:30,vagas:30,prog:41,ate:92},
+  {escola:'Centro de Formação Modelo',turma:'Eletricista Noite',prof:'prof.joao@modelo.com',alunos:22,vagas:25,prog:78,ate:5},
+  {escola:'Colégio Teste',turma:'9º ano B',prof:'prof.rita@teste.com',alunos:35,vagas:40,prog:23,ate:60},
+  {escola:'Colégio Teste',turma:'Clube de Robótica',prof:'prof.rita@teste.com',alunos:12,vagas:15,prog:0,ate:-3},
+];
+const ALUNOS=[
+  ['Ana','Turma 7','TURMA7-ANA','Leve',6,'hoje',92],['Léo','Turma 7','TURMA7-LEO','Técnico',9,'ontem',92],
+  ['Duda','Turma 8','TURMA8-DUDA','Técnico',3,'há 4 dias',92],['Caio','Eletricista Noite','NOITE-CAIO','Profissional',8,'hoje',5],
+  ['Bia','9º ano B','9B-BIA','Leve',2,'há 2 semanas',60],['Rafa','Clube de Robótica','ROBO-RAFA','Técnico',0,'nunca',-3],
+];
+const ACESSOS=[
+  ['familia.souza@exemplo.com','Individual','Pix aprovado',-30,60],['tecnico.lima@exemplo.com','Individual','Cartão aprovado',-85,5],
+  ['escola@exemplo.com','Turma (2×30)','Boleto aprovado',-1,92],['mae.ana@exemplo.com','Individual','Pix pendente',0,null],
+];
+const situ=d=>d===null?['Aguardando','var(--muted)']:d<0?['Vencido','var(--fase)']:d<=7?['Vence em '+d+' d','var(--amber)']:['Ativo','var(--terra)'];
+const st=d=>{const [t,c]=situ(d);return '<span class="st" style="--c:'+c+'">'+t+'</span>'};
+const acao=d=>d!==null&&d<=7?'<button class="btn sm main" title="Renovar por mais 3 meses">Renovar</button>':'<button class="btn sm ghost">Abrir</button>';
+function render(){
+  document.getElementById('tb-turmas').innerHTML=TURMAS.map(t=>'<tr><td>'+t.escola+'</td><td>'+t.turma+'</td><td>'+t.prof+'</td><td class="num">'+t.alunos+'/'+t.vagas+'</td><td class="num"><span class="bar"><i style="width:'+t.prog+'%"></i></span>'+t.prog+'%</td><td class="num">'+dia(t.ate)+'</td><td>'+st(t.ate)+'</td><td>'+acao(t.ate)+'</td></tr>').join('');
+  document.getElementById('tb-alunos').innerHTML=ALUNOS.map(a=>'<tr data-t="'+a[1]+'"><td>'+a[0]+'</td><td>'+a[1]+'</td><td><code>'+a[2]+'</code></td><td>'+a[3]+'</td><td class="num"><span class="bar"><i style="width:'+(a[4]/9*100)+'%"></i></span>'+a[4]+'/9</td><td>'+a[5]+'</td><td class="num">'+dia(a[6])+'</td><td><button class="btn sm ghost">Novo código</button></td></tr>').join('');
+  document.getElementById('tb-acessos').innerHTML=ACESSOS.map(a=>'<tr><td>'+a[0]+'</td><td>'+a[1]+'</td><td>'+a[2]+'</td><td class="num">'+dia(a[3])+'</td><td class="num">'+(a[4]===null?'—':dia(a[4]))+'</td><td>'+st(a[4])+'</td><td>'+acao(a[4])+'</td></tr>').join('');
+  document.querySelector('#tab-alunos select').innerHTML='<option value="">Todas as turmas</option>'+TURMAS.map(t=>'<option>'+t.turma+'</option>').join('');
+  const ativos=TURMAS.filter(t=>t.ate>=0).reduce((s,t)=>s+t.alunos,0)+ACESSOS.filter(a=>a[4]!==null&&a[4]>=0&&a[1]==='Individual').length;
+  document.getElementById('k-ativos').textContent=ativos;
+  document.getElementById('k-vence').textContent=TURMAS.filter(t=>t.ate>=0&&t.ate<=7).reduce((s,t)=>s+t.alunos,0)+ACESSOS.filter(a=>a[4]!==null&&a[4]>=0&&a[4]<=7&&a[1]==='Individual').length;
+  document.getElementById('k-turmas').textContent=TURMAS.length;
+  document.getElementById('k-semana').textContent=74;
+}
+render();
+document.querySelectorAll('.tabs .btn').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tabs .btn').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  ['turmas','alunos','acessos'].forEach(k=>document.getElementById('tab-'+k).classList.toggle('hidden',k!==b.dataset.tab));
+});
+function filtra(q,k){q=q.toLowerCase();document.querySelectorAll('#tb-'+k+' tr').forEach(r=>r.hidden=!r.textContent.toLowerCase().includes(q))}
+function filtraTurma(t){document.querySelectorAll('#tb-alunos tr').forEach(r=>r.hidden=t&&r.dataset.t!==t)}
+const dlg=document.getElementById('dlg');
+/* Sem 0/O, 1/I/L: letras que confundem quando o aluno digita */
+const SEGURO='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+function novaTurma(){document.getElementById('f-turma').classList.remove('hidden');document.getElementById('gerados').classList.add('hidden');dlg.showModal()}
+dlg.addEventListener('close',()=>{
+  if(dlg.returnValue!=='ok')return;
+  const nome=document.getElementById('t-nome').value.trim(),n=+document.getElementById('t-vagas').value||30;
+  const pre=nome.toUpperCase().normalize('NFD').replace(/[^A-Z0-9]/g,'').slice(0,6)||'TURMA';
+  const cs=[];for(let i=0;i<n;i++){let s='';for(let j=0;j<4;j++)s+=SEGURO[Math.floor(Math.random()*SEGURO.length)];cs.push(pre+'-'+s)}
+  TURMAS.unshift({escola:document.getElementById('t-escola').value,turma:nome,prof:document.getElementById('t-prof').value||'—',alunos:0,vagas:n,prog:0,ate:92});render();
+  document.getElementById('codes').innerHTML=cs.map(c=>'<span>'+c+'</span>').join('');
+  document.getElementById('f-turma').classList.add('hidden');document.getElementById('gerados').classList.remove('hidden');dlg.returnValue='';dlg.showModal();
+});
+</script>
+</body>
+</html>
