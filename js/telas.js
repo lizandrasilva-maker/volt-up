@@ -3,7 +3,8 @@ function showStart(){
   setMode();
   app.innerHTML='<section class="hero"><span class="eyebrow">Neurolytics · modo história</span><h1>Modo <span class="bolt">Eletricista</span></h1><p class="muted">Escolha como quer jogar. Dá pra trocar depois.</p></section>'+
   '<div class="modes">'+Object.entries(MODES).map(([k,m])=>'<button class="btn mode" data-m="'+k+'" style="--c:'+m.c+'"><span class="wire"></span><span><b>'+m.nome+'</b><small>'+m.sub+'</small></span><span class="tag">'+m.fio+'</span></button>').join('')+'</div>'+
-  '<div class="soon">🤟 Modo Libras: em breve</div>';
+  '<div class="soon">🤟 Modo Libras: em breve</div>'+
+  '<a class="btn ghost" href="login.html" style="display:grid;place-items:center;text-decoration:none">🔑 Entrar com login (progresso salvo na nuvem)</a>';
   app.querySelectorAll('.mode').forEach(b=>b.onclick=()=>{S.mode=b.dataset.m;save();S.char?showMap():showChar()});
 }
 function showChar(){

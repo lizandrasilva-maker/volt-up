@@ -122,6 +122,15 @@ Os scripts são clássicos (sem `import`), então tudo é global e a ordem no `i
 3. Escrever uma cena em `SCENES[idDaFase]` que descreva exatamente o que o aluno vai fazer.
 4. Mapear o atributo da fase em `PH_ATTR`.
 
+## Servidor (Supabase)
+- Projeto `volt-up` (id `pmhkzxkygvpeyckhnipz`, região São Paulo, plano grátis), organização "Neurolytics".
+- Tabelas: `perfis` (apelido, papel aluno/professor/admin, turma, código), `turmas` (escola, nome, vagas, validade), `acessos` (acesso individual), `progresso` (o objeto `S` do jogo em JSON). Todas com RLS. Esquema em `supabase/migrations/`.
+- Função `criar-alunos` (`supabase/functions/`): o Adm ou o professor da turma gera os logins dos alunos. O aluno entra com um código (ex.: `TURMA7-K8SDQP`); por baixo, o login é `<codigo>@aluno.volt-up.app` com o código como senha.
+- No navegador: `js/vendor/supabase-2.45.4.js` (cópia local da biblioteca) e `js/nuvem.js` (chave publishable, que pode ficar pública). Cada `save()` do jogo também envia o progresso para a nuvem, se houver login.
+- Telas: `login.html` (aluno e e-mail) e `admin.html` (painel). Os arquivos em `prototipos/` são só os desenhos iniciais.
+- Para virar admin: a conta é criada em `login.html` e o papel `admin` é definido no banco (`update perfis set papel='admin' where id=...`).
+- Ainda não implementado: painel do professor, pagamento (Mercado Pago), bloqueio dos capítulos pagos (só o Cap. 1 existe).
+
 ## Pendências e próximos passos sugeridos
 - [ ] Falas por nível: Leve com frases de até 8 palavras e imagem do cômodo.
 - [ ] Capítulo 2: chamado da casa toda apagada (QD, disjuntor geral, DR, barramentos N e PE).

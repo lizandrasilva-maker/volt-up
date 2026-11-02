@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Painel Adm · Modo Eletricista</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito:wght@400;600;800;900&display=swap">
+<link rel="stylesheet" href="css/estilo.css">
+<link rel="stylesheet" href="css/contas.css">
+</head>
+<body>
+<div class="wrap adm">
+  <header class="admtop">
+    <h1>Painel <span style="color:var(--amber)">Adm</span></h1>
+    <span class="chip">Modo Eletricista</span>
+    <span class="sp"></span>
+    <span class="small" id="quem"></span>
+    <a class="btn ghost sm" href="index.html" style="display:grid;place-items:center;text-decoration:none">Jogo</a>
+    <button class="btn ghost sm" id="sair">Sair</button>
+  </header>
+
+  <p class="small hidden" id="msg" role="status"></p>
+
+  <div id="conteudo" class="hidden" style="display:flex;flex-direction:column;gap:14px">
+  <section class="kpis">
+    <div class="tile"><small>Alunos com acesso</small><b id="k-ativos">–</b></div>
+    <div class="tile" style="border-color:var(--amber)"><small>Vencem em 7 dias</small><b id="k-vence">–</b></div>
+    <div class="tile"><small>Turmas</small><b id="k-turmas">–</b></div>
+    <div class="tile"><small>Jogaram em 7 dias</small><b id="k-semana">–</b></div>
+  </section>
+
+  <nav class="tabs" role="tablist">
+    <button class="btn" aria-pressed="true" data-tab="turmas">🏫 Turmas</button>
+    <button class="btn" aria-pressed="false" data-tab="alunos">🎒 Alunos</button>
+  </nav>
+
+  <section id="tab-turmas" class="panel">
+    <div class="tools">
+      <div class="field"><input placeholder="Buscar escola ou turma" oninput="filtra(this.value,'turmas')"></div>
+      <button class="btn main" id="nova">+ Nova turma</button>
+    </div>
+    <div class="tblwrap"><table class="tbl"><thead><tr><th>Escola</th><th>Turma</th><th>Alunos</th><th>Válido até</th><th>Situação</th><th></th></tr></thead><tbody id="tb-turmas"></tbody></table></div>
+  </section>
+
+  <section id="tab-alunos" class="panel hidden">
+    <div class="tools">
+      <div class="field"><input placeholder="Buscar apelido ou código" oninput="filtra(this.value,'alunos')"></div>
+      <div class="field" style="flex:0 0 220px"><select id="sel-turma"><option value="">Todas as turmas</option></select></div>
+    </div>
+    <div class="tblwrap"><table class="tbl"><thead><tr><th>Apelido</th><th>Turma</th><th>Código</th><th>Fases</th><th>Último jogo</th></tr></thead><tbody id="tb-alunos"></tbody></table></div>
+    <p class="note">LGPD: para alunos guardamos só apelido, turma e progresso. Sem CPF, foto ou data de nascimento.</p>
+  </section>
+  </div>
+</div>
+
+<dialog id="dlg-turma">
+  <form id="f-turma" style="display:flex;flex-direction:column;gap:12px">
+    <h2>Nova turma</h2>
+    <div class="field"><label class="eyebrow" for="t-escola">Escola</label><input id="t-escola" required></div>
+    <div class="field"><label class="eyebrow" for="t-nome">Turma</label><input id="t-nome" placeholder="Ex.: Elétrica 2027.1" required></div>
+    <div class="row">
+      <div class="field" style="flex:1"><label class="eyebrow" for="t-vagas">Vagas</label><input id="t-vagas" type="number" min="1" max="200" value="30"></div>
+      <div class="field" style="flex:1"><label class="eyebrow" for="t-dur">Duração</label><select id="t-dur"><option value="90">3 meses</option><option value="180">6 meses</option></select></div>
+    </div>
+    <div class="row"><button class="btn ghost" type="button" onclick="this.closest('dialog').close()">Cancelar</button><button class="btn main" type="submit">Criar turma</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlg-alunos">
+  <form id="f-alunos" style="display:flex;flex-direction:column;gap:12px">
+    <h2>Gerar códigos · <span id="a-turma"></span></h2>
+    <div class="field"><label class="eyebrow" for="a-lista">Apelidos dos alunos, um por linha</label>
+      <textarea id="a-lista" rows="8" style="font:inherit;font-weight:700;color:var(--ink);background:var(--bg);border:2px solid var(--line);border-radius:14px;padding:10px" placeholder="Ana&#10;Léo&#10;Duda"></textarea></div>
+    <p class="small">Use só o primeiro nome ou um apelido (LGPD).</p>
+    <div class="row"><button class="btn ghost" type="button" onclick="this.closest('dialog').close()">Cancelar</button><button class="btn main" type="submit">Gerar códigos</button></div>
+  </form>
+  <div id="gerados" class="hidden" style="display:flex;flex-direction:column;gap:12px">
+    <h2>Códigos criados</h2>
+    <p class="small">Entregue um para cada aluno. Ele digita o código em "Entrar", sem e-mail. Anote ou imprima agora.</p>
+    <div class="codes" id="codes"></div>
+    <div class="row"><button class="btn ghost" type="button" onclick="this.closest('dialog').close()">Fechar</button><button class="btn main" type="button" onclick="window.print()">🖨️ Imprimir</button></div>
+  </div>
+</dialog>
+
+<script src="js/vendor/supabase-2.45.4.js"></script>
+<script src="js/nuvem.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const dataBR=d=>d?new Date(d+(String(d).length===10?'T12:00':'')).toLocaleDateString('pt-BR'):'—';
+const diasAte=d=>Math.ceil((new Date(d+'T23:59')-new Date())/864e5);
+function aviso(t,erro){$('msg').textContent=t;$('msg').classList.toggle('hidden',!t);$('msg').style.color=erro?'var(--fase)':''}
+let TURMAS=[],ALUNOS=[],PROG={},turmaAtual=null;
+
+function st(d){const n=diasAte(d);const [t,c]=n<0?['Vencida','var(--fase)']:n<=7?['Vence em '+n+' d','var(--amber)']:['Ativa','var(--terra)'];return '<span class="st" style="--c:'+c+'">'+t+'</span>'}
+
+async function carregar(){
+  const [t,a,p]=await Promise.all([
+    nuvem.from('turmas').select('id,escola,nome,vagas,valido_ate').order('criado_em',{ascending:false}),
+    nuvem.from('perfis').select('id,apelido,codigo,turma_id').eq('papel','aluno'),
+    nuvem.from('progresso').select('user_id,estado,atualizado_em')]);
+  if(t.error||a.error||p.error){aviso('Erro ao carregar os dados: '+(t.error||a.error||p.error).message,true);return}
+  TURMAS=t.data;ALUNOS=a.data;PROG={};p.data.forEach(r=>PROG[r.user_id]=r);
+  const porTurma={};ALUNOS.forEach(x=>{porTurma[x.turma_id]=(porTurma[x.turma_id]||0)+1});
+  $('tb-turmas').innerHTML=TURMAS.length?TURMAS.map(x=>'<tr><td>'+esc(x.escola)+'</td><td>'+esc(x.nome)+'</td><td class="num">'+(porTurma[x.id]||0)+'/'+x.vagas+'</td><td class="num">'+dataBR(x.valido_ate)+'</td><td>'+st(x.valido_ate)+'</td><td><button class="btn sm main" data-gerar="'+x.id+'">+ Alunos</button> <button class="btn sm ghost" data-renovar="'+x.id+'">Renovar +3 meses</button></td></tr>').join(''):'<tr><td colspan="6" class="small">Nenhuma turma ainda. Crie a primeira em "+ Nova turma".</td></tr>';
+  const nomeT=id=>(TURMAS.find(x=>x.id===id)||{}).nome||'—';
+  $('tb-alunos').innerHTML=ALUNOS.length?ALUNOS.map(x=>{const pr=PROG[x.id];const f=pr&&pr.estado&&pr.estado.done?Object.keys(pr.estado.done).length:0;
+    return '<tr data-t="'+x.turma_id+'"><td>'+esc(x.apelido)+'</td><td>'+esc(nomeT(x.turma_id))+'</td><td><code>'+esc(x.codigo||'—')+'</code></td><td class="num"><span class="bar"><i style="width:'+Math.min(100,f/9*100)+'%"></i></span>'+f+'/9</td><td>'+(pr?dataBR(pr.atualizado_em):'nunca')+'</td></tr>'}).join(''):'<tr><td colspan="5" class="small">Nenhum aluno ainda.</td></tr>';
+  $('sel-turma').innerHTML='<option value="">Todas as turmas</option>'+TURMAS.map(x=>'<option value="'+x.id+'">'+esc(x.nome)+'</option>').join('');
+  const ativa=id=>{const x=TURMAS.find(y=>y.id===id);return x&&diasAte(x.valido_ate)>=0};
+  const vence=id=>{const x=TURMAS.find(y=>y.id===id);return x&&diasAte(x.valido_ate)>=0&&diasAte(x.valido_ate)<=7};
+  $('k-ativos').textContent=ALUNOS.filter(x=>ativa(x.turma_id)).length;
+  $('k-vence').textContent=ALUNOS.filter(x=>vence(x.turma_id)).length;
+  $('k-turmas').textContent=TURMAS.length;
+  $('k-semana').textContent=Object.values(PROG).filter(r=>new Date()-new Date(r.atualizado_em)<7*864e5).length;
+}
+
+document.querySelectorAll('.tabs .btn').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tabs .btn').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  ['turmas','alunos'].forEach(k=>$('tab-'+k).classList.toggle('hidden',k!==b.dataset.tab));
+});
+function filtra(q,k){q=q.toLowerCase();document.querySelectorAll('#tb-'+k+' tr').forEach(r=>r.hidden=!r.textContent.toLowerCase().includes(q))}
+$('sel-turma').onchange=e=>document.querySelectorAll('#tb-alunos tr').forEach(r=>r.hidden=!!e.target.value&&r.dataset.t!==e.target.value);
+
+$('nova').onclick=()=>{$('f-turma').reset();$('dlg-turma').showModal()};
+$('f-turma').onsubmit=async e=>{e.preventDefault();
+  const d=new Date();d.setDate(d.getDate()+(+$('t-dur').value));
+  const {error}=await nuvem.from('turmas').insert({escola:$('t-escola').value.trim(),nome:$('t-nome').value.trim(),vagas:+$('t-vagas').value||30,valido_ate:d.toISOString().slice(0,10)});
+  if(error){aviso('Não deu para criar a turma: '+error.message,true);return}
+  $('dlg-turma').close();aviso('Turma criada. Agora gere os códigos em "+ Alunos".');carregar();
+};
+
+$('tb-turmas').onclick=async e=>{
+  const g=e.target.dataset.gerar,r=e.target.dataset.renovar;
+  if(g){turmaAtual=TURMAS.find(x=>x.id===g);$('a-turma').textContent=turmaAtual.nome;$('a-lista').value='';
+    $('f-alunos').classList.remove('hidden');$('gerados').classList.add('hidden');$('dlg-alunos').showModal()}
+  if(r){const x=TURMAS.find(y=>y.id===r);const base=diasAte(x.valido_ate)>0?new Date(x.valido_ate+'T12:00'):new Date();base.setDate(base.getDate()+90);
+    if(!confirm('Renovar "'+x.nome+'" até '+base.toLocaleDateString('pt-BR')+'?'))return;
+    const {error}=await nuvem.from('turmas').update({valido_ate:base.toISOString().slice(0,10)}).eq('id',r);
+    if(error)aviso('Não deu para renovar: '+error.message,true);else{aviso('Turma renovada.');carregar()}}
+};
+$('f-alunos').onsubmit=async e=>{e.preventDefault();
+  const apelidos=$('a-lista').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  if(!apelidos.length)return;
+  e.target.querySelectorAll('button').forEach(b=>b.disabled=true);
+  const {data,error}=await nuvem.functions.invoke('criar-alunos',{body:{turma_id:turmaAtual.id,apelidos}});
+  e.target.querySelectorAll('button').forEach(b=>b.disabled=false);
+  let erro=error?error.message:null;
+  if(error&&error.context&&error.context.json){try{erro=(await error.context.json()).erro||erro}catch(_){}}
+  if(erro){aviso('Não deu para gerar os códigos: '+erro,true);$('dlg-alunos').close();return}
+  $('codes').innerHTML=data.criados.map(c=>'<span title="'+esc(c.apelido)+'">'+esc(c.apelido)+'<br>'+esc(c.codigo)+'</span>').join('');
+  $('f-alunos').classList.add('hidden');$('gerados').classList.remove('hidden');carregar();
+};
+$('sair').onclick=async()=>{await nuvem.auth.signOut();location.href='login.html'};
+
+(async()=>{
+  if(!nuvem){aviso('Sem conexão com o servidor agora.',true);return}
+  const u=await nuvemUsuario();if(!u){location.href='login.html';return}
+  const {data:p}=await nuvem.from('perfis').select('apelido,papel').eq('id',u.id).maybeSingle();
+  if(!p||p.papel!=='admin'){aviso('Este painel é só para a administradora. Você entrou como '+((p&&p.apelido)||u.email)+'.',true);return}
+  $('quem').textContent=p.apelido+' · administradora';
+  $('conteudo').classList.remove('hidden');carregar();
+})();
+</script>
+</body>
+</html>
