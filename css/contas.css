@@ -1,4 +1,4 @@
-/* Estilos só dos protótipos de login e painel Adm (reaproveita css/estilo.css). */
+/* Estilos das telas de conta: login do aluno e painel Adm (reaproveita css/estilo.css). */
 .field{display:flex;flex-direction:column;gap:6px}
 .field input,.field select{font:inherit;font-weight:700;color:var(--ink);background:var(--panel);border:2px solid var(--line);border-radius:14px;min-height:50px;padding:10px 14px;width:100%}
 .field input:focus,.field select:focus{outline:none;border-color:var(--amber)}

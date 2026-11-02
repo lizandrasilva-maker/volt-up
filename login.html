@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Entrar · Modo Eletricista</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito:wght@400;600;800;900&display=swap">
+<link rel="stylesheet" href="css/estilo.css">
+<link rel="stylesheet" href="css/contas.css">
+</head>
+<body>
+<div class="wrap">
+  <section class="hero">
+    <span class="eyebrow">Neurolytics · modo história</span>
+    <h1>Modo <span class="bolt">Eletricista</span></h1>
+  </section>
+
+  <div class="mascot">
+    <img src="img/calango.webp" alt="Calango Faísca, o mascote">
+    <div class="bubble" id="fala">Oi! Bora religar a casa da Dona Fátima? ⚡</div>
+  </div>
+
+  <!-- Entrar -->
+  <section id="entrar" class="panel hidden">
+    <div class="seg" role="group" aria-label="Como você vai entrar">
+      <button class="btn" aria-pressed="true" data-t="codigo">🎫 Código da turma</button>
+      <button class="btn" aria-pressed="false" data-t="email">✉️ E-mail</button>
+    </div>
+
+    <form id="f-codigo" class="field">
+      <label class="eyebrow" for="cod">Seu código</label>
+      <input id="cod" class="code" placeholder="TURMA7-K8SDQP" autocomplete="off" autocapitalize="characters" maxlength="16" required>
+      <p class="small">O professor entrega esse código. Não precisa de e-mail.</p>
+      <button class="btn main" type="submit">Entrar ⚡</button>
+    </form>
+
+    <form id="f-email" class="field hidden">
+      <label class="eyebrow" for="em">E-mail</label>
+      <input id="em" type="email" autocomplete="email" placeholder="voce@email.com" required>
+      <label class="eyebrow" for="pw">Senha</label>
+      <input id="pw" type="password" autocomplete="current-password" placeholder="••••••••" required minlength="8">
+      <button class="btn main" type="submit">Entrar ⚡</button>
+      <p class="small"><a href="#" id="esqueci">Esqueci a senha</a> · <a href="#" id="ir-criar">Criar conta</a> (para responsáveis, professores e profissionais)</p>
+    </form>
+  </section>
+
+  <!-- Criar conta (e-mail) -->
+  <section id="criar" class="panel hidden">
+    <h2>Criar conta</h2>
+    <form id="f-criar" class="field">
+      <label class="eyebrow" for="c-apelido">Como quer ser chamado no jogo</label>
+      <input id="c-apelido" maxlength="18" placeholder="Ex.: Ana" required>
+      <label class="eyebrow" for="c-em">E-mail</label>
+      <input id="c-em" type="email" autocomplete="email" required>
+      <label class="eyebrow" for="c-pw">Senha (mínimo 8 letras ou números)</label>
+      <input id="c-pw" type="password" autocomplete="new-password" minlength="8" required>
+      <label class="small" style="display:flex;gap:8px;align-items:flex-start"><input type="checkbox" id="c-ok" required style="width:auto;min-height:0;margin-top:3px"> Tenho 18 anos ou mais, ou sou o responsável por quem vai jogar.</label>
+      <button class="btn main" type="submit">Criar conta</button>
+      <button class="btn ghost sm" type="button" id="voltar">Voltar</button>
+    </form>
+  </section>
+
+  <!-- Já entrou -->
+  <section id="ok" class="panel hidden">
+    <h2>Oi, <span id="nome" style="color:var(--amber)"></span>!</h2>
+    <div class="valid" id="validade"></div>
+    <p class="small" id="prog"></p>
+    <button class="btn main" id="continuar">Continuar de onde parei ▶</button>
+    <a class="btn ghost sm hidden" id="painel" href="admin.html" style="display:grid;place-items:center;text-decoration:none">Abrir o painel Adm</a>
+    <button class="btn ghost sm" id="sair">Sair</button>
+  </section>
+
+  <p class="small hidden" id="msg" role="status" style="text-align:center"></p>
+
+  <div class="or">ou</div>
+  <a class="btn ghost" href="index.html" style="display:grid;place-items:center;text-decoration:none">Jogar o Capítulo 1 grátis</a>
+  <p class="small" style="text-align:center">Sem login, o progresso fica só neste aparelho.</p>
+</div>
+
+<script src="js/vendor/supabase-2.45.4.js"></script>
+<script src="js/nuvem.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const mostra=id=>['entrar','criar','ok'].forEach(k=>$(k).classList.toggle('hidden',k!==id));
+function aviso(t,erro){$('msg').textContent=t;$('msg').classList.toggle('hidden',!t);$('msg').style.color=erro?'var(--fase)':''}
+const dataBR=d=>new Date(d).toLocaleDateString('pt-BR');
+function ocupado(form,sim){form.querySelectorAll('button').forEach(b=>b.disabled=sim)}
+
+document.querySelectorAll('.seg .btn').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.seg .btn').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  $('f-codigo').classList.toggle('hidden',b.dataset.t!=='codigo');
+  $('f-email').classList.toggle('hidden',b.dataset.t!=='email');aviso('');
+});
+$('cod').oninput=()=>{$('cod').value=$('cod').value.toUpperCase().replace(/[^A-Z0-9-]/g,'')};
+
+async function entrarCom(email,senha,form){
+  ocupado(form,true);aviso('');
+  const {error}=await nuvem.auth.signInWithPassword({email,password:senha});
+  ocupado(form,false);
+  if(error){aviso(form.id==='f-codigo'?'Código não encontrado. Confira as letras com o professor.':'E-mail ou senha errados.',true);return}
+  await nuvemPuxar();await painel();
+}
+$('f-codigo').onsubmit=e=>{e.preventDefault();const c=$('cod').value.trim();entrarCom(c.toLowerCase()+ALUNO_DOMINIO,c,e.target)};
+$('f-email').onsubmit=e=>{e.preventDefault();entrarCom($('em').value.trim(),$('pw').value,e.target)};
+
+$('ir-criar').onclick=e=>{e.preventDefault();mostra('criar');aviso('')};
+$('voltar').onclick=()=>{mostra('entrar');aviso('')};
+$('f-criar').onsubmit=async e=>{
+  e.preventDefault();ocupado(e.target,true);
+  const {data,error}=await nuvem.auth.signUp({email:$('c-em').value.trim(),password:$('c-pw').value,
+    options:{data:{apelido:$('c-apelido').value.trim()},emailRedirectTo:new URL('login.html',location.href).href}});
+  ocupado(e.target,false);
+  if(error){aviso('Não deu para criar a conta: '+error.message,true);return}
+  if(data.session){await painel()}else{mostra('entrar');aviso('Pronto! Abra seu e-mail e toque no link de confirmação. Depois é só entrar.')}
+};
+$('esqueci').onclick=async e=>{e.preventDefault();const em=$('em').value.trim();
+  if(!em){aviso('Escreva seu e-mail acima e toque de novo em "Esqueci a senha".',true);return}
+  await nuvem.auth.resetPasswordForEmail(em,{redirectTo:new URL('login.html',location.href).href});
+  aviso('Se esse e-mail tiver conta, mandamos um link para criar uma senha nova.')};
+
+async function painel(){
+  const u=await nuvemUsuario();if(!u){mostra('entrar');return}
+  const [{data:p},{data:ate}]=await Promise.all([
+    nuvem.from('perfis').select('apelido,papel,turma_id').eq('id',u.id).maybeSingle(),
+    nuvem.rpc('validade_acesso')]);
+  $('nome').textContent=(p&&p.apelido)||'jogador';
+  $('fala').textContent='Que bom te ver de novo, '+((p&&p.apelido)||'eletricista')+'!';
+  const v=$('validade');
+  if(p&&p.papel==='admin'){v.innerHTML='<span style="font-size:28px">🛠️</span><div><b>Conta de administradora</b><span class="small">Acesso completo</span></div>';v.className='valid'}
+  else if(ate&&new Date(ate)>new Date()){const dias=Math.ceil((new Date(ate)-new Date())/864e5);
+    v.className='valid'+(dias<=7?' warn':'');
+    v.innerHTML='<span style="font-size:28px">'+(dias<=7?'⏳':'🔓')+'</span><div><b>Acesso liberado até '+dataBR(ate)+'</b><span class="small">Faltam '+dias+' dias'+(dias<=7?'. Seu progresso fica guardado; fale com o professor para renovar.':'')+'</span></div>'}
+  else{v.className='valid warn';v.innerHTML='<span style="font-size:28px">🔒</span><div><b>Sem acesso pago ativo</b><span class="small">O Capítulo 1 é grátis. Seu progresso fica guardado na nuvem.</span></div>'}
+  $('painel').classList.toggle('hidden',!(p&&(p.papel==='admin'||p.papel==='professor')));
+  let s={};try{s=JSON.parse(localStorage.getItem('neuro-eletricista-v2')||'{}')}catch(e){}
+  const fases=s.done?Object.keys(s.done).length:0;
+  $('prog').textContent=fases?'Progresso salvo: '+fases+' fase(s) concluída(s) · '+((s.cards||[]).length)+' cards':'Ainda sem fases concluídas. Bora começar!';
+  mostra('ok');
+}
+$('continuar').onclick=async()=>{
+  let s={};try{s=JSON.parse(localStorage.getItem('neuro-eletricista-v2')||'{}')}catch(e){}
+  if(!s.name){const n=$('nome').textContent;if(n){s.name=n;try{localStorage.setItem('neuro-eletricista-v2',JSON.stringify(s))}catch(e){}}}
+  location.href='index.html';
+};
+$('sair').onclick=async()=>{await nuvem.auth.signOut();
+  /* Aparelho compartilhado na escola: o próximo aluno não deve ver o jogo de quem saiu. */
+  try{localStorage.removeItem('neuro-eletricista-v2')}catch(e){}
+  mostra('entrar');aviso('Você saiu. O progresso continua salvo na nuvem.')};
+
+if(!nuvem){mostra('entrar');aviso('Sem conexão com o servidor agora. Você ainda pode jogar o Capítulo 1 grátis.',true)}
+else painel();
+</script>
+</body>
+</html>
