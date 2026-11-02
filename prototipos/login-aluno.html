@@ -58,7 +58,7 @@
       <div><b>Exemplo de aviso: seu acesso vence em 5 dias</b><span class="small">Seu progresso e seus cards ficam guardados. Fale com o professor para renovar.</span></div>
     </div>
     <p class="small">Progresso salvo na nuvem: 6 de 9 fases do Capítulo 1 · 14 cards</p>
-    <button class="btn main">Continuar de onde parei ▶</button>
+    <button class="btn main" onclick="continuar()">Continuar de onde parei ▶</button>
     <button class="btn ghost sm" onclick="sair()">Não sou a Ana · Sair</button>
   </section>
 
@@ -75,6 +75,15 @@ document.querySelectorAll('.seg .btn').forEach(b=>b.onclick=()=>{
 const cod=document.getElementById('cod');
 cod.oninput=()=>{cod.value=cod.value.toUpperCase().replace(/[^A-Z0-9-]/g,'')};
 function entrar(e){e.preventDefault();document.getElementById('entrar').classList.add('hidden');document.getElementById('ok').classList.remove('hidden');return false}
+/* Protótipo: sem servidor, o progresso vem do navegador. Se ainda não houver jogo salvo,
+   cria a Ana (nível Leve) para abrir direto no mapa. Um progresso que já existe não é apagado. */
+function continuar(){
+  const K='neuro-eletricista-v2';
+  try{const s=JSON.parse(localStorage.getItem(K)||'{}');
+    if(!s.mode||!s.char){Object.assign(s,{mode:s.mode||'leve',char:s.char||'aprendiz',name:s.name||'Ana'});localStorage.setItem(K,JSON.stringify(s))}
+  }catch(e){}
+  location.href='../index.html';
+}
 function sair(){document.getElementById('ok').classList.add('hidden');document.getElementById('entrar').classList.remove('hidden')}
 </script>
 </body>
