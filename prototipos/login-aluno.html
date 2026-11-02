@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Entrar · Modo Eletricista</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito:wght@400;600;800;900&display=swap">
+<link rel="stylesheet" href="../css/estilo.css">
+<link rel="stylesheet" href="proto.css">
+</head>
+<body>
+<!-- PROTÓTIPO VISUAL: ainda sem servidor. O login de verdade virá com o Supabase (ver plano de comercialização). -->
+<div class="wrap">
+  <section class="hero">
+    <span class="eyebrow">Neurolytics · modo história</span>
+    <h1>Modo <span class="bolt">Eletricista</span></h1>
+  </section>
+
+  <div class="mascot">
+    <img src="../img/calango.webp" alt="Calango Faísca, o mascote">
+    <div class="bubble">Oi! Bora religar a casa da Dona Fátima? ⚡</div>
+  </div>
+
+  <!-- Tela 1: escolher como entrar -->
+  <section id="entrar" class="panel">
+    <div class="seg" role="group" aria-label="Como você vai entrar">
+      <button class="btn" aria-pressed="true" data-t="codigo">🎫 Código da turma</button>
+      <button class="btn" aria-pressed="false" data-t="email">✉️ E-mail</button>
+    </div>
+
+    <form id="f-codigo" class="field" onsubmit="return entrar(event)">
+      <label class="eyebrow" for="cod">Seu código</label>
+      <input id="cod" class="code" placeholder="TURMA7-ANA" autocomplete="off" maxlength="14" required>
+      <p class="small">O professor entrega esse código. Não precisa de e-mail.</p>
+      <button class="btn main" type="submit">Entrar ⚡</button>
+    </form>
+
+    <form id="f-email" class="field hidden" onsubmit="return entrar(event)">
+      <label class="eyebrow" for="em">E-mail</label>
+      <input id="em" type="email" placeholder="voce@email.com" required>
+      <label class="eyebrow" for="pw">Senha</label>
+      <input id="pw" type="password" placeholder="••••••••">
+      <button class="btn main" type="submit">Entrar ⚡</button>
+      <button class="btn ghost sm" type="button">Mandar um link de entrada no meu e-mail</button>
+      <p class="small"><a href="#">Esqueci a senha</a> · <a href="#">Criar conta</a> (para responsáveis e profissionais)</p>
+    </form>
+  </section>
+
+  <!-- Tela 2: depois de entrar (simulado) -->
+  <section id="ok" class="panel hidden">
+    <h2>Oi, <span class="bolt" style="color:var(--amber)">Ana</span>!</h2>
+    <div class="valid">
+      <span style="font-size:28px">🔓</span>
+      <div><b>Acesso liberado até 02/02/2027</b><span class="small">Faltam 92 dias · Turma 7 · Escola Exemplo</span></div>
+    </div>
+    <div class="valid warn">
+      <span style="font-size:28px">⏳</span>
+      <div><b>Exemplo de aviso: seu acesso vence em 5 dias</b><span class="small">Seu progresso e seus cards ficam guardados. Fale com o professor para renovar.</span></div>
+    </div>
+    <p class="small">Progresso salvo na nuvem: 6 de 9 fases do Capítulo 1 · 14 cards</p>
+    <button class="btn main">Continuar de onde parei ▶</button>
+    <button class="btn ghost sm" onclick="sair()">Não sou a Ana · Sair</button>
+  </section>
+
+  <div class="or">ou</div>
+  <a class="btn ghost" href="../index.html" style="display:grid;place-items:center;text-decoration:none">Jogar o Capítulo 1 grátis</a>
+  <p class="small" style="text-align:center">Sem login, o progresso fica só neste aparelho.<br><a href="#">Privacidade</a> · <a href="#">Termos de uso</a></p>
+</div>
+<script>
+document.querySelectorAll('.seg .btn').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.seg .btn').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  document.getElementById('f-codigo').classList.toggle('hidden',b.dataset.t!=='codigo');
+  document.getElementById('f-email').classList.toggle('hidden',b.dataset.t!=='email');
+});
+const cod=document.getElementById('cod');
+cod.oninput=()=>{cod.value=cod.value.toUpperCase().replace(/[^A-Z0-9-]/g,'')};
+function entrar(e){e.preventDefault();document.getElementById('entrar').classList.add('hidden');document.getElementById('ok').classList.remove('hidden');return false}
+function sair(){document.getElementById('ok').classList.add('hidden');document.getElementById('entrar').classList.remove('hidden')}
+</script>
+</body>
+</html>

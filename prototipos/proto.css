@@ -1,0 +1,41 @@
+/* Estilos só dos protótipos de login e painel Adm (reaproveita css/estilo.css). */
+.field{display:flex;flex-direction:column;gap:6px}
+.field input,.field select{font:inherit;font-weight:700;color:var(--ink);background:var(--panel);border:2px solid var(--line);border-radius:14px;min-height:50px;padding:10px 14px;width:100%}
+.field input:focus,.field select:focus{outline:none;border-color:var(--amber)}
+.code{font-family:var(--display);font-size:24px;letter-spacing:.12em;text-transform:uppercase;text-align:center}
+.mascot{display:flex;align-items:flex-end;gap:10px}
+.mascot img{width:92px;height:92px;border-radius:50%;border:3px solid var(--amber);background:var(--panel2);object-fit:cover;flex:none}
+.panel{background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.or{display:flex;align-items:center;gap:10px;color:var(--muted);font-weight:800;font-size:13px}
+.or::before,.or::after{content:"";flex:1;height:2px;background:var(--line)}
+.small{font-size:13px;color:var(--muted);font-weight:700}
+.small a,.link{color:var(--neutro);font-weight:800}
+.valid{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;border:2px solid var(--terra);background:color-mix(in srgb,var(--terra) 14%,var(--panel))}
+.valid.warn{border-color:var(--amber);background:color-mix(in srgb,var(--amber) 12%,var(--panel))}
+.valid b{display:block}
+.hidden{display:none!important}
+/* Painel Adm: mais largo, pensado para computador */
+.adm{max-width:1100px}
+.admtop{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-block:10px;border-bottom:2px solid var(--line)}
+.admtop h1{font-size:24px}
+.admtop .sp{flex:1}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.tabs{display:flex;gap:6px;padding:4px;border-radius:14px;background:var(--panel);overflow-x:auto}
+.tabs .btn{min-height:42px;border-color:transparent;background:transparent;flex:none}
+.tabs .btn[aria-pressed="true"]{background:var(--panel2);border-color:var(--amber)}
+.tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.tools .field{flex:1;min-width:200px}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tblwrap{overflow-x:auto;border:2px solid var(--line);border-radius:14px}
+.tbl th{text-align:left;font-size:11px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:10px 10px;background:var(--panel2);white-space:nowrap}
+.tbl td{padding:10px 10px;border-top:2px solid var(--line);font-weight:700;white-space:nowrap}
+.tbl td.num{font-variant-numeric:tabular-nums}
+.st{font-size:12px;font-weight:900;padding:3px 9px;border-radius:999px;border:2px solid var(--c);color:var(--c)}
+.bar{height:8px;width:60px;border-radius:4px;background:var(--panel2);overflow:hidden;display:inline-block;vertical-align:middle;margin-right:6px}
+.bar i{display:block;height:100%;background:var(--amber)}
+.note{font-size:13px;color:var(--muted);font-weight:700;border-left:4px solid var(--neutro);padding-left:10px}
+dialog{background:var(--panel);color:var(--ink);border:2px solid var(--amber);border-radius:18px;padding:18px;width:min(460px,calc(100vw - 32px))}
+dialog::backdrop{background:rgba(5,10,20,.7)}
+dialog form{display:flex;flex-direction:column;gap:12px}
+.codes{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.codes span{font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:900;font-size:16px;letter-spacing:.1em;text-align:center;padding:8px;border-radius:10px;background:var(--lcd);color:var(--lcdink)}
