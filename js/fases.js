@@ -42,6 +42,11 @@ function runSort(p,list){
   render();
 }
 
+/* Cartão da missão: objetivo + etiquetas "peça = objeto real" numa linha só. */
+function missao(goal,real,nota,rotulo){return '<div class="goal"><span class="gi">'+(rotulo||'MISSÃO')+'</span><div class="gtx"><span>'+goal+'</span>'+(nota?'<small>'+nota+'</small>':'')+realHTML(real)+'</div></div>'}
+/* Bancada com a cadeia de energia (poste → medidor → quadro) colada em cima. */
+function benchWrap(svg,id){return '<div class="benchwrap">'+entrada()+'<div class="bench"'+(id?' id="'+id+'"':'')+'>'+svg+'</div></div>'}
+
 /* frame() sobe a tela para o topo. Na bancada, a partir do 2º desenho, volta para onde o aluno estava
    (no celular a bancada fica abaixo da dobra e cada fio ligado fazia a página pular). */
 let benchY=0;
@@ -51,23 +56,21 @@ window.addEventListener('scroll',()=>{benchY=window.scrollY},{passive:true});
 /* ---------- Bancada: montar ---------- */
 function runBuild(p,task){
   const st={comps:clone(task.comps),wires:[]};let sel=null,tries=0,msg=null,won=false,cor='fase';
-  /* Vista real (Etapa 1 do plano de realismo): por enquanto só no Primeiro Circuito. Zoom em todas as bancadas de montar. */
-  const realOk=p.id==='primeiro',zm=benchZoom();let drawn=false;
+  const zm=benchZoom();let drawn=false;
   const render=()=>{
-    const r=solve(st.comps,st.wires),R=realOk&&vistaReal();
-    const help=L()?'Toque num '+(R?'parafuso 🔩':'ponto ⚪')+' e depois em outro para ligar um fio (ou arraste). Toque no fio para tirar. Toque no interruptor para abrir e fechar.':'Toque/arraste entre '+(R?'bornes':'terminais')+' para ligar. Toque no fio para remover. Toque na chave para comutar e testar ao vivo.';
-    frame(p,'<div class="goal"><span class="gi">MISSÃO</span><span>'+task.goal+(L()?'<br><small>Cores: fase vermelha · neutro azul · terra verde-amarelo. Na vida real, só eletricista mexe na rede, com tudo desligado.</small>':' Cores da NBR 5410: neutro azul-claro, PE verde-amarelo.')+'</span></div>'+
-      realHTML(task.real)+(won?'':palette(cor))+entrada()+benchBar(zm,realOk)+'<div class="bench">'+board(st,{res:r,sel,pickTerm:!won,pickWire:!won,toggle:true,real:R,vb:zm.vb()})+'</div>'+statusChips(st,r)+
-      (msg?'<div class="fb '+(won?'good':'bad')+'">'+msg+'</div>':'<p class="help">'+help+'</p>')+
-      (won?'<button class="btn main" id="end">Concluir ⚡</button>':'<div class="row"><button class="btn ghost" id="clr">Limpar fios</button><button class="btn main" id="chk">Verificar</button></div>'),
-      won?pick(PRAISE[S.mode])+' Missão cumprida!':tries?'Teste mexendo nos interruptores.':pick(CHEER[S.mode]));
+    const r=solve(st.comps,st.wires),R=vistaReal();
+    const help=L()?'Toque num '+(R?'parafuso':'ponto ⚪')+' e depois em outro para ligar um fio (ou arraste). Toque no fio para tirar. Toque no interruptor para ligar e desligar.':'Toque ou arraste entre os '+(R?'bornes':'terminais')+' para ligar. Toque no fio para remover. Toque no interruptor para testar ao vivo.';
+    frame(p,missao(task.goal,task.real,L()?'Na vida real, só eletricista mexe na rede, e com tudo desligado.':'')+
+      (won?'':palette(cor))+benchBar(zm,true)+benchWrap(board(st,{res:r,sel,pickTerm:!won,pickWire:!won,toggle:true,real:R,vb:zm.vb()}))+statusChips(st,r)+
+      (msg?'<div class="fb '+(won?'good':'bad')+'">'+(won?pick(PRAISE[S.mode])+' ':'')+msg+'</div>':st.wires.length?'':'<p class="help">'+help+'</p>')+
+      (won?'<button class="btn main" id="end">Concluir ⚡</button>':'<div class="row"><button class="btn ghost" id="clr">Limpar fios</button><button class="btn main" id="chk">Verificar</button></div>'));
     keepScroll(drawn);drawn=true;
     const svg=app.querySelector('.bench svg');
     zm.bind(app.querySelector('.bench'),app);
     const ts=document.getElementById('tSol');if(ts)ts.onclick=()=>{st.wires=testeSol(p.id);sel=null;msg=null;render()};
     app.querySelectorAll('[data-vista]').forEach(b=>b.onclick=()=>{setVista(b.dataset.vista==='real');render()});
     app.querySelectorAll('[data-cor]').forEach(b=>b.onclick=()=>{cor=b.dataset.cor;render()});
-    svg.querySelectorAll('[data-sw]').forEach(h=>h.addEventListener('click',()=>{if(zm.busy())return;const c=st.comps.find(x=>x.id===h.dataset.sw);c.closed=!c.closed;msg=null;render()}));
+    svg.querySelectorAll('[data-sw]').forEach(h=>h.addEventListener('click',()=>{if(zm.busy())return;const c=st.comps.find(x=>x.id===h.dataset.sw);flipSwitch(c);msg=null;render()}));
     svg.querySelectorAll('[data-w]').forEach(h=>h.addEventListener('click',()=>{if(zm.busy())return;st.wires.splice(+h.dataset.w,1);msg=null;render()}));
     svg.querySelectorAll('[data-t]').forEach(h=>h.addEventListener('pointerdown',e=>{
       e.preventDefault();const a=h.dataset.t,p0=tpos(st.comps,a);let line=null;
@@ -88,19 +91,21 @@ function runBuild(p,task){
 
 /* ---------- Bancada: prever ---------- */
 function runPredict(p,list){
-  let i=0,ok=0;const res=[];
+  let i=0,ok=0;const res=[];const zm=benchZoom();
   const render=()=>{
-    const it=list[i],st=it.sc(),opts=shuffle(it.o.map((t,k)=>({t,k})));let tries=0;
-    const draw=(after)=>{const r=solve(st.comps,st.wires);return '<div class="bench">'+board(st,{res:r,cls:after?'flash':''})+'</div>'+statusChips(st,r)};
-    frame(p,progBar(list.length,i,res)+realHTML([['🔧','🏫','bancada de treino da oficina']])+entrada()+'<div id="bd">'+draw()+'</div><div class="goal"><span class="gi">AÇÃO</span><span>'+it.acao+'</span></div>'+
-      '<div class="qcard"><p class="q">'+it.q+'</p></div><div class="opts">'+opts.map(o=>'<button class="btn opt" data-k="'+o.k+'">'+o.t+'</button>').join('')+'</div><div id="fb" class="opts"></div>',
-      L()?'Olhe o circuito e aposte! Depois a gente vê.':'Preveja antes de ver.');
+    const it=list[i],st=it.sc(),opts=shuffle(it.o.map((t,k)=>({t,k})));
+    const draw=(after)=>{const r=solve(st.comps,st.wires);return benchWrap(board(st,{res:r,cls:after?'flash':'',real:vistaReal(),vb:zm.vb()}))+statusChips(st,r)};
+    const bindBd=()=>zm.bind(document.querySelector('#bd .bench'),app);
+    frame(p,progBar(list.length,i,res)+missao(it.acao,[['🔧','🏫','bancada de treino da oficina']],'','AÇÃO')+benchBar(zm,true)+'<div id="bd">'+draw()+'</div>'+
+      '<div class="qcard"><p class="q">'+it.q+'</p></div><div class="opts">'+opts.map(o=>'<button class="btn opt" data-k="'+o.k+'">'+o.t+'</button>').join('')+'</div><div id="fb" class="opts"></div>');
+    bindBd();
+    app.querySelectorAll('[data-vista]').forEach(b=>b.onclick=()=>{setVista(b.dataset.vista==='real');app.querySelectorAll('[data-vista]').forEach(x=>x.setAttribute('aria-pressed',x===b));document.getElementById('bd').innerHTML=draw();bindBd()});
     app.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
-      tries++;const right=+b.dataset.k===0;
+      const right=+b.dataset.k===0;
       app.querySelectorAll('.opt').forEach(x=>{x.disabled=true;if(+x.dataset.k===0)x.classList.add('right')});
       if(!right)b.classList.add('wrong');
       res[i]=right;if(right){ok++;S.xp+=10;save()}
-      it.act(st);document.getElementById('bd').innerHTML=draw(true);
+      it.act(st);document.getElementById('bd').innerHTML=draw(true);bindBd();
       document.getElementById('fb').innerHTML='<div class="fb '+(right?'good':'bad')+'">'+(right?pick(PRAISE[S.mode])+' ':'Olha o que aconteceu! ')+it.w+'</div>'+nextBtn(i===list.length-1);
       document.getElementById('nx').onclick=()=>{i++;i<list.length?render():finish(p,ok,list.length)};
     });
@@ -109,11 +114,11 @@ function runPredict(p,list){
 }
 
 /* ---------- Bancada: caça-defeito ---------- */
-function diagCircuit(V){return withPE({comps:[BAT(),C('F','fuse',125,40,0,{lab:'DJ'}),C('S1','sw',225,40,0,{closed:true}),C('L1','lamp',300,140,1)],
+function diagCircuit(V){return withPE({comps:[BAT(),C('F','fuse',125,48,0,{lab:'DJ'}),C('S1','sw',225,48,0,{closed:true}),C('L1','lamp',300,140,1)],
   wires:[W('B.0','F.0','v'),W('F.1','S1.0'),W('S1.1','L1.0','h'),W('L1.1','B.1','h')]})}
 function runDiag(p,d){
-  const ROUNDS=2;let round=0,score=0;
-  const startRound=()=>{
+  const ROUNDS=2;let round=0,score=0;const zm=benchZoom();
+  const startRound=()=>{let drawn=false;
     const st=diagCircuit(d.V);const fault=pick(d.cand);
     if(fault[0]==='w')st.wires[+fault.slice(1)].broken=true;else st.comps.find(c=>c.id===fault).broken=true;
     const letters={};let n=0;st.comps.forEach(c=>[0,1].forEach(k=>letters[c.id+'.'+k]='ABCDEFGHIJKLMNOPQR'[n++]));
@@ -124,26 +129,29 @@ function runDiag(p,d){
       const meter=L()?'':'<div class="meter"><div><small>MULTÍMETRO</small><small>V~ (CA)</small></div><div class="lcd">'+(reading===null?'– – –':reading.toFixed(2).replace('.',',')+' V')+'</div></div>'+
         '<p class="help">'+(probes.length===0?'Toque no 1º ponto (ponta vermelha).':probes.length===1?'Agora o 2º ponto (ponta preta).':'Pontas em '+letters[probes[0]]+' e '+letters[probes[1]]+' (CA: valor eficaz). Toque em outro ponto para nova medição.')+'</p>';
       frame(p,progBar(ROUNDS,round,[score>=2])+
-        '<div class="goal"><span class="gi">CHAMADO</span><span>'+(L()?'A lâmpada da cozinha não acende. Teste as peças e troque só a que quebrou.':'Cliente relata: a lâmpada da cozinha não acende; o resto da casa funciona. Ache a falha com até '+d.limit+' medições.')+'</span></div>'+
+        missao(L()?'A lâmpada da cozinha não acende. Teste as peças e troque só a que quebrou.':'Cliente relata: a lâmpada da cozinha não acende; o resto da casa funciona. Ache a falha com até '+d.limit+' medições.',
+          [['L1','💡','lâmpada da cozinha'],['S1','🔘','interruptor da cozinha'],['DJ','🎚','disjuntor da cozinha no quadro']],'','CHAMADO')+
         '<div class="seg"><button class="btn" id="t1" aria-pressed="'+(tool!=='fix')+'">'+toolNames[1]+'</button><button class="btn" id="t2" aria-pressed="'+(tool==='fix')+'">🔧 '+(S.mode==='full'?'Reparar':'Trocar')+'</button></div>'+
-        realHTML([['L1','💡','lâmpada da cozinha'],['S1','🔘','interruptor da cozinha'],['DJ','🎚','disjuntor da cozinha no quadro']])+(tool==='meter'?meter:'')+entrada()+
-        '<div class="bench">'+board(st,{res:r,letters:tool==='meter'?letters:null,probes,tags:tool==='test'||tool==='fix'?tags:null,
-           pickTerm:tool==='meter'&&!fixed,pickComp:(tool==='test'||tool==='fix')&&!fixed,pickWire:tool==='fix'&&!fixed&&S.mode==='full'})+'</div>'+
+        (tool==='meter'?meter:'')+benchBar(zm,true)+
+        benchWrap(board(st,{res:r,letters:tool==='meter'?letters:null,probes,tags:tool==='test'||tool==='fix'?tags:null,real:vistaReal(),vb:zm.vb(),
+           pickTerm:tool==='meter'&&!fixed,pickComp:(tool==='test'||tool==='fix')&&!fixed,pickWire:tool==='fix'&&!fixed&&S.mode==='full'}))+
         '<div class="status"><span class="chip">'+(L()?'Testes: ':'Medições: ')+measures+(L()?'':' / '+d.limit)+'</span>'+(wrong?'<span class="chip">Trocas erradas: '+wrong+'</span>':'')+'</div>'+
         (msg?'<div class="fb '+(fixed?'good':msg.bad?'bad':'info')+'">'+msg.t+'</div>':'<p class="help">'+(tool==='fix'?(S.mode==='full'?'Toque na peça ou no fio (conexão frouxa) com defeito.':'Toque na peça que você quer trocar.'):tool==='test'?'Toque numa peça para testar se a energia passa por ela.':'')+'</p>')+
-        (fixed?'<button class="btn main" id="nx">'+(round<ROUNDS-1?'Próximo chamado →':'Concluir')+'</button>':(!L()&&!hint&&measures>=2?'<button class="btn ghost sm" id="hint">💡 Dica</button>':'')),
-        fixed?pick(PRAISE[S.mode])+' Luz de volta!':L()?'Detetive da elétrica!':'Raciocine antes de medir.');
+        (fixed?'<button class="btn main" id="nx">'+(round<ROUNDS-1?'Próximo chamado →':'Concluir')+'</button>':(!L()&&!hint&&measures>=2?'<button class="btn ghost sm" id="hint">💡 Dica</button>':'')));
+      keepScroll(drawn);drawn=true;
       const svg=app.querySelector('.bench svg');
+      zm.bind(app.querySelector('.bench'),app);
+      app.querySelectorAll('[data-vista]').forEach(b=>b.onclick=()=>{setVista(b.dataset.vista==='real');render()});
       document.getElementById('t1').onclick=()=>{tool=L()?'test':'meter';msg=null;render()};
       document.getElementById('t2').onclick=()=>{tool='fix';msg=null;render()};
       svg.querySelectorAll('[data-t]').forEach(h=>h.addEventListener('click',()=>{
-        if(probes.length>=2)probes=[];probes.push(h.dataset.t);
+        if(zm.busy())return;if(probes.length>=2)probes=[];probes.push(h.dataset.t);
         if(probes.length===2){measures++;const rr=solve(st.comps,st.wires);reading=Math.abs(rr.vAt(probes[0])-rr.vAt(probes[1]))}else reading=null;msg=null;render()}));
       svg.querySelectorAll('[data-c]').forEach(h=>h.addEventListener('click',()=>{
-        const c=st.comps.find(x=>x.id===h.dataset.c);
+        if(zm.busy())return;const c=st.comps.find(x=>x.id===h.dataset.c);
         if(tool==='test'){measures++;tags[c.id]=!c.broken;msg=null;speak(c.broken?'não passa':'passa');render();return}
         tryFix(c.broken,()=>{c.broken=false},c.id+' ('+NAME[c.type]+')')}));
-      svg.querySelectorAll('[data-w]').forEach(h=>h.addEventListener('click',()=>{const w=st.wires[+h.dataset.w];tryFix(w.broken,()=>{w.broken=false},'a conexão do fio')}));
+      svg.querySelectorAll('[data-w]').forEach(h=>h.addEventListener('click',()=>{if(zm.busy())return;const w=st.wires[+h.dataset.w];tryFix(w.broken,()=>{w.broken=false},'a conexão do fio')}));
       const nx=document.getElementById('nx');if(nx)nx.onclick=()=>{round++;round<ROUNDS?startRound():finish(p,score,ROUNDS*2)};
       const hb=document.getElementById('hint');if(hb)hb.onclick=()=>{hint=true;msg={t:'Num circuito série aberto, quase toda tensão aparece sobre o ponto aberto. Peças boas medem 0 V.'};render()};
     };
@@ -162,13 +170,15 @@ function runDiag(p,d){
 function runSandbox(){
   setMode();
   let sb=S.sandbox&&S.sandbox.comps&&S.sandbox.comps.some(c=>c.type==='src')?clone(S.sandbox):{comps:[BAT()],wires:[]};
+  /* circuitos salvos antes do bocal sem PE: tira fios presos a bornes que não existem mais */
+  sb.wires=sb.wires.filter(w=>[w.a,w.b].every(t=>{const [id,k]=t.split('.'),c=sb.comps.find(x=>x.id===id);return c&&+k<terms(c).length}));
   let tool='build',cor='fase',sel=null,selC=null,probes=[],reading=null,msg=null,sure=false;
   const zm=benchZoom();let drawn=false;
   const persist=()=>{S.sandbox=sb;save()};
   const SPOTS=[[170,55],[280,55],[170,195],[280,195],[120,125],[225,125],[300,125],[110,55],[110,195],[225,55]];
   const getSvg=()=>document.querySelector('#bench svg');
   const sc=()=>sb.comps.find(c=>c.id===selC);
-  const benchHTML=()=>{const r=solve(sb.comps,sb.wires);return '<div class="bench" id="bench">'+board(sb,{res:r,sel,selC,move:tool==='build',pickTerm:true,pickWire:tool==='build',probes:tool==='meter'?probes:null,real:vistaReal(),vb:zm.vb()})+'</div>'+statusChips(sb,r)};
+  const benchHTML=()=>{const r=solve(sb.comps,sb.wires);return benchWrap(board(sb,{res:r,sel,selC,move:tool==='build',pickTerm:true,pickWire:tool==='build',probes:tool==='meter'?probes:null,real:vistaReal(),vb:zm.vb()}),'bench')+statusChips(sb,r)};
   const redrawBench=()=>{document.getElementById('bw').innerHTML=benchHTML();bindBench()};
   const add=type=>{
     if(sb.comps.length>=9){msg={bad:1,t:'Bancada cheia: no máximo 8 peças além da rede.'};render();return}
@@ -182,11 +192,10 @@ function runSandbox(){
       '<div class="seg"><button class="btn" id="tb" aria-pressed="'+(tool==='build')+'">🔌 Montar</button><button class="btn" id="tm" aria-pressed="'+(tool==='meter')+'">📏 Medir</button></div>'+
       (tool==='build'?'<div class="row"><button class="btn sm" data-add="lamp">+ Lâmpada</button><button class="btn sm" data-add="sw">+ Interruptor</button><button class="btn sm" data-add="fuse">+ Disjuntor</button></div>'+palette(cor)
         :'<div class="meter"><div><small>MULTÍMETRO</small><small>V~ (CA)</small></div><div class="lcd">'+(reading===null?'– – –':reading.toFixed(2).replace('.',',')+' V')+'</div></div><p class="help">'+(probes.length===1?'Agora o 2º ponto (ponta preta).':'Toque em dois terminais para medir a tensão entre eles.')+'</p>')+
-      entrada()+benchBar(zm,true)+'<div id="bw">'+benchHTML()+'</div>'+
-      (c&&tool==='build'?'<div class="row" style="align-items:center"><span class="chip">'+c.id+'</span><button class="btn sm" id="rot">↻ Girar</button>'+(c.type==='sw'?'<button class="btn sm" id="tog">'+(c.closed?'Abrir':'Fechar')+'</button>':'')+(c.type!=='src'?'<button class="btn sm danger" id="del">🗑 Remover</button>':'')+'</div>':'')+
+      benchBar(zm,true)+'<div id="bw">'+benchHTML()+'</div>'+
+      (c&&tool==='build'?'<div class="row" style="align-items:center"><span class="chip">'+c.id+'</span>'+(vistaReal()?'':'<button class="btn sm" id="rot">↻ Girar</button>')+(c.type==='sw'?'<button class="btn sm" id="tog">'+(c.closed?'Abrir':'Fechar')+'</button>':'')+(c.type!=='src'?'<button class="btn sm danger" id="del">🗑 Remover</button>':'')+'</div>':'')+
       (msg?'<div class="fb '+(msg.bad?'bad':'good')+'">'+msg.t+'</div>':'<p class="help">'+(tool==='build'?'Arraste as peças pelo corpo. Toque numa peça para selecionar (no interruptor, isso também liga e desliga). Ligue fios entre os '+(vistaReal()?'bornes 🔩':'terminais ⚪')+'. Toque no fio para tirar.':'')+'</p>')+
-      '<div class="row"><button class="btn ghost" id="clr">'+(sure?'Toque de novo para limpar':'Limpar bancada')+'</button><button class="btn main" id="insp">🔎 Inspecionar</button></div>',
-      'Aqui é livre! Invente, teste e meça.');
+      '<div class="row"><button class="btn ghost" id="clr">'+(sure?'Toque de novo para limpar':'Limpar bancada')+'</button><button class="btn main" id="insp">🔎 Inspecionar</button></div>');
     keepScroll(drawn);drawn=true;
     document.getElementById('tb').onclick=()=>{tool='build';probes=[];reading=null;msg=null;render()};
     document.getElementById('tm').onclick=()=>{tool='meter';sel=null;selC=null;msg=null;render()};
@@ -194,7 +203,7 @@ function runSandbox(){
     app.querySelectorAll('[data-vista]').forEach(b=>b.onclick=()=>{setVista(b.dataset.vista==='real');render()});
     app.querySelectorAll('[data-cor]').forEach(b=>b.onclick=()=>{cor=b.dataset.cor;render()});
     const rot=document.getElementById('rot');if(rot)rot.onclick=()=>{c.v=!c.v;persist();render()};
-    const tog=document.getElementById('tog');if(tog)tog.onclick=()=>{c.closed=!c.closed;persist();render()};
+    const tog=document.getElementById('tog');if(tog)tog.onclick=()=>{flipSwitch(c);persist();render()};
     const del=document.getElementById('del');if(del)del.onclick=()=>{sb.comps=sb.comps.filter(x=>x!==c);sb.wires=sb.wires.filter(w=>!w.a.startsWith(c.id+'.')&&!w.b.startsWith(c.id+'.'));selC=null;persist();render()};
     document.getElementById('clr').onclick=()=>{if(!sure){sure=true;render();return}sure=false;sb={comps:[BAT()],wires:[]};selC=null;sel=null;probes=[];reading=null;msg=null;persist();render()};
     document.getElementById('insp').onclick=()=>{
@@ -212,10 +221,10 @@ function runSandbox(){
     svg.querySelectorAll('[data-mv]').forEach(h=>h.addEventListener('pointerdown',e=>{
       e.preventDefault();const c=sb.comps.find(x=>x.id===h.dataset.mv),q0=svgPoint(svg,e),ox=c.x,oy=c.y;let moved=false;
       const move=ev=>{if(zm.busy())return;const q=svgPoint(getSvg(),ev),dx=q.x-q0.x,dy=q.y-q0.y;if(!moved&&Math.hypot(dx,dy)<6)return;moved=true;
-        c.x=Math.max(34,Math.min(306,Math.round((ox+dx)/5)*5));c.y=Math.max(34,Math.min(216,Math.round((oy+dy)/5)*5));redrawBench()};
+        c.x=Math.max(34,Math.min(306,Math.round((ox+dx)/5)*5));c.y=vistaReal()?Math.max(REAL_Y[0],Math.min(REAL_Y[1],Math.round((oy+dy)/5)*5)):Math.max(34,Math.min(216,Math.round((oy+dy)/5)*5));redrawBench()};
       const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',up);
         if(zm.busy()){c.x=ox;c.y=oy;render();return}
-        if(!moved){selC=c.id;if(c.type==='sw')c.closed=!c.closed}msg=null;persist();render()};
+        if(!moved){selC=c.id;if(c.type==='sw')flipSwitch(c)}msg=null;persist();render()};
       window.addEventListener('pointermove',move);window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up)}));
     svg.querySelectorAll('[data-t]').forEach(h=>h.addEventListener('pointerdown',e=>{
       e.preventDefault();const a=h.dataset.t;

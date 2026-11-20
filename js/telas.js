@@ -40,11 +40,15 @@ function showMap(){
   const tb=typeof testeBarHTML==='function'?testeBarHTML():'';
   app.innerHTML=hud()+tb+talk(all?'Capítulo completo! Bora pro próximo quando sair.':pick(CHEER[S.mode]))+tabs+
   '<div class="chcard'+(ch.id==='cap1'?' art':'')+'"><span class="eyebrow">Capítulo '+(CHAPTERS.indexOf(ch)+1)+' · '+ch.tema+'</span><div class="world"><h2>'+ch.nome+'</h2><span class="tag" style="--c:'+m.c+'">'+m.nome+'</span></div></div>'+body+
-  plantaoHTML()+
-  '<div class="quick"><button class="btn" id="sandbox">🛠 Oficina livre</button><button class="btn" id="resp">🌬 Respira e religa</button></div>'+
-  '<button class="btn" id="ficha">🪪 Minha ficha de eletricista</button>'+
-  '<div class="row"><button class="btn ghost" id="cMode">Trocar nível</button><button class="btn ghost" id="cChar">Trocar personagem</button></div>'+
-  '<button class="btn ghost danger" id="reset">Recomeçar do zero</button>';
+  '<button class="btn" id="sandbox">🛠 Oficina livre <small class="muted">· monte o que quiser</small></button>'+
+  /* o resto fica recolhido para o mapa mostrar só o caminho das fases */
+  '<details class="mais"><summary class="btn ghost">☰ Mais opções</summary><div class="mais-in">'+
+    plantaoHTML()+
+    '<button class="btn" id="ficha">🪪 Minha ficha de eletricista</button>'+
+    '<button class="btn pausa" id="resp"><span>🌬 Pausa para respirar</span><small>1 minuto para acalmar antes de voltar à bancada</small></button>'+
+    '<div class="row"><button class="btn ghost" id="cMode">Trocar nível</button><button class="btn ghost" id="cChar">Trocar personagem</button></div>'+
+    '<button class="btn ghost danger" id="reset">Recomeçar do zero</button>'+
+  '</div></details>';
   bindHud();if(tb)bindTesteBar();
   app.querySelectorAll('[data-ch]').forEach(b=>b.onclick=()=>{S.chap=b.dataset.ch;save();showMap()});
   app.querySelectorAll('.node').forEach(n=>n.onclick=()=>{if(!n.classList.contains('lock'))playPhase(+n.dataset.i)});
@@ -77,7 +81,7 @@ function playPhase(i){
 }
 function frame(p,inner,bubble){
   const tf=typeof testePhaseHTML==='function'?testePhaseHTML(p):'';
-  app.innerHTML=hud()+'<div class="world"><h2>'+p.nome+'</h2><button class="btn ghost sm" id="quit">Sair</button></div>'+tf+talk(bubble)+inner;
+  app.innerHTML=hud()+'<div class="world"><h2>'+p.nome+'</h2><button class="btn ghost sm" id="quit">Sair</button></div>'+tf+(bubble?talk(bubble):'')+inner;
   bindHud();document.getElementById('quit').onclick=showMap;if(tf)bindTestePhase(p);window.scrollTo(0,0);
 }
 const progBar=(n,i,res)=>'<div class="prog">'+Array.from({length:n},(_,k)=>'<i class="'+(k<i?(res[k]?'ok':'no'):k===i?'cur':'')+'"></i>').join('')+'</div>';

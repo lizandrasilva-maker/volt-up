@@ -4,10 +4,15 @@
 const C=(id,type,x,y,v,ex)=>Object.assign({id,type,x,y,v:!!v},ex||{});
 const W=(a,b,e)=>({a,b,e});
 const NAME={src:'rede',lamp:'luminária',sw:'interruptor',fuse:'disjuntor'};
+/* Posição dos bornes. Na vista real (GEOM_REAL, ligada por board()) cada peça tem os bornes onde o
+   equipamento tem (js/bancada-real.js). O cálculo só usa o número do borne, então é o mesmo nas duas vistas.
+   A lâmpada é bocal com 2 bornes (X1/X2), sem PE; só uma luminária com pe:true teria o 3º borne. */
+let GEOM_REAL=false;
 function terms(c){const d=26;
+  if(GEOM_REAL&&typeof realTerms==='function')return realTerms(c).map(t=>t.p);
   if(c.type==='src')return [[c.x,c.y-30],[c.x,c.y+30],[c.x+28,c.y]];
   const t=c.v?[[c.x,c.y-d],[c.x,c.y+d]]:[[c.x-d,c.y],[c.x+d,c.y]];
-  if(c.type==='lamp'&&c.pe!==false)t.push(c.v?[c.x+(c.x>250?24:-24),c.y]:[c.x,c.y+(c.y>200?-24:24)]);
+  if(c.type==='lamp'&&c.pe===true)t.push(c.v?[c.x+(c.x>250?24:-24),c.y]:[c.x,c.y+(c.y>200?-24:24)]);
   return t}
 function tpos(comps,t){const [id,k]=t.split('.');const c=comps.find(x=>x.id===id);return terms(c)[+k]}
 function UF(){const p={};const find=x=>{if(p[x]===undefined)p[x]=x;while(p[x]!==x){p[x]=p[p[x]];x=p[x]}return x};return{find,union:(a,b)=>{const ra=find(a),rb=find(b);if(ra!==rb)p[ra]=rb}}}
@@ -58,31 +63,28 @@ function compSVG(c,b,o){
   if(o.pickComp&&c.type!=='src')s+='<rect class="chit" data-c="'+c.id+'" x="-28" y="-24" width="56" height="48"/>';
   return '<g transform="translate('+c.x+' '+c.y+')'+(c.v?' rotate(90)':'')+'">'+s+'</g>';
 }
-/* o.real = vista real (js/bancada-real.js): mesmas posições de terminais, só muda o desenho. o.vb = viewBox do zoom. */
+/* o.real = vista real (js/bancada-real.js). o.vb = viewBox do zoom. */
 function board(st,o){
-  o=o||{};const r=o.res||solve(st.comps,st.wires),R=!!o.real;
+  o=o||{};const R=!!o.real;GEOM_REAL=R;
+  const r=o.res||solve(st.comps,st.wires);
   const anyLit=Object.values(r.lamp).some(b=>b>0.04);
   let s='<svg viewBox="'+(o.vb||'0 0 340 250')+'" class="'+(r.short?'short':anyLit?'on':'')+(R?' real-v':'')+(o.cls?' '+o.cls:'')+'" role="img" aria-label="Bancada de circuito'+(R?' em vista real':'')+'">';
-  if(R)s+=realBg();
-  let rings='';
-  st.wires.forEach((w,i)=>{let d;
-    if(R){const pts=realWirePts(st.comps,w);d=ptsPath(pts);s+='<path class="wo" d="'+d+'"/>';rings+=anilhas(pts,i+1)}else d=wirePath(st.comps,w);
+  if(R)return s+realBoard(st,o,r)+'</svg>';
+  if(typeof SW_FLIP!=='undefined')SW_FLIP=null;
+  st.wires.forEach((w,i)=>{const d=wirePath(st.comps,w);
     s+='<path class="w '+(w.cor||'cobre')+'" d="'+d+'"/>'+(w.cor==='terra'?'<path class="w2" d="'+d+'"/>':'');if(o.pickWire)s+='<path class="hit" data-w="'+i+'" d="'+d+'"/>'});
-  s+=rings;
-  if(!R)st.comps.forEach(c=>{if(c.type==='lamp'&&c.pe!==false){const tp=terms(c)[2],dx=Math.sign(tp[0]-c.x),dy=Math.sign(tp[1]-c.y);s+='<line x1="'+(c.x+dx*14)+'" y1="'+(c.y+dy*14)+'" x2="'+tp[0]+'" y2="'+tp[1]+'" style="stroke:var(--terra)" stroke-width="2.5" stroke-dasharray="3 2"/>'}});
-  st.comps.forEach(c=>{s+=R?realComp(c,r.lamp[c.id]||0,o):compSVG(c,r.lamp[c.id]||0,o);
+  st.comps.forEach(c=>{if(c.type==='lamp'&&c.pe===true){const tp=terms(c)[2],dx=Math.sign(tp[0]-c.x),dy=Math.sign(tp[1]-c.y);s+='<line x1="'+(c.x+dx*14)+'" y1="'+(c.y+dy*14)+'" x2="'+tp[0]+'" y2="'+tp[1]+'" style="stroke:var(--terra)" stroke-width="2.5" stroke-dasharray="3 2"/>'}});
+  st.comps.forEach(c=>{s+=compSVG(c,r.lamp[c.id]||0,o);
     if(o.move)s+=(o.selC===c.id?'<rect class="selc" x="'+(c.x-32)+'" y="'+(c.y-32)+'" width="64" height="64" rx="10"/>':'')+'<rect class="mvhit" data-mv="'+c.id+'" x="'+(c.x-(c.v?18:16))+'" y="'+(c.y-(c.v?16:18))+'" width="'+(c.v?36:32)+'" height="'+(c.v?32:36)+'"/>'});
   st.comps.forEach(c=>{
     const lab=c.lab||c.id;
     if(c.type==='src'){const t=terms(c);s+='<text class="lab" x="'+(t[0][0]+12)+'" y="'+(t[0][1]+4)+'" style="fill:var(--fase)">F</text><text class="lab" x="'+(t[1][0]+12)+'" y="'+(t[1][1]+4)+'" style="fill:var(--neutro)">N</text><text class="lab" x="'+(t[2][0]-2)+'" y="'+(t[2][1]+20)+'" style="fill:var(--terra)">PE</text>';return}
-    const lx=R?38:36,ly=R?[40,-31]:[34,-22];
-    s+=c.v?'<text class="lab" x="'+(c.x+(c.x>250?-lx:lx))+'" y="'+(c.y+4)+'" text-anchor="'+(c.x>250?'end':'start')+'">'+lab+'</text>':'<text class="lab" x="'+c.x+'" y="'+(c.y+(c.y>200?ly[0]:ly[1]))+'" text-anchor="middle">'+lab+'</text>';
+    s+=c.v?'<text class="lab" x="'+(c.x+(c.x>250?-36:36))+'" y="'+(c.y+4)+'" text-anchor="'+(c.x>250?'end':'start')+'">'+lab+'</text>':'<text class="lab" x="'+c.x+'" y="'+(c.y+(c.y>200?34:-22))+'" text-anchor="middle">'+lab+'</text>';
     if(o.tags&&o.tags[c.id]!==undefined){const ok=o.tags[c.id];s+='<text class="lab '+(ok?'ok':'no')+'" x="'+c.x+'" y="'+(c.v?c.y+44:c.y+(c.y>200?-20:30))+'" text-anchor="middle">'+(ok?'✓ passa':'✗ não passa')+'</text>'}
   });
   st.comps.forEach(c=>terms(c).forEach((p,k)=>{const t=c.id+'.'+k;
-    let cl='term'+(R?' scr':'');if(o.sel===t)cl+=' sel';if(o.probes&&o.probes[0]===t)cl+=' probe-r';if(o.probes&&o.probes[1]===t)cl+=' probe-b';
+    let cl='term';if(o.sel===t)cl+=' sel';if(o.probes&&o.probes[0]===t)cl+=' probe-r';if(o.probes&&o.probes[1]===t)cl+=' probe-b';
     s+='<circle class="'+cl+'" cx="'+p[0]+'" cy="'+p[1]+'" r="6"/>';
-    if(R)s+='<line class="slot" x1="'+(p[0]-3.5)+'" y1="'+(p[1]+3.5)+'" x2="'+(p[0]+3.5)+'" y2="'+(p[1]-3.5)+'"/>'+realBorneLab(c,k,p);
     if(o.letters)s+='<text class="lab k" x="'+(p[0]+(c.v?-13:0))+'" y="'+(p[1]+(c.v?4:-10))+'" text-anchor="middle">'+o.letters[t]+'</text>';
     if(o.pickTerm)s+='<circle class="thit" data-t="'+t+'" cx="'+p[0]+'" cy="'+p[1]+'" r="17"/>'}));
   return s+'</svg>';

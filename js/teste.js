@@ -65,11 +65,11 @@ function bindTestePhase(p){const k=document.getElementById('tSkip');if(k)k.oncli
 
 /* Gabaritos das bancadas de montar (conferidos com normCheck, colorCheck e o check da missão). */
 const TESTE_SOL={
-  'primeiro:leve':[['B.0','S1.0','fase'],['S1.1','L1.0','retorno'],['L1.1','B.1','neutro'],['B.2','L1.2','terra']],
-  'primeiro:moderado':[['B.0','F.0','fase'],['F.1','S1.0','fase'],['S1.1','L1.0','retorno'],['L1.1','B.1','neutro'],['B.2','L1.2','terra']],
-  'paralelo:leve':[['B.0','L1.0','fase'],['B.0','L2.0','fase'],['L1.1','B.1','neutro'],['L2.1','B.1','neutro'],['B.2','L1.2','terra'],['B.2','L2.2','terra']],
-  'paralelo:moderado':[['B.0','S1.0','fase'],['B.0','S2.0','fase'],['S1.1','L1.0','retorno'],['S2.1','L2.0','retorno'],['L1.1','B.1','neutro'],['L2.1','B.1','neutro'],['B.2','L1.2','terra'],['B.2','L2.2','terra']],
-  'paralelo:full':[['B.0','S0.0','fase'],['S0.1','L1.0','retorno'],['S0.1','S2.0','retorno'],['S2.1','L2.0','retorno'],['L1.1','B.1','neutro'],['L2.1','B.1','neutro'],['B.2','L1.2','terra'],['B.2','L2.2','terra']]
+  'primeiro:leve':[['B.0','S1.0','fase'],['S1.1','L1.0','retorno'],['L1.1','B.1','neutro']],
+  'primeiro:moderado':[['B.0','F.0','fase'],['F.1','S1.0','fase'],['S1.1','L1.0','retorno'],['L1.1','B.1','neutro']],
+  'paralelo:leve':[['B.0','L1.0','fase'],['B.0','L2.0','fase'],['L1.1','B.1','neutro'],['L2.1','B.1','neutro']],
+  'paralelo:moderado':[['B.0','S1.0','fase'],['B.0','S2.0','fase'],['S1.1','L1.0','retorno'],['S2.1','L2.0','retorno'],['L1.1','B.1','neutro'],['L2.1','B.1','neutro']],
+  'paralelo:full':[['B.0','S0.0','fase'],['S0.1','L1.0','retorno'],['S0.1','S2.0','retorno'],['S2.1','L2.0','retorno'],['L1.1','B.1','neutro'],['L2.1','B.1','neutro']]
 };
 TESTE_SOL['primeiro:full']=TESTE_SOL['primeiro:moderado'];
 function testeSol(pid){const s=TESTE_SOL[pid+':'+S.mode];return s?s.map(([a,b,cor])=>Object.assign(W(a,b),{cor})):null}

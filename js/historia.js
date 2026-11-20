@@ -21,7 +21,7 @@ const CHAPTERS=[
 const SCENES={
   faisca:[['chico','Antes de mexer em qualquer coisa, me responde umas perguntas. Quero ver como você pensa.']],
   entrada:[['chico','Olha pela janela da oficina: lá no poste tem o transformador, e na parede tem o medidor.'],['chico','É por esse caminho que a energia chega. {nome}, me mostra que você entendeu.']],
-  primeiro:[['chico','Essa é a sua bancada de treino. Tem a energia da rede, um interruptor e uma lâmpada.'],['chico','Ligue do jeito da NBR 5410: neutro azul-claro, terra verde-amarelo e o interruptor cortando a fase.']],
+  primeiro:[['chico','Essa é a sua bancada de treino. Tem a energia da rede, um interruptor e uma lâmpada.'],['chico','Ligue do jeito da NBR 5410: fase no interruptor, retorno até a lâmpada e neutro azul-claro direto no bocal.']],
   previsao:[['chico','Ainda na bancada: eletricista bom prevê o que vai acontecer antes de ligar. Topa um desafio?'],['eu','Topo! Vou pensar antes de responder.']],
   paralelo:[['fatima','Bom dia! Sou a Dona Fátima, moro aqui na rua. Quero colocar duas lâmpadas na minha sala.'],['fatima','E quero as duas bem fortes, viu?'],['chico','Primeira cliente, {nome}! Cuidado: tem um jeito de ligar que deixa as duas fraquinhas.']],
   defeito:[['fatima','Mestre, a lâmpada da minha cozinha não acende mais! As outras luzes da casa estão funcionando.'],['chico','Se só a cozinha apagou, o problema está no circuito da cozinha. Vamos testar peça por peça: aqui não se troca nada no chute.']],
@@ -86,19 +86,19 @@ const PHASES=[
          {q:'O medidor marcou 3 kWh em 2 horas. Potência média?',o:['1,5 kW','6 kW','0,67 kW'],w:'P = E ÷ t = 3 ÷ 2 = 1,5 kW.'}]
   }},
  {id:'primeiro',nome:'Primeiro Circuito',sub:'Bancada de treino',kind:'bancada',tipo:'build',ic:'interruptor',cor:'#7a4a1f',
-  card:{leve:'Interruptor sempre na fase. Terra sempre ligado.',moderado:'Rede → disjuntor → interruptor → luminária, com PE.',full:'NBR 5410: comando secciona a fase; todo circuito tem PE.'},
+  card:{leve:'Interruptor sempre na fase. Neutro direto na lâmpada.',moderado:'Rede → disjuntor → interruptor → retorno → lâmpada → neutro.',full:'NBR 5410: o comando secciona a fase; o neutro vai direto à carga.'},
   dados:{
    leve:{comps:[BAT(),C('S1','sw',170,45,0,{closed:false}),C('L1','lamp',290,125,1)],
      real:[['L1','💡','lâmpada da bancada'],['S1','🔘','interruptor'],['Rede','🔌','energia que vem do poste']],
-     goal:'Ligue a lâmpada L1 na rede, com o interruptor S1 ligando e desligando. Não esqueça o terra!',
+     goal:'Ligue a lâmpada L1 na rede, com o interruptor S1 ligando e desligando.',
      check:st=>tableCheck(st,[{sw:{S1:1},want:{L1:1}},{sw:{S1:0},want:{L1:0}}])},
    moderado:{comps:[BAT(),C('F','fuse',115,45,0,{lab:'DJ 10A'}),C('S1','sw',225,45,0,{closed:false}),C('L1','lamp',290,135,1)],
      real:[['L1','💡','lâmpada da bancada'],['S1','🔘','interruptor'],['DJ','🎚','disjuntor no quadro'],['Rede','🔌','energia que vem do poste']],
-     goal:'S1 comanda L1, o disjuntor protege o circuito e a luminária fica aterrada.',
+     goal:'S1 comanda L1 e o disjuntor protege o circuito.',
      check:st=>tableCheck(st,[{sw:{S1:1},want:{L1:1}},{sw:{S1:0},want:{L1:0}}])},
    full:{comps:[BAT(),C('F','fuse',115,45,0,{lab:'DJ 10A'}),C('S1','sw',225,45,0,{closed:false}),C('L1','lamp',290,135,1)],
      real:[['L1','💡','luminária da bancada'],['S1','🔘','interruptor simples'],['DJ','🎚','disjuntor do circuito'],['Rede','🔌','220 V~ do QD']],
-     goal:'Circuito de iluminação conforme NBR 5410: proteção na fase, comando seccionando a fase, PE na luminária e cores corretas.',
+     goal:'Circuito de iluminação conforme NBR 5410: proteção na fase, comando seccionando a fase e cores corretas.',
      check:st=>tableCheck(st,[{sw:{S1:1},want:{L1:1}},{sw:{S1:0},want:{L1:0}}])}
   }},
  {id:'previsao',nome:'Previsão',sub:'Desafio na bancada',kind:'bancada',tipo:'predict',ic:'previsao',cor:'#2b4f6e',

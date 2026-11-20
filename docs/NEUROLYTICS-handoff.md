@@ -31,7 +31,7 @@ Instruções do projeto:
 - **A cadeia de energia aparece em toda bancada:** transformador do poste (13,8 kV → 380/220 V), medidor em kWh, quadro com disjuntor e o circuito.
 - **Checagens automáticas da bancada** (`normCheck` + `colorCheck`):
   - O interruptor secciona a fase. Se cortar o neutro, a lâmpada desligada continua com 220 V.
-  - Toda luminária tem PE ligado. O PE nunca conduz corrente de serviço. PE e neutro não se unem no circuito.
+  - A lâmpada é um **bocal simples com 2 bornes (X1/X2), sem PE**, como no equipamento real (decisão da Liz em 20/11/2026, substituindo "toda luminária tem PE"). O PE continua na tomada de bancada e volta a ser cobrado quando entrar luminária metálica ou tomada (`pe:true` no componente). O PE nunca conduz corrente de serviço. PE e neutro não se unem no circuito.
   - O disjuntor fica em série na fase, antes de tudo.
   - Cores: neutro azul-claro, PE verde-amarelo, fase e retorno em qualquer outra cor. No jogo a fase é vermelha e o retorno é branco (convenção, não exigência da NBR).
   - Curto fase-neutro e curto fase-terra são detectados.
@@ -80,7 +80,8 @@ Capítulos previstos, ainda "em construção":
 - **Progressão:** XP, plano de carreira (Aprendiz → Ajudante → Eletricista → Eletricista Sênior → Responsável Técnico) e cards por fase e nível (álbum).
 - **Ficha do eletricista:** atributos (Conceito, Montagem, Diagnóstico, Segurança, Cálculo) e perfil.
 - **Rotina:** Plantão de hoje (3 missões, +30 XP), 🔥 dias seguidos e 12 conquistas.
-- **Pausa:** "Respira e religa", 3 respirações guiadas.
+- **Pausa:** "Pausa para respirar" (antes "Respira e religa"), 3 respirações guiadas, dentro de "☰ Mais opções" no mapa.
+- **Telas:** o mapa mostra só as fases, "Rever a abertura" e a Oficina; Plantão, Ficha, Pausa, trocar nível/personagem e Recomeçar ficam em "☰ Mais opções". Nas bancadas não há balão do personagem: Missão (com as etiquetas) → cores → Real/Diagrama e zoom → bancada com a faixa poste→medidor→quadro colada em cima → resultado → botões. A ajuda some depois do primeiro fio.
 - **Oficina livre:** sandbox com rede, luminárias, interruptores e disjuntores, multímetro V~ e botão Inspecionar.
 - **Cenas em estilo visual novel:** personagem de meio corpo de um lado e a fala do outro. O texto aparece letra por letra (instantâneo com movimento reduzido).
 - **Decisões de design** (estudo de referência de apps de hábito gamificados):
@@ -114,9 +115,10 @@ Os scripts são clássicos (sem `import`), então tudo é global e a ordem no `i
   - `solve()`: análise nodal (lâmpadas resistivas, valores eficazes).
   - `sim()`: simula posições de interruptor ou defeitos.
 - Desenho da bancada: `board()`, `compSVG()`, `entrada()` (faixa poste → medidor → quadro) e `realHTML()` (etiquetas da vida real).
-  - `board(st,{real:true})` troca o desenho pela vista real (`realComp()`, `realWirePts()`, `anilhas()` em `js/bancada-real.js`). Os terminais e o cálculo são os mesmos nas duas vistas.
-  - A vista escolhida fica em `S.vista[nível]`. Padrão: Leve abre na vista real; Técnico e Profissional, no símbolo.
-  - Bornes impressos: disjuntor `1` (entrada) e `2` (saída); interruptor `L` e `R` (retorno); luminária `F/R`, `N` e `PE`; rede `F`, `N` e `PE`.
+  - `board(st,{real:true})` desenha a vista real (`realBoard()` em `js/bancada-real.js`). Na vista real os bornes ficam onde o equipamento tem (`REAL_TERMS`, ligado por `GEOM_REAL` em `terms()`), mas o motor só usa o número do borne: o cálculo e as checagens são os mesmos nas duas vistas.
+  - Peças: rede como **caixa de ligação** (o cabo do quadro entra por cima e abre em fase vermelha, neutro azul e terra verde-amarelo, cada um no seu borne, lado a lado e **sem letra impressa**: o aluno identifica pela cor do condutor), disjuntor DIN (1 em cima, 2 embaixo, alavanca ON/OFF), interruptor em módulo (L e R na régua de baixo; a tecla anima quando o aluno toca, via `flipSwitch()`), lâmpada no bocal de porcelana (X1 e X2 embaixo). Parafusos com fenda em cruz, anilhas laranja numeradas. No Caça-Defeito o teste de peça aparece como selo ✓/✗ no canto da peça.
+  - Na vista real a altura das peças fica entre 46 e 184 (`REAL_Y`), para os fios terem canaleta. Os fios desviam de peças, de parafusos e dos fios já desenhados.
+  - A vista escolhida fica em `S.vista[nível]`. Padrão: vista real em todos os níveis e em todas as bancadas; o botão "Diagrama" mostra o esquema.
   - `benchZoom()`: pinça, arrastar com um dedo no fundo quando ampliado, Ctrl+roda e botões − + ⤢. Durante a pinça (`zm.busy()`) os toques não ligam fio nem mexem peça.
 - `/* CONTEÚDO */`:
   - Cenários de previsão `sc*()`, com `withPE()` e `autoColor()`.

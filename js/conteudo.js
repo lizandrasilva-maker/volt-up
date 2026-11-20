@@ -1,6 +1,7 @@
 /* ================= CONTEÚDO ================= */
 const BAT=()=>C('B','src',45,125,0,{V:220});
-function withPE(st){const ls=st.comps.filter(c=>c.type==='lamp');let prev='B.2';ls.forEach(l=>{st.wires.push({a:prev,b:l.id+'.2',e:'h',cor:'terra'});prev=l.id+'.2'});return autoColor(st)}
+/* Liga o PE nas luminárias que têm borne de terra (pe:true, ex.: luminária metálica). O bocal simples não tem PE. */
+function withPE(st){const ls=st.comps.filter(c=>c.type==='lamp'&&c.pe===true);let prev='B.2';ls.forEach(l=>{st.wires.push({a:prev,b:l.id+'.2',e:'h',cor:'terra'});prev=l.id+'.2'});return autoColor(st)}
 function autoColor(st){const r=solve(st.comps.map(c=>c.type==='sw'?Object.assign({},c,{closed:false}):c),st.wires);
   st.wires.forEach(w=>{if(w.cor)return;const n=r.net(w.a);w.cor=n===r.P?'fase':n===r.N?'neutro':n===r.PE?'terra':'retorno'});return st}
 function scSerie(){return withPE({comps:[BAT(),C('L1','lamp',170,45,0),C('L2','lamp',290,125,1)],wires:[W('B.0','L1.0','v'),W('L1.1','L2.0','h'),W('L2.1','B.1')]})}
@@ -45,7 +46,7 @@ function normCheck(st){
   const lamps=st.comps.filter(c=>c.type==='lamp'),r=solve(st.comps,st.wires);
   for(const l of lamps){const n=r.net(l.id+'.0'),m=r.net(l.id+'.1');
     if(n===r.PE||m===r.PE)return L()?'O terra não pode levar a corrente da lâmpada. Ele só protege.':'O PE está fazendo papel de condutor vivo em '+l.id+'. Pela NBR 5410 o condutor de proteção nunca conduz corrente de serviço.'}
-  for(const l of lamps)if(l.pe!==false&&r.net(l.id+'.2')!==r.PE)return L()?'Falta ligar o terra (verde-amarelo) na luminária '+l.id+'.':'Luminária '+l.id+' sem condutor de proteção. NBR 5410: todo circuito deve ter PE.';
+  for(const l of lamps)if(l.pe===true&&r.net(l.id+'.2')!==r.PE)return L()?'Falta ligar o terra (verde-amarelo) na luminária '+l.id+'.':'Luminária '+l.id+' sem condutor de proteção. NBR 5410: todo circuito deve ter PE.';
   if(r.PE===r.N&&lamps.length)return 'Terra e neutro não podem ser unidos no circuito. Eles só se encontram no padrão de entrada.';
   const sws=st.comps.filter(c=>c.type==='sw');
   if(sws.length){const off=sim(st,Object.fromEntries(sws.map(c=>[c.id,0])));

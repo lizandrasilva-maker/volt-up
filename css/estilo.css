@@ -109,6 +109,19 @@ input[type=text]{font:inherit;font-weight:800;width:100%;min-height:52px;padding
 /* Bancada (simulador) */
 .goal{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:14px;background:var(--panel2);font-weight:800}
 .goal .gi{color:var(--amber);font-family:var(--display);font-size:13px;flex:none;padding-top:2px}
+.goal .gtx{display:flex;flex-direction:column;gap:6px;min-width:0}
+.goal .gtx small{color:var(--muted);font-weight:700}
+.goal .real .rchip{background:var(--panel);font-size:12px}
+.benchwrap{display:flex;flex-direction:column}
+.benchwrap .entrada{border-radius:14px 14px 0 0;border-bottom:0;opacity:.9}
+.benchwrap .bench{border-radius:0 0 18px 18px}
+.mais{display:flex;flex-direction:column}
+.mais>summary{list-style:none;display:grid;place-items:center;cursor:pointer}
+.mais>summary::-webkit-details-marker{display:none}
+.mais[open]>summary{border-color:var(--amber)}
+.mais-in{display:flex;flex-direction:column;gap:10px;padding-top:10px}
+.pausa{display:flex;flex-direction:column;align-items:center;gap:2px}.pausa small{font-size:12px;color:var(--muted);font-weight:700}
+#sandbox small{font-weight:700}
 .bench{background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:4px;position:relative}
 .bench svg{width:100%;height:auto;display:block;touch-action:none;-webkit-user-select:none;user-select:none}
 .w{stroke:var(--copper);stroke-width:5;fill:none;stroke-linecap:round;stroke-linejoin:round}
@@ -133,18 +146,33 @@ input[type=text]{font:inherit;font-weight:800;width:100%;min-height:52px;padding
 .real-v .w,.real-v .w2{stroke-width:5.5}
 .real-v.on .w{stroke-dasharray:none;animation:none}
 .real-v.on .w2{stroke-dasharray:7 7}
-.wo{stroke:#070c14;stroke-width:9;fill:none;stroke-linecap:round;stroke-linejoin:round}
-.rbody{fill:#e9edf2;stroke:#3d4652;stroke-width:2}
-.rcap{fill:#d3d9e1}
-.rtxt{fill:#2f3a48;font:900 7px var(--body)}
+.wo{stroke:#05080d;stroke-width:9;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.rbody{fill:url(#gBody);stroke:#8b939c;stroke-width:1.2}
+.janela{fill:#3a4048;stroke:#262b31;stroke-width:1}
+.rtxt{fill:#46505b;font:900 6.5px var(--body);letter-spacing:.02em}
+.ltxt{fill:#f2f4f6;font:900 4.6px var(--body)}
 .furo{fill:#2a2f36}
-.rlead{stroke:#8a94a1;stroke-width:3;stroke-linecap:round}
-.anel{pointer-events:none}.anel rect{fill:#f4d03f;stroke:#6b5a12;stroke-width:.8}.anel text{fill:#1b1a10;font:900 7px var(--body)}
-.term.scr{fill:#c9cfd8;stroke:#3d4652;stroke-width:2}
-.term.scr.sel{fill:var(--amber);stroke:var(--amber)}
-.term.scr.probe-r{fill:var(--fase);stroke:var(--fase)}.term.scr.probe-b{fill:#05080d;stroke:var(--amber);stroke-width:4}
-.slot{stroke:#3d4652;stroke-width:1.6;stroke-linecap:round;pointer-events:none}
+.anel{pointer-events:none}.anel rect{fill:#f39c12;stroke:#7a4a06;stroke-width:.8}.anel text{fill:#1b1206;font:900 7px var(--body)}
+.term.scr{fill:url(#gScrew);stroke:#5a636d;stroke-width:1}
+.term.scr.sel{fill:var(--amber);stroke:#fff;stroke-width:2}
+.term.scr.probe-r{fill:var(--fase);stroke:#fff;stroke-width:2}.term.scr.probe-b{fill:#05080d;stroke:var(--amber);stroke-width:3}
+.slot{stroke:#4a535d;stroke-width:1.5;stroke-linecap:round;fill:none;pointer-events:none}
 .lab.bn{fill:var(--ink);font-size:8.5px;font-weight:900}
+.lab .kl{fill:var(--neutro);font-size:11px}
+/* condutores que chegam do quadro na caixa de ligação da rede */
+.cond-o{fill:none;stroke:#05080d;stroke-width:5;stroke-linejoin:round}
+.cond{fill:none;stroke-width:3.2;stroke-linejoin:round}.cond.t{stroke:#f2d22e;stroke-dasharray:4 4}
+/* selo ✓/✗ do teste de peça no Caça-Defeito */
+.selo circle{stroke:#fff;stroke-width:1.5}.selo.ok circle{fill:var(--terra)}.selo.no circle{fill:var(--fase)}
+.selo text{fill:#fff;font:900 10px var(--body)}
+/* tecla do interruptor: gira e a metade apertada desliza quando o aluno toca */
+.tecla{transform-box:fill-box;transform-origin:center}
+.tecla.liga{animation:teclaLiga .28s ease-out}.tecla.desliga{animation:teclaDesliga .28s ease-out}
+.tecla.liga .aperto{animation:apertoDesce .28s ease-out}.tecla.desliga .aperto{animation:apertoSobe .28s ease-out}
+@keyframes teclaLiga{0%{transform:none}45%{transform:translateY(1.5px) scale(.93,.86)}100%{transform:none}}
+@keyframes teclaDesliga{0%{transform:none}45%{transform:translateY(-1.5px) scale(.93,.86)}100%{transform:none}}
+@keyframes apertoDesce{from{transform:translateY(-14px)}to{transform:none}}
+@keyframes apertoSobe{from{transform:translateY(14px)}to{transform:none}}
 /* Cena de história */
 .scene{display:flex;flex-direction:column;gap:14px;padding-top:6px}
 .stage{display:flex;flex-direction:column;align-items:center;gap:8px;padding:18px 14px;border-radius:20px;background:radial-gradient(120% 90% at 50% 0%,var(--panel2),var(--panel));border:2px solid var(--line)}

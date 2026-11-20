@@ -58,7 +58,7 @@ function showFicha(){
 function showBreath(done){
   setMode();let cyc=0,phase=0,timer=null;const total=3;
   const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  app.innerHTML=hud()+'<section class="breath"><p class="big" style="text-align:center">Respira e <em>religa</em></p><p class="muted" style="text-align:center">'+(L()?'Vamos respirar juntos, bem devagar.':'Três respirações antes de voltar à bancada.')+'</p>'+
+  app.innerHTML=hud()+'<section class="breath"><p class="big" style="text-align:center">Pausa para <em>respirar</em></p><p class="muted" style="text-align:center">'+(L()?'Vamos respirar juntos, bem devagar.':'Três respirações antes de voltar à bancada.')+'</p>'+
     '<div class="ring" id="ring"><b id="rt">Pronto?</b></div><p class="help" id="rc">'+total+' respirações · 4 segundos cada parte</p>'+
     '<div class="row" style="width:100%"><button class="btn ghost" id="sk">Voltar</button><button class="btn main" id="st">Começar</button></div></section>';
   bindHud();
