@@ -9,7 +9,8 @@
 /* Bornes de cada peça na vista real: posição relativa ao centro (p), lado por onde o fio sai (d) e nome impresso (n). */
 const REAL_TERMS={
   /* tomada 2P+T: 3 bornes lado a lado embaixo, na ordem dos pinos vistos de frente.
-     Terra no meio; fase à direita e neutro à esquerda (recomendação usual da NBR 14136). Sem letra impressa:
+     Terra no meio; fase à direita e neutro à esquerda: convenção DA BANCADA. A NBR 14136 só fixa dimensões
+     de pinos e contatos, não o lado da fase (conferido no texto da norma). Sem letra impressa:
      o aluno precisa saber a ligação. Índices do motor: .0 fase, .1 neutro, .2 PE. */
   src:[{p:[17,25],d:[0,1],n:''},{p:[-17,25],d:[0,1],n:''},{p:[0,25],d:[0,1],n:''}],
   fuse:[{p:[0,-26],d:[0,-1],n:'1'},{p:[0,26],d:[0,1],n:'2'}],
