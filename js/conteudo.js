@@ -48,7 +48,7 @@ function normCheck(st){
   for(const l of st.comps.filter(c=>c.type==='lamp'||c.type==='motor'||c.type==='kc'||c.type==='ri')){const n=r.net(l.id+'.0'),m=r.net(l.id+'.1');
     if(n===r.PE||m===r.PE)return L()?'O terra não pode levar a corrente de '+l.id+'. Ele só protege.':'O PE está fazendo papel de condutor vivo em '+l.id+'. Pela NBR 5410 o condutor de proteção nunca conduz corrente de serviço.'}
   for(const l of lamps)if(l.type==='motor'&&r.net(l.id+'.2')!==r.PE)return L()?'O motor '+l.id+' tem carcaça de metal: ligue o terra (verde-amarelo) no borne ⏚.':'Motor '+l.id+' sem condutor de proteção na carcaça. NBR 5410: massas metálicas devem ser ligadas ao PE.';
-  for(const l of lamps)if(l.pe===true&&r.net(l.id+'.2')!==r.PE)return L()?'Falta ligar o terra (verde-amarelo) na luminária '+l.id+'.':'Luminária '+l.id+' sem condutor de proteção. NBR 5410: todo circuito deve ter PE.';
+  for(const l of lamps)if(l.pe===true&&r.net(l.id+'.2')!==r.PE)return L()?'Falta ligar o terra (verde-amarelo) na luminária '+l.id+'.':'Luminária '+l.id+' sem condutor de proteção. NBR 5410 (5.1.2.2.3.6): todo circuito deve ter PE em toda a sua extensão.';
   if(r.PE===r.N&&lamps.length)return 'Terra e neutro não podem ser unidos no circuito. Eles só se encontram no padrão de entrada.';
   const sws=st.comps.filter(c=>c.type==='sw');
   if(sws.length){const off=sim(st,Object.fromEntries(sws.map(c=>[c.id,0])));
