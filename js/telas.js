@@ -32,13 +32,15 @@ function showMap(){
     const nodes=ids.map((id,i)=>{const p=phaseById(id);
       const done=S.done[S.mode+':'+p.id]||0,open=window.VOLT_TESTE||i===0||S.done[S.mode+':'+ids[i-1]];
       let cls=done?'done':open?'':'lock';if(open&&!done&&!nextFound){cls+=' next';nextFound=true}
-      return '<button class="node '+cls+'" data-i="'+PHASES.indexOf(p)+'"><span class="dot">'+icon(p.ic)+'</span><span class="tt"><b>'+p.nome+'</b><small>'+(open?p.sub:'Bloqueada')+'</small><span class="kind">'+p.kind+'</span></span>'+(done?stars(done):'')+'</button>';
+      /* fase bloqueada: só o nome e o cadeado, sem subtítulo nem tipo */
+      return '<button class="node '+cls+'" data-i="'+PHASES.indexOf(p)+'"><span class="dot">'+icon(p.ic)+'</span><span class="tt"><b>'+p.nome+'</b>'+(open?'<small>'+p.sub+'</small><span class="kind">'+p.kind+'</span>':'')+'</span>'+(done?stars(done):open?'':'<span class="cad" aria-label="bloqueada">🔒</span>')+'</button>';
     }).join('');
     body='<div class="map">'+nodes+'</div><button class="btn ghost sm" id="replay">▶ Rever a abertura do capítulo</button>';
   }
   const all=!ch.soon&&ch.fases.every(id=>S.done[S.mode+':'+id]);
   const tb=typeof testeBarHTML==='function'?testeBarHTML():'';
-  app.innerHTML=hud()+tb+talk(all?'Capítulo completo! Bora pro próximo quando sair.':pick(CHEER[S.mode]))+tabs+
+  /* o balão do personagem só aparece quando tem algo a dizer (capítulo completo) */
+  app.innerHTML=hud()+tb+(all?talk('Capítulo completo! Bora pro próximo quando sair.'):'')+tabs+
   '<div class="chcard'+(ch.id==='cap1'?' art':'')+'"><span class="eyebrow">Capítulo '+(CHAPTERS.indexOf(ch)+1)+' · '+ch.tema+'</span><div class="world"><h2>'+ch.nome+'</h2><span class="tag" style="--c:'+m.c+'">'+m.nome+'</span></div></div>'+body+
   '<button class="btn" id="sandbox">🛠 Oficina livre <small class="muted">· monte o que quiser</small></button>'+
   /* o resto fica recolhido para o mapa mostrar só o caminho das fases */

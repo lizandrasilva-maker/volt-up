@@ -133,8 +133,11 @@ function entrada(estado){
    '<rect x="-4.5" y="6" width="9" height="6" rx="1" style="fill:url(#eMetal)"/><path d="M-12 3 H-4" style="stroke:#2b3036" stroke-width="2"/></g>'+
    [[6,'start'],[125,'middle'],[210,'middle'],[336,'end']].map(([x,an],i)=>'<text x="'+x+'" y="63" text-anchor="'+an+'" class="lab" style="font-size:'+(L()?10:8.5)+'px">'+t[i]+'</text>').join('')+
    '</svg></div>'}
-function statusChips(st,r){
+/* Chips de brilho das lâmpadas. Na vista real a lâmpada desenhada já mostra se acendeu, então só o curto
+   aparece (a não ser que sempre=true, como na Previsão, onde o brilho é a resposta). */
+function statusChips(st,r,sempre){
   if(r.short)return '<div class="status"><span class="chip sc">⚡ Curto-circuito!</span></div>';
+  if(!sempre&&typeof vistaReal==='function'&&vistaReal())return '';
   return '<div class="status">'+st.comps.filter(c=>c.type==='lamp').map(c=>{const b=r.lamp[c.id];return '<span class="chip'+(b>0.04?' lit':'')+'">'+c.id+': '+(L()?bright(b):bright(b)+(b>0.04?' · '+Math.round(b*100)+'%':''))+'</span>'}).join('')+'</div>';
 }
 function svgPoint(svg,ev){const p=svg.createSVGPoint();p.x=ev.clientX;p.y=ev.clientY;return p.matrixTransform(svg.getScreenCTM().inverse())}

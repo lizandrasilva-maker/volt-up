@@ -252,7 +252,7 @@ function benchZoom(){
       z.g=null;if(z.until===Infinity)z.until=Date.now()+350}
     else if(z.g&&z.g.pinch)begin()};
   const down=e=>{
-    const onPart=e.target.closest&&e.target.closest('[data-t],[data-w],[data-sw],[data-mv],[data-c]');
+    const onPart=e.target.closest&&e.target.closest('[data-t],[data-w],[data-sw],[data-mv],[data-c],button');
     if(z.pts.size===0){window.addEventListener('pointermove',move);window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up)}
     z.pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
     if(z.pts.size>=2){z.until=Infinity;begin()}

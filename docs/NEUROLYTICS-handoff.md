@@ -81,7 +81,11 @@ Capítulos previstos, ainda "em construção":
 - **Ficha do eletricista:** atributos (Conceito, Montagem, Diagnóstico, Segurança, Cálculo) e perfil.
 - **Rotina:** Plantão de hoje (3 missões, +30 XP), 🔥 dias seguidos e 12 conquistas.
 - **Pausa:** "Pausa para respirar" (antes "Respira e religa"), 3 respirações guiadas, dentro de "☰ Mais opções" no mapa.
-- **Telas:** o mapa mostra só as fases, "Rever a abertura" e a Oficina; Plantão, Ficha, Pausa, trocar nível/personagem e Recomeçar ficam em "☰ Mais opções". Nas bancadas não há balão do personagem: Missão (com as etiquetas) → cores → Real/Diagrama e zoom → bancada com a faixa poste→medidor→quadro colada em cima → resultado → botões. A ajuda some depois do primeiro fio.
+- **Telas (menos informação, para o aluno ficar tranquilo):**
+  - Mapa: só as fases, "Rever a abertura" e a Oficina; Plantão, Ficha, Pausa, trocar nível/personagem e Recomeçar ficam em "☰ Mais opções". Sem balão do personagem (só aparece com o capítulo completo). Fase bloqueada mostra só o nome e 🔒.
+  - Bancadas: Missão em uma frase → cores → bancada (faixa poste→medidor→quadro colada em cima; botões "Diagrama/Real" e zoom − + ⤢ no rodapé da própria bancada) → resultado → botões. Sem balão do personagem.
+  - As etiquetas "peça = objeto real" e os chips de brilho das lâmpadas só aparecem no Diagrama (na vista real a peça já é o objeto e a lâmpada mostra se acendeu); a Previsão mantém o brilho, que é a resposta. O curto sempre aparece.
+  - A ajuda é uma linha só e some depois do primeiro fio. O aviso "só eletricista mexe na rede" aparece na vitória do nível Leve.
 - **Oficina livre:** sandbox com rede, luminárias, interruptores e disjuntores, multímetro V~ e botão Inspecionar.
 - **Cenas em estilo visual novel:** personagem de meio corpo de um lado e a fala do outro. O texto aparece letra por letra (instantâneo com movimento reduzido).
 - **Decisões de design** (estudo de referência de apps de hábito gamificados):

@@ -125,6 +125,7 @@ input[type=text]{font:inherit;font-weight:800;width:100%;min-height:52px;padding
 .eled{fill:#7a2a24}.eled.pisca{fill:#ff5a4a;animation:eled .6s steps(2) infinite}
 @keyframes eled{50%{fill:#7a2a24}}
 .benchwrap .bench{border-radius:0 0 18px 18px}
+.node .cad{font-size:15px;opacity:.6}
 .mais{display:flex;flex-direction:column}
 .mais>summary{list-style:none;display:grid;place-items:center;cursor:pointer}
 .mais>summary::-webkit-details-marker{display:none}
@@ -140,17 +141,19 @@ input[type=text]{font:inherit;font-weight:800;width:100%;min-height:52px;padding
 .on .w{stroke-dasharray:12 7;animation:flow .9s linear infinite}
 .on .w.cobre{stroke:var(--amber)}
 .pal{display:flex;gap:6px;flex-wrap:wrap}
-.pal .btn{flex:1 1 70px;min-height:44px;padding:6px 8px;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px}
+.pal .btn{flex:1 1 60px;min-height:38px;padding:4px 6px;font-size:12.5px;border-radius:12px;display:flex;align-items:center;justify-content:center;gap:5px}
 .pal .btn[aria-pressed="true"]{border-color:var(--amber);background:var(--panel2)}
 .sw8{width:22px;height:8px;border-radius:4px;flex:none}
 .mvhit{fill:transparent;cursor:grab}
 .selc{fill:none;stroke:var(--amber);stroke-width:2;stroke-dasharray:5 4}
 /* Bancada: chave Símbolo/Real e zoom (js/bancada-real.js) */
-.benchbar{display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap}
-.vista,.zoom{display:flex;gap:6px}
-.benchbar .btn{min-height:42px;padding:4px 12px;font-size:14px}
-.zoom .btn{min-width:44px;padding:4px 0;font-size:18px}
-.vista .btn[aria-pressed="true"]{border-color:var(--amber);background:var(--panel2)}
+/* botões que flutuam dentro da bancada: vista à esquerda, zoom à direita, embaixo */
+.bench:has(.bctl){padding-bottom:48px}
+.bctl{position:absolute;left:8px;right:8px;bottom:6px;display:flex;justify-content:space-between;align-items:flex-end;gap:6px;pointer-events:none}
+.bctl>*{pointer-events:auto}
+.bctl .btn{min-height:36px;padding:2px 10px;font-size:13px;border-radius:10px;background:color-mix(in srgb,var(--panel2) 85%,transparent);backdrop-filter:blur(2px)}
+.zoom{display:flex;gap:4px}
+.zoom .btn{min-width:36px;padding:2px 0;font-size:17px}
 .bench.zoomed{border-color:var(--neutro)}
 /* Vista real: peças como o equipamento, fio grosso com contorno, anilha numerada, borne com parafuso */
 .real-v .w,.real-v .w2{stroke-width:5.5}
