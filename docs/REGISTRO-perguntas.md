@@ -186,7 +186,7 @@ Pistas medidas depois: nenhuma medida.
 
 Pistas medidas antes: nenhuma medida.
 
-**Problema da versão anterior:** Conversão direta Vpico = Vrms × √2 (conteúdo de MI UC 2, 5.8, que deixou de ser cobrado; ver pendências).
+**Problema da versão anterior:** Conversão direta Vpico = Vrms × √2 (conteúdo do plano de curso, que deixou de ser cobrado; ver pendências).
 
 **Depois:** Uma fonte com rendimento de 80 % entrega 40 W à carga. Quanto ela dissipa em calor?
 
@@ -616,7 +616,7 @@ Pistas medidas depois: nenhuma medida.
 
 Pistas medidas antes: nenhuma medida.
 
-**Problema da versão anterior:** Memorização da faixa da curva C (conteúdo de ME I UC 1, 8.1.2; ver pendências).
+**Problema da versão anterior:** Memorização da faixa da curva C (conteúdo do plano de curso; ver pendências).
 
 **Depois:** DR com IΔn = 30 mA. Há uma fuga de 12 mA para o PE. O DR…
 
@@ -1650,7 +1650,7 @@ Pistas medidas depois: certa é a mais longa; palavra absoluta só nas erradas.
 
 Pistas medidas antes: certa é a mais longa.
 
-**Problema da versão anterior:** Seis terminais para Y-Δ (conteúdo de ME II UC 2, 6.2.7; ver pendências).
+**Problema da versão anterior:** Seis terminais para Y-Δ (conteúdo do plano de curso; ver pendências).
 
 **Depois:** Motor 380/660 V numa rede de 380 V pode partir em estrela-triângulo?
 

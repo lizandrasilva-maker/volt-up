@@ -70,6 +70,15 @@ let pistas={};
     confere('Pistas nos quizzes',p.soCertaJustifica<=3,'certa não é a única com justificativa (≤ 3)',String(p.soCertaJustifica));
     confere('Pistas nos quizzes',!p.numericas||p.certaNoMeio/p.numericas<=0.5,'numéricas: certa não é sempre o valor do meio (≤ 50 %)',p.certaNoMeio+' de '+p.numericas);
     confere('Cenas e personagens',(t.faltando||[]).length===0,'cenas, personagens e ícones existem',(t.faltando||[]).join(', '));
+    /* Privacidade: a política existe, tem as seções obrigatórias e está ligada nas telas de entrada */
+    confere('Privacidade',t.privacidade_inicio===true,'tela inicial tem link para a política');
+    confere('Privacidade',t.privacidade_mapa===true,'menu "Mais opções" tem link para a política');
+    const ler=f=>{try{return fs.readFileSync(path.join(RAIZ,f),'utf8')}catch{return ''}};
+    const pol=ler('politica-privacidade.html');
+    for(const s of ['Quem cuida dos seus dados','Que dados tratamos','Para que usamos','Crianças e adolescentes','Com quem compartilhamos','Por quanto tempo','Seus direitos','Como protegemos'])
+      confere('Privacidade',pol.includes(s),'política tem a seção "'+s+'"');
+    confere('Privacidade',/politica-privacidade\.html/.test(ler('login.html')),'login e cadastro levam à política');
+    confere('Privacidade',/politica-privacidade\.html/.test(ler('admin.html')),'painel de administração leva à política');
     confere('Trava de capítulos',/Bloqueado/.test(t.cap2_semCap1||''),'capítulo 2 travado sem o 1',t.cap2_semCap1);
     confere('Trava de capítulos',/\d+ fases/.test(t.cap2_comCap1||''),'capítulo 2 abre depois do 1',t.cap2_comCap1);
     confere('Trava de capítulos',/Bloqueado/.test(t.cap3_semCap2||''),'capítulo 3 travado sem o 2',t.cap3_semCap2);

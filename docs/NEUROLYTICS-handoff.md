@@ -13,7 +13,7 @@ Atualizado em 02/11/2026. Para continuar o desenvolvimento em outra conta ou con
 5. Para testar localmente: `python3 -m http.server` na pasta do repositório e abrir `http://localhost:8000`. Abrir o `index.html` direto do disco também funciona.
 
 ## O que é o projeto
-Game educativo de elétrica, energia e renováveis no modo história do eletricista, para o SENAI. Tem 3 níveis de público:
+Game educativo de elétrica, energia e renováveis no modo história do eletricista, para cursos técnicos. Tem 3 níveis de público:
 - **Leve:** crianças ou adultos atípicos. Frases curtas, letra maior, pode tentar de novo, áudio 🔊.
 - **Técnico:** jargão moderado e cálculos simples.
 - **Profissional:** normas, cálculos e diagnóstico de campo.

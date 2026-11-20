@@ -1,6 +1,6 @@
 # Volt Up · Neurolytics Modo Eletricista
 
-Game educativo de elétrica, energia e renováveis (SENAI), no modo história do eletricista.
+Game educativo de elétrica, energia e renováveis para cursos técnicos, no modo história do eletricista.
 
 - **Jogar:** abra `index.html` (ou o link do GitHub Pages, quando ativado).
 - **Desenvolver:** leia [docs/NEUROLYTICS-handoff.md](docs/NEUROLYTICS-handoff.md): regras de conteúdo (NBR 5410, público jovem), estrutura de pastas e pendências.
@@ -12,7 +12,6 @@ Game educativo de elétrica, energia e renováveis (SENAI), no modo história do
   - [Auditoria técnica](docs/AUDITORIA-tecnica.md): normas.
   - [Auditoria pedagógica](docs/AUDITORIA-pedagogica.md): quizzes.
   - [Registro das perguntas](docs/REGISTRO-perguntas.md): antes, depois e justificativa.
-  - [Matriz curricular](docs/MATRIZ-curricular.md): missões × plano de curso SENAI.
 - **Limite atual:** a bancada é um modelo didático **qualitativo**. Mostra se o circuito liga, comanda e protege, mas não calcula corrente, potência, aquecimento nem a atuação quantitativa das proteções.
 - **Entrar / painel:** [login.html](login.html) e [admin.html](admin.html), ligados ao Supabase.
 - **Protótipos antigos (sem servidor, dados de exemplo):** [login do aluno](prototipos/login-aluno.html) e [painel Adm](prototipos/admin.html).
