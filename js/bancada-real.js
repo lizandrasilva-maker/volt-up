@@ -72,7 +72,7 @@ function segHits(p,q,r){
   if(p[1]===q[1]){const y=p[1],a=Math.min(p[0],q[0]),b=Math.max(p[0],q[0]);return y>r[1]&&y<r[3]&&b>r[0]&&a<r[2]}
   const x=p[0],a=Math.min(p[1],q[1]),b=Math.max(p[1],q[1]);return x>r[0]&&x<r[2]&&b>r[1]&&a<r[3]}
 /* Ponta do fio: parafuso (p), ponto logo fora do corpo (s) e distância até ele (out). */
-function wireEnd(comps,t){const [id,k]=t.split('.'),c=comps.find(x=>x.id===id),T=realTerms(c)[+k],r=realBounds(c);
+function wireEnd(comps,t,geo){geo=geo||GEO_REAL;const [id,k]=t.split('.'),c=comps.find(x=>x.id===id),T=geo.terms(c)[+k],r=geo.bounds(c);
   const d=T.d,p=T.p;let out=10;
   if(d[1]>0)out=r[3]-p[1]+10;else if(d[1]<0)out=p[1]-r[1]+10;else if(d[0]>0)out=r[2]-p[0]+10;else out=p[0]-r[0]+10;
   out=Math.max(10,out);
@@ -85,14 +85,16 @@ function segOverlap(p,q,a,b){
   if(!hz(p,q)&&!hz(a,b)){if(Math.abs(p[0]-a[0])>5)return 0;return Math.max(0,Math.min(Math.max(p[1],q[1]),Math.max(a[1],b[1]))-Math.max(Math.min(p[1],q[1]),Math.min(a[1],b[1])))}
   return 0}
 /* taken = trechos dos fios já desenhados: o fio novo evita correr por cima deles. */
-function realWireRoute(comps,w,taken){taken=taken||[];
+/* geo = geometria da vista: bornes com direção de saída (terms) e corpo das peças (bounds). */
+const GEO_REAL={terms:c=>realTerms(c),bounds:(c,pad)=>realBounds(c,pad)};
+function realWireRoute(comps,w,taken,geo){taken=taken||[];geo=geo||GEO_REAL;
   const cl=(v,lo,hi)=>Math.max(lo,Math.min(hi,Math.round(v)));
-  const A=wireEnd(comps,w.a),B=wireEnd(comps,w.b),P=A.s,Q=B.s;
-  const boxes=comps.map(c=>realBounds(c,2));
+  const A=wireEnd(comps,w.a,geo),B=wireEnd(comps,w.b,geo),P=A.s,Q=B.s;
+  const boxes=comps.map(c=>geo.bounds(c,2));
   const same=(p,q)=>p[0]===q[0]&&p[1]===q[1];
-  comps.forEach(c=>realTerms(c).forEach(T=>{if(!same(T.p,A.p)&&!same(T.p,B.p))boxes.push([T.p[0]-8,T.p[1]-8,T.p[0]+8,T.p[1]+8])}));
+  comps.forEach(c=>geo.terms(c).forEach(T=>{if(!same(T.p,A.p)&&!same(T.p,B.p))boxes.push([T.p[0]-8,T.p[1]-8,T.p[0]+8,T.p[1]+8])}));
   const lanesY=[(P[1]+Q[1])/2],lanesX=[(P[0]+Q[0])/2];
-  [A.c,B.c].forEach(c=>{const r=realBounds(c);[12,22,32].forEach(g=>{lanesY.push(r[1]-g,r[3]+g);lanesX.push(r[0]-g,r[2]+g)})});
+  [A.c,B.c].forEach(c=>{const r=geo.bounds(c);[12,22,32].forEach(g=>{lanesY.push(r[1]-g,r[3]+g);lanesX.push(r[0]-g,r[2]+g)})});
   /* o fio também pode sair um pouco mais longe da peça (P2/Q2), para não colar no vizinho */
   const ext=(E,k)=>{const d=E.p[0]===E.s[0]?[0,Math.sign(E.s[1]-E.p[1])]:[Math.sign(E.s[0]-E.p[0]),0];return [cl(E.s[0]+d[0]*k,4,336),cl(E.s[1]+d[1]*k,4,246)]};
   const routes=[];

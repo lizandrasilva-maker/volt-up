@@ -150,6 +150,8 @@ function board(st,o){
   const anyLit=Object.values(r.lamp).some(b=>b>0.04);
   let s='<svg viewBox="'+(o.vb||'0 0 340 250')+'" class="'+(r.short?'short':anyLit?'on':'')+(R?' real-v':'')+(o.cls?' '+o.cls:'')+'" role="img" aria-label="Bancada de circuito'+(R?' em vista real':'')+'">';
   if(R)return s+realBoard(st,o,r)+'</svg>';
+  /* a outra vista é o diagrama multifilar (js/multifilar.js); o desenho antigo abaixo fica só de reserva */
+  if(typeof multiBoard==='function')return s+multiBoard(st,o,r)+'</svg>';
   if(typeof SW_FLIP!=='undefined')SW_FLIP=null;
   st.wires.forEach((w,i)=>{const d=wirePath(st.comps,w);
     s+='<path class="w '+(w.cor||'cobre')+'" d="'+d+'"/>'+(w.cor==='terra'?'<path class="w2" d="'+d+'"/>':'');if(o.pickWire)s+='<path class="hit" data-w="'+i+'" d="'+d+'"/>'});

@@ -49,7 +49,7 @@ function missao(goal,real,nota,rotulo){return '<div class="goal"><span class="gi
    os botões pequenos de vista (Real/Diagrama) e de zoom, como num mapa de celular.
    O estado da faixa (energia passando ou curto) vem da classe que board() põe no <svg>. */
 function benchWrap(svg,id,zm){const m=/^<svg[^>]*class="(\w*)/.exec(svg),est=m?m[1]:'',R=vistaReal();
-  const ctl=zm?'<div class="bctl">'+'<button class="btn vbtn" data-vista="'+(R?'simb':'real')+'" aria-label="'+(R?'Ver o diagrama':'Ver as peças reais')+'">'+(R?'📐 Diagrama':'🔌 Real')+'</button>'+zm.ui()+'</div>':'';
+  const ctl=zm?'<div class="bctl">'+'<button class="btn vbtn" data-vista="'+(R?'simb':'real')+'" aria-label="'+(R?'Ver o diagrama multifilar':'Ver as peças reais')+'">'+(R?'📐 Multifilar':'🔌 Real')+'</button>'+zm.ui()+'</div>':'';
   return '<div class="benchwrap">'+entrada(est)+'<div class="bench"'+(id?' id="'+id+'"':'')+'>'+svg+ctl+'</div></div>'}
 
 /* frame() sobe a tela para o topo. Na bancada, a partir do 2º desenho, volta para onde o aluno estava
