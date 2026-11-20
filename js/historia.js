@@ -14,9 +14,13 @@ const CHAPTERS=[
   intro:[['chico','Gente nova na oficina! Boas-vindas, {nome}.'],['eu','Bom dia, Mestre! Pronto pra começar o serviço!'],['chico','Calma. Primeiro a gente treina aqui na bancada da oficina. Depois vamos atender clientes de verdade.'],['chico','Começamos pelo básico: de onde vem a energia e como ela chega até uma lâmpada.']],
   fim:[['fatima','Mestre Chico! Agora a casa inteira apagou! Nenhuma luz e nenhuma tomada funcionam!'],['chico','Quando a casa toda apaga, o problema não é uma lâmpada. Precisamos olhar o quadro de distribuição.'],['eu','Então vamos ver o quadro da casa dela?'],['chico','Esse é o próximo capítulo, {nome}. Lá você vai aprender disjuntor geral e DR.']]},
 
- {id:'cap2',nome:'O Quadro da Dona Fátima',tema:'Quadro de distribuição, disjuntores e DR',soon:true},
- {id:'cap3',nome:'Sol no Telhado',tema:'Energia solar fotovoltaica',soon:true},
- {id:'cap4',nome:'Ventos do Litoral',tema:'Energia eólica',soon:true}
+ /* Cada capítulo é uma história própria e tem a sua biblioteca de peças (BIBLIOTECAS em fases.js). */
+ {id:'cap2',nome:'O Quadro da Dona Fátima',tema:'Instalação predial',soon:true,
+  previstas:['Ligação simples e tomada','Montagem do quadro (disjuntor geral, barramentos N e PE)','DR e DPS','Three-way (paralelo)','Four-way (intermediário)','Fotocélula na luz da garagem','Relé de impulso com pulsadores']},
+ {id:'cap3',nome:'Chão de Fábrica',tema:'Instalação industrial e comandos',soon:true,
+  previstas:['Partida direta com contatora e relé térmico','Partida com reversão','Nível de caixa d\'água (boia)','Partida estrela-triângulo']},
+ {id:'cap4',nome:'Sol no Telhado',tema:'Energia solar fotovoltaica',soon:true},
+ {id:'cap5',nome:'Ventos do Litoral',tema:'Energia eólica',soon:true}
 ];
 const SCENES={
   faisca:[['chico','Antes de mexer em qualquer coisa, me responde umas perguntas. Quero ver como você pensa.']],

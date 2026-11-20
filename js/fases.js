@@ -172,51 +172,87 @@ function runDiag(p,d){
   startRound();
 }
 
+/* ---------- Bibliotecas de peças (uma por capítulo da história) ----------
+   [chave, ícone, nome]. A chave vira o tipo da peça (as botoeiras são o tipo 'btn' com nf). */
+const BIBLIOTECAS={
+  fundamentos:{nome:'⚡ Fundamentos',pecas:[['lamp','💡','Lâmpada'],['sw','🔘','Interruptor simples'],['fuse','🎚️','Disjuntor']]},
+  predial:{nome:'🏠 Predial',pecas:[['sw2','🔘','Interruptor duplo'],['sw3','🔀','Interruptor paralelo'],['sw4','✖️','Interruptor intermediário'],
+    ['dr','🛡️','DR (diferencial)'],['dps','⚡','DPS (surto)'],['foto','🌙','Fotocélula'],['ri','🔁','Relé de impulso'],['btnNA','🟢','Pulsador (NA)']]},
+  industrial:{nome:'🏭 Industrial',pecas:[['motor','⚙️','Motor monofásico'],['kc','🧲','Contatora'],['ft','🌡️','Relé térmico'],['btnNA','🟢','Botoeira liga (NA)'],['btnNF','🔴','Botoeira desliga (NF)']]}
+};
+
 /* ---------- Oficina livre (sandbox) ---------- */
 function runSandbox(){
   setMode();
   let sb=S.sandbox&&S.sandbox.comps&&S.sandbox.comps.some(c=>c.type==='src')?clone(S.sandbox):{comps:[BAT()],wires:[]};
   /* circuitos salvos antes do bocal sem PE: tira fios presos a bornes que não existem mais */
   sb.wires=sb.wires.filter(w=>[w.a,w.b].every(t=>{const [id,k]=t.split('.'),c=sb.comps.find(x=>x.id===id);return c&&+k<terms(c).length}));
-  let tool='build',cor='fase',sel=null,selC=null,probes=[],reading=null,msg=null,sure=false;
+  sb.comps.forEach(c=>{if(c.type==='btn')c.pressed=false});
+  let tool='build',cor='fase',sel=null,selC=null,probes=[],reading=null,msg=null,sure=false,box=false,cat='fundamentos';
   const zm=benchZoom();let drawn=false;
   const persist=()=>{S.sandbox=sb;save()};
-  const SPOTS=[[170,55],[280,55],[170,195],[280,195],[120,125],[225,125],[300,125],[110,55],[110,195],[225,55]];
+  const SPOTS=[[115,60],[185,60],[255,60],[308,60],[115,165],[185,165],[255,165],[308,165],[150,112],[230,112],[290,112]];
+  /* Acionar a peça (toque no corpo): interruptores mudam de posição, botoeira aperta e solta,
+     DR e relé térmico disparam (teste/sobrecarga) ou rearmam. lx = posição do toque em relação ao centro. */
+  const acionar=(c,lx)=>{
+    if(c.type==='sw')flipSwitch(c);
+    else if(c.type==='sw2'){const k=lx<0?'a':'b';c[k]=!c[k];SW_FLIP=c.id+'.'+k}
+    else if(c.type==='sw3'||c.type==='sw4'){c.pos=c.pos?0:1;SW_FLIP=c.id}
+    else if(c.type==='foto')c.noite=!c.noite;
+    else if(c.type==='dr'){c.trip=!c.trip;c.porFuga=false}
+    else if(c.type==='ft')c.trip=!c.trip;
+    else if(c.type==='btn'){c.pressed=true;setTimeout(()=>{c.pressed=false;persist();if(document.getElementById('bw'))render()},700)}
+  };
   const getSvg=()=>document.querySelector('#bench svg');
   const sc=()=>sb.comps.find(c=>c.id===selC);
   const benchHTML=()=>{const r=solve(sb.comps,sb.wires);return benchWrap(board(sb,{res:r,sel,selC,move:tool==='build',pickTerm:true,pickWire:tool==='build',probes:tool==='meter'?probes:null,real:vistaReal(),vb:zm.vb()}),'bench',zm)+statusChips(sb,r)};
   const redrawBench=()=>{document.getElementById('bw').innerHTML=benchHTML();bindBench()};
-  const add=type=>{
-    if(sb.comps.length>=9){msg={bad:1,t:'Bancada cheia: no máximo 8 peças além da rede.'};render();return}
-    const pre={lamp:'L',sw:'S',fuse:'DJ'}[type];let n=1;while(sb.comps.some(c=>c.id===pre+n))n++;
-    const spot=SPOTS.find(([x,y])=>!sb.comps.some(c=>Math.hypot(c.x-x,c.y-y)<50))||[170,125];
-    sb.comps.push(C(pre+n,type,spot[0],spot[1],0,type==='sw'?{closed:false}:{}));selC=pre+n;msg=null;persist();render()};
+  const add=key=>{
+    if(sb.comps.length>=12){msg={bad:1,t:'Bancada cheia: no máximo 11 peças além da rede.'};render();return}
+    const type=key.startsWith('btn')?'btn':key;
+    const pre={lamp:'L',sw:'S',sw2:'SD',sw3:'SP',sw4:'SI',fuse:'DJ',dr:'DR',dps:'DPS',foto:'FC',ri:'RI',motor:'M',kc:'K',ft:'FT',btnNA:'BL',btnNF:'BD'}[key];let n=1;while(sb.comps.some(c=>c.id===pre+n))n++;
+    const ex={sw:{closed:false},sw2:{a:false,b:false},sw3:{pos:0},sw4:{pos:0},foto:{noite:false},btnNA:{nf:false},btnNF:{nf:true}}[key]||{};
+    const spot=SPOTS.find(([x,y])=>!sb.comps.some(c=>Math.hypot(c.x-x,c.y-y)<60))||[185,112];
+    sb.comps.push(C(pre+n,type,spot[0],spot[1],0,ex));selC=pre+n;msg=null;persist();render()};
   const addWire=(a,b)=>{sel=null;msg=null;if(a.split('.')[0]!==b.split('.')[0]||true){if(!sb.wires.some(w=>(w.a===a&&w.b===b)||(w.a===b&&w.b===a)))sb.wires.push(Object.assign(W(a,b),{cor}))}persist();render()};
   const render=()=>{
     const c=sc();
+    /* botões de ação da peça selecionada */
+    const acoes=c?({sw:[['x',c.closed?'Abrir':'Fechar']],sw2:[['-1','Seção 1'],['1','Seção 2']],sw3:[['x','Inverter']],sw4:[['x','Inverter']],foto:[['x',c.noite?'Virar dia':'Virar noite']],dr:[['x',c.trip?'Rearmar':'Testar']],
+      ft:[['x',c.trip?'Rearmar':'Simular sobrecarga']],btn:[['x','Apertar']]}[c.type]||[]):[];
+    const drFuga=sb.comps.find(x=>x.type==='dr'&&x.trip&&x.porFuga);
     frame({nome:'Oficina Livre'},
-      '<div class="seg"><button class="btn" id="tb" aria-pressed="'+(tool==='build')+'">🔌 Montar</button><button class="btn" id="tm" aria-pressed="'+(tool==='meter')+'">📏 Medir</button></div>'+
-      (tool==='build'?'<div class="row"><button class="btn sm" data-add="lamp">+ Lâmpada</button><button class="btn sm" data-add="sw">+ Interruptor</button><button class="btn sm" data-add="fuse">+ Disjuntor</button></div>'+palette(cor)
-        :'<div class="meter"><div><small>MULTÍMETRO</small><small>V~ (CA)</small></div><div class="lcd">'+(reading===null?'– – –':reading.toFixed(2).replace('.',',')+' V')+'</div></div><p class="help">'+(probes.length===1?'Agora o 2º ponto (ponta preta).':'Toque em dois terminais para medir a tensão entre eles.')+'</p>')+
+      /* tudo de montar fica numa caixa de ferramentas; fechada, mostra só o que está sendo feito */
+      '<div class="caixa-bar"><button class="btn" id="cx" aria-expanded="'+box+'">🧰 Caixa de ferramentas</button>'+
+        '<span class="chip modo">'+(tool==='build'?'<span class="sw8" style="background:'+CORES[cor].c+'"></span>Fio '+CORES[cor].n:'📏 Medindo')+'</span></div>'+
+      (box?'<div class="caixa">'+
+        '<span class="eyebrow">O que fazer</span><div class="seg"><button class="btn" data-tool="build" aria-pressed="'+(tool==='build')+'">🔌 Montar</button><button class="btn" data-tool="meter" aria-pressed="'+(tool==='meter')+'">📏 Medir</button></div>'+
+        '<span class="eyebrow">Cor do fio</span>'+palette(cor)+
+        '<span class="eyebrow">Biblioteca de peças</span><div class="seg3">'+Object.entries(BIBLIOTECAS).map(([k,b])=>'<button class="btn" data-cat="'+k+'" aria-pressed="'+(cat===k)+'">'+b.nome+'</button>').join('')+'</div>'+
+        '<div class="pecas">'+BIBLIOTECAS[cat].pecas.map(([k,e,n])=>'<button class="btn peca" data-add="'+k+'"><span class="pe">'+e+'</span><span>'+n+'</span></button>').join('')+'</div>'+
+        '<button class="btn ghost sm" id="cxf">Fechar a caixa</button></div>':'')+
+      (tool==='meter'?'<div class="meter"><div><small>MULTÍMETRO</small><small>V~ (CA)</small></div><div class="lcd">'+(reading===null?'– – –':reading.toFixed(2).replace('.',',')+' V')+'</div></div><p class="help">'+(probes.length===1?'Agora o 2º ponto (ponta preta).':'Toque em dois parafusos para medir a tensão entre eles.')+'</p>':'')+
       '<div id="bw">'+benchHTML()+'</div>'+
-      (c&&tool==='build'?'<div class="row" style="align-items:center"><span class="chip">'+c.id+'</span>'+(vistaReal()?'':'<button class="btn sm" id="rot">↻ Girar</button>')+(c.type==='sw'?'<button class="btn sm" id="tog">'+(c.closed?'Abrir':'Fechar')+'</button>':'')+(c.type!=='src'?'<button class="btn sm danger" id="del">🗑 Remover</button>':'')+'</div>':'')+
-      (msg?'<div class="fb '+(msg.bad?'bad':'good')+'">'+msg.t+'</div>':tool==='build'&&!sb.wires.length?'<p class="help">Arraste as peças pelo corpo. Toque em dois '+(vistaReal()?'parafusos':'pontos ⚪')+' para ligar um fio.</p>':'')+
+      (c&&tool==='build'?'<div class="row" style="align-items:center"><span class="chip">'+c.id+'</span>'+(vistaReal()?'':'<button class="btn sm" id="rot">↻ Girar</button>')+acoes.map(([k,t])=>'<button class="btn sm" data-ac="'+k+'">'+t+'</button>').join('')+(c.type!=='src'?'<button class="btn sm danger" id="del">🗑 Remover</button>':'')+'</div>':'')+
+      (msg?'<div class="fb '+(msg.bad?'bad':'good')+'">'+msg.t+'</div>':drFuga?'<div class="fb info">🛡️ O '+drFuga.id+' desarmou: tem corrente escapando para o terra. Ache a fuga e toque no DR para rearmar.</div>':tool==='build'&&!sb.wires.length?'<p class="help">Abra a caixa para pegar peças. Toque em dois '+(vistaReal()?'parafusos':'pontos ⚪')+' para ligar um fio.</p>':'')+
       '<div class="row"><button class="btn ghost" id="clr">'+(sure?'Toque de novo para limpar':'Limpar bancada')+'</button><button class="btn main" id="insp">🔎 Inspecionar</button></div>');
     keepScroll(drawn);drawn=true;
-    document.getElementById('tb').onclick=()=>{tool='build';probes=[];reading=null;msg=null;render()};
-    document.getElementById('tm').onclick=()=>{tool='meter';sel=null;selC=null;msg=null;render()};
-    app.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>add(b.dataset.add));
+    document.getElementById('cx').onclick=()=>{box=!box;render()};
+    const cxf=document.getElementById('cxf');if(cxf)cxf.onclick=()=>{box=false;render()};
+    app.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>{tool=b.dataset.tool;probes=[];reading=null;sel=null;if(tool==='meter')selC=null;msg=null;box=false;render()});
+    app.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>{cat=b.dataset.cat;render()});
+    app.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>{box=false;tool='build';add(b.dataset.add)});
     app.querySelectorAll('[data-vista]').forEach(b=>b.onclick=()=>{setVista(b.dataset.vista==='real');render()});
-    app.querySelectorAll('[data-cor]').forEach(b=>b.onclick=()=>{cor=b.dataset.cor;render()});
+    app.querySelectorAll('[data-cor]').forEach(b=>b.onclick=()=>{cor=b.dataset.cor;tool='build';box=false;render()});
     const rot=document.getElementById('rot');if(rot)rot.onclick=()=>{c.v=!c.v;persist();render()};
-    const tog=document.getElementById('tog');if(tog)tog.onclick=()=>{flipSwitch(c);persist();render()};
+    app.querySelectorAll('[data-ac]').forEach(b=>b.onclick=()=>{acionar(c,b.dataset.ac==='-1'?-1:1);persist();render()});
     const del=document.getElementById('del');if(del)del.onclick=()=>{sb.comps=sb.comps.filter(x=>x!==c);sb.wires=sb.wires.filter(w=>!w.a.startsWith(c.id+'.')&&!w.b.startsWith(c.id+'.'));selC=null;persist();render()};
     document.getElementById('clr').onclick=()=>{if(!sure){sure=true;render();return}sure=false;sb={comps:[BAT()],wires:[]};selC=null;sel=null;probes=[];reading=null;msg=null;persist();render()};
     document.getElementById('insp').onclick=()=>{
       const r=solve(sb.comps,sb.wires);const nl=Object.values(r.lamp).filter(b=>b>0.04).length;
       if(!sb.wires.length)msg={bad:1,t:'Ainda não tem nenhum fio na bancada.'};
       else if(r.short)msg={bad:1,t:'Curto-circuito! Há um caminho sem carga entre fase e neutro (ou terra). Na vida real, o disjuntor desarmaria.'};
-      else{const m=normCheck(sb)||colorCheck(sb);msg=m?{bad:1,t:m}:{t:'Inspeção aprovada: cores conforme a norma e '+nl+' lâmpada(s) acesa(s) agora.'}}
+      else{const m=normCheck(sb)||colorCheck(sb);msg=m?{bad:1,t:m}:{t:'Inspeção aprovada: cores conforme a norma e '+nl+' carga(s) ligada(s) agora.'}}
       if(!msg.bad){S.xp+=2;S.flags.ofi=1;markDaily('ofi');save()}render()};
     bindBench();
   };
@@ -230,7 +266,7 @@ function runSandbox(){
         c.x=Math.max(34,Math.min(306,Math.round((ox+dx)/5)*5));c.y=vistaReal()?Math.max(REAL_Y[0],Math.min(REAL_Y[1],Math.round((oy+dy)/5)*5)):Math.max(34,Math.min(216,Math.round((oy+dy)/5)*5));redrawBench()};
       const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',up);
         if(zm.busy()){c.x=ox;c.y=oy;render();return}
-        if(!moved){selC=c.id;if(c.type==='sw')flipSwitch(c)}msg=null;persist();render()};
+        if(!moved){selC=c.id;acionar(c,q0.x-(vistaReal()?RP(c)[0]:c.x))}msg=null;persist();render()};
       window.addEventListener('pointermove',move);window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up)}));
     svg.querySelectorAll('[data-t]').forEach(h=>h.addEventListener('pointerdown',e=>{
       e.preventDefault();const a=h.dataset.t;

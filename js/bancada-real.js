@@ -14,16 +14,30 @@ const REAL_TERMS={
   src:[{p:[17,25],d:[0,1],n:''},{p:[-17,25],d:[0,1],n:''},{p:[0,25],d:[0,1],n:''}],
   fuse:[{p:[0,-26],d:[0,-1],n:'1'},{p:[0,26],d:[0,1],n:'2'}],
   sw:[{p:[-10,26],d:[0,1],n:'L'},{p:[10,26],d:[0,1],n:'R'}],
-  lamp:[{p:[-10,27],d:[0,1],n:'X1'},{p:[10,27],d:[0,1],n:'X2'},{p:[22,8],d:[1,0],n:'PE'}]
+  lamp:[{p:[-10,27],d:[0,1],n:'X1'},{p:[10,27],d:[0,1],n:'X2'},{p:[22,8],d:[1,0],n:'PE'}],
+  /* peças da Oficina */
+  sw2:[{p:[-20,26],d:[0,1],n:'L'},{p:[0,26],d:[0,1],n:'1'},{p:[20,26],d:[0,1],n:'2'}],
+  sw3:[{p:[-20,26],d:[0,1],n:'C'},{p:[0,26],d:[0,1],n:'1'},{p:[20,26],d:[0,1],n:'2'}],
+  dr:[{p:[-10,-26],d:[0,-1],n:'1'},{p:[10,-26],d:[0,-1],n:'N'},{p:[-10,26],d:[0,1],n:'2'},{p:[10,26],d:[0,1],n:'N'}],
+  motor:[{p:[-20,27],d:[0,1],n:'1'},{p:[0,27],d:[0,1],n:'2'},{p:[20,27],d:[0,1],n:'⏚'}],
+  kc:[{p:[-21,-26],d:[0,-1],n:'A1'},{p:[-21,26],d:[0,1],n:'A2'},{p:[0,-26],d:[0,-1],n:'1'},{p:[0,26],d:[0,1],n:'2'},{p:[21,-26],d:[0,-1],n:'13'},{p:[21,26],d:[0,1],n:'14'}],
+  ft:[{p:[-10,-26],d:[0,-1],n:'1'},{p:[-10,26],d:[0,1],n:'2'},{p:[12,-26],d:[0,-1],n:'95'},{p:[12,26],d:[0,1],n:'96'}],
+  btn:[{p:[-10,26],d:[0,1],n:'3'},{p:[10,26],d:[0,1],n:'4'}],
+  sw4:[{p:[-10,-34],d:[0,-1],n:'1'},{p:[10,-34],d:[0,-1],n:'2'},{p:[-10,26],d:[0,1],n:'3'},{p:[10,26],d:[0,1],n:'4'}],
+  dps:[{p:[0,-26],d:[0,-1],n:'L'},{p:[0,26],d:[0,1],n:'⏚'}],
+  foto:[{p:[-20,26],d:[0,1],n:'L'},{p:[0,26],d:[0,1],n:'N'},{p:[20,26],d:[0,1],n:'C'}],
+  ri:[{p:[-10,-26],d:[0,-1],n:'A1'},{p:[-10,26],d:[0,1],n:'A2'},{p:[10,-26],d:[0,-1],n:'1'},{p:[10,26],d:[0,1],n:'2'}]
 };
 /* Retângulo do corpo de cada peça [x0,y0,x1,y1]: usado para o fio desviar e para a área de toque. */
-const REAL_BOX={src:[-27,-30,27,33],fuse:[-14,-36,14,36],sw:[-17,-29,17,33],lamp:[-14,-28,14,34]};
+const REAL_BOX={src:[-27,-30,27,33],fuse:[-14,-36,14,36],sw:[-17,-29,17,33],lamp:[-14,-28,14,34],
+  sw2:[-26,-29,26,33],sw3:[-26,-29,26,33],dr:[-21,-36,21,36],motor:[-41,-30,33,34],kc:[-29,-36,29,36],ft:[-23,-36,23,36],btn:[-17,-29,17,33],
+  sw4:[-17,-41,17,33],dps:[-14,-36,14,36],foto:[-26,-29,26,33],ri:[-21,-36,21,36]};
 
 /* Posição da peça na vista real. As fases foram posicionadas para o diagrama; as peças reais são mais altas
    e os fios saem por baixo, então a altura fica entre 46 e 184 para sobrar canaleta em cima e embaixo. */
 const REAL_Y=[46,184];
 function RP(c){return [c.x,Math.max(REAL_Y[0],Math.min(REAL_Y[1],c.y))]}
-function realTerms(c){const t=REAL_TERMS[c.type].slice(0,c.type==='lamp'&&c.pe===true?3:c.type==='lamp'?2:3);
+function realTerms(c){const t=c.type==='lamp'?REAL_TERMS.lamp.slice(0,c.pe===true?3:2):REAL_TERMS[c.type];
   const [X,Y]=RP(c);return t.map(o=>({p:[X+o.p[0],Y+o.p[1]],d:o.d,n:o.n}))}
 function realDir(c,k){return REAL_TERMS[c.type][k].d}
 
@@ -43,6 +57,7 @@ function realDefs(){return '<defs>'+
   '<radialGradient id="gLit" cx=".45" cy=".45" r=".7"><stop offset="0" stop-color="#fffbe6"/><stop offset=".5" stop-color="#ffe680"/><stop offset="1" stop-color="#f4c430"/></radialGradient>'+
   '<radialGradient id="gHalo"><stop offset="0" stop-color="#ffe680" stop-opacity=".85"/><stop offset="1" stop-color="#ffe680" stop-opacity="0"/></radialGradient>'+
   '<linearGradient id="gMetal" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8e969f"/><stop offset=".4" stop-color="#eef1f4"/><stop offset="1" stop-color="#7c848d"/></linearGradient>'+
+  '<linearGradient id="gMotor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7d9cc0"/><stop offset=".5" stop-color="#4f6f94"/><stop offset="1" stop-color="#2f4a6a"/></linearGradient>'+
   '<linearGradient id="gPorc" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#d9d4c8"/><stop offset=".35" stop-color="#fdfcf8"/><stop offset="1" stop-color="#cfc9bb"/></linearGradient>'+
   '</defs>'}
 const realBg=()=>realDefs()+'<rect width="340" height="250" fill="url(#rdots)" pointer-events="none"/>';
@@ -169,6 +184,77 @@ function realComp(c,b,o){
       '<rect x="-11" y="7" width="22" height="13" rx="3" style="fill:url(#gPorc);stroke:#a39e93" stroke-width="1"/>'+
       '<rect x="-14" y="19" width="28" height="15" rx="2" class="janela"/>';
   }
+  /* ---- peças da Oficina ---- */
+  const placa=(w)=>shadow(-w,-29,2*w,62,4)+'<rect x="'+(-w)+'" y="-29" width="'+2*w+'" height="62" rx="4" class="rbody"/>';
+  const tecla=(x0,w,on,key)=>{const fl=SW_FLIP===key?(on?' liga':' desliga'):'';
+    return '<g class="tecla'+fl+'"><rect x="'+x0+'" y="-23" width="'+w+'" height="30" rx="3" style="fill:url(#gKey);stroke:#aeb5bd" stroke-width="1.2"/>'+
+      '<rect class="aperto" x="'+(x0+1)+'" y="'+(on?-8:-22)+'" width="'+(w-2)+'" height="14" rx="2.5" style="fill:#cfd5dc"/>'+
+      '<rect x="'+(x0+w/2-3)+'" y="'+(on?-19:-3)+'" width="6" height="2" rx="1" style="fill:'+(on?'var(--terra)':'#9aa3ad')+'"/></g>'};
+  const din=(w)=>shadow(-w,-36,2*w,72,3)+'<rect x="'+(-w)+'" y="-36" width="'+2*w+'" height="72" rx="3" class="rbody" style="fill:url(#gSide)"/>'+
+    '<rect x="'+(2-w)+'" y="-34" width="'+(2*w-4)+'" height="16" rx="2" class="janela"/><rect x="'+(2-w)+'" y="18" width="'+(2*w-4)+'" height="16" rx="2" class="janela"/>'+
+    '<path d="M'+(-w)+' -16 H'+w+' M'+(-w)+' 16 H'+w+'" style="stroke:#b4bbc3" stroke-width="1"/>';
+  if(c.type==='sw2'){/* interruptor de 2 seções: duas teclas independentes, borne comum L */
+    s=placa(26)+'<rect x="-23" y="-24" width="46" height="32" rx="3" style="fill:#c5ccd4"/>'+
+      tecla(-22,21,!!c.a,c.id+'.a')+tecla(1,21,!!c.b,c.id+'.b')+'<rect x="-25" y="18" width="50" height="15" rx="2" class="janela"/>'}
+  if(c.type==='sw3'){/* interruptor paralelo (three-way): o comum C vai para 1 ou para 2 */
+    s=placa(26)+'<rect x="-11" y="-24" width="22" height="32" rx="3" style="fill:#c5ccd4"/>'+tecla(-10,20,!!c.pos,c.id)+
+      '<path d="M-20 -12 l3.5 -5 l3.5 5 Z M-20 -4 l3.5 5 l3.5 -5 Z M13 -12 l3.5 -5 l3.5 5 Z M13 -4 l3.5 5 l3.5 -5 Z" style="fill:#9aa3ad"/>'+
+      '<rect x="-25" y="18" width="50" height="15" rx="2" class="janela"/>'}
+  if(c.type==='dr'){/* interruptor diferencial residual (IDR 2 polos, 30 mA): alavanca, botão TESTE */
+    const trip=!!c.trip;
+    s=din(21)+'<rect x="-17" y="-10" width="12" height="19" rx="2" style="fill:#1c2025"/>'+
+      '<rect x="-16" y="'+(trip?0:-9)+'" width="10" height="9" rx="1.6" style="fill:'+(trip?'url(#gLever)':'#2f6fb0')+'"/>'+
+      '<text x="-11" y="'+(trip?6.2:-2.8)+'" text-anchor="middle" class="ltxt">'+(trip?'OFF':'ON')+'</text>'+
+      '<rect x="0" y="-8" width="17" height="8" rx="1.5" style="fill:#f2d22e;stroke:#a88f12" stroke-width=".7"/><text x="8.5" y="-2.4" text-anchor="middle" class="rtxt" style="font-size:4.4px">TESTE</text>'+
+      '<text x="8.5" y="8" text-anchor="middle" class="rtxt" style="font-size:4.4px">IDR 30mA</text>'}
+  if(c.type==='motor'){/* motor monofásico: carcaça aletada, ventoinha atrás, eixo com acoplamento que gira */
+    const on=b>0.04;
+    s=shadow(-26,-24,58,36,6)+
+      '<rect x="-34" y="-12" width="9" height="5" rx="1" style="fill:url(#gMetal)"/>'+
+      '<g class="giro'+(on?' gira':'')+'"><circle cx="-36" cy="-9.5" r="5" style="fill:#59616b;stroke:#2b3036" stroke-width=".8"/><path d="M-36 -14.5 V-4.5" style="stroke:#e9edf2" stroke-width="1.4"/></g>'+
+      '<rect x="-26" y="-24" width="44" height="30" rx="6" style="fill:url(#gMotor);stroke:#22364d" stroke-width="1"/>'+
+      '<path d="M-19 -22 V4 M-13 -22 V4 M-7 -22 V4 M-1 -22 V4 M5 -22 V4 M11 -22 V4" style="stroke:#22364d" stroke-width="1.2" opacity=".5"/>'+
+      '<rect x="18" y="-22" width="13" height="26" rx="4" style="fill:#3b4148"/>'+
+      '<path d="M20 -18 H29 M20 -14 H29 M20 -10 H29 M20 -6 H29 M20 -2 H29" style="stroke:#6b747e" stroke-width="1"/>'+
+      '<rect x="-8" y="-30" width="16" height="7" rx="1.5" style="fill:#22364d"/>'+
+      '<rect x="-22" y="6" width="34" height="5" rx="1" style="fill:#3a4048"/>'+
+      '<rect x="-31" y="18" width="62" height="16" rx="2" class="janela"/>'}
+  if(c.type==='kc'){/* contatora: bobina A1-A2; o indicador (êmbolo) desce e fica laranja quando energizada */
+    const on=!!c.on;
+    s=din(29)+'<rect x="-14" y="-9" width="28" height="17" rx="2" style="fill:#d9dee4;stroke:#9aa3ad" stroke-width=".8"/>'+
+      '<rect x="-8" y="'+(on?-2:-7)+'" width="16" height="7" rx="1.5" class="embolo" style="fill:'+(on?'#f39c12':'#5b646e')+'"/>'+
+      '<text x="0" y="'+(on?3.2:-1.8)+'" text-anchor="middle" class="ltxt">'+(on?'I':'O')+'</text>'}
+  if(c.type==='ft'){/* relé térmico: ajuste de corrente, botão de rearme e indicador de disparo */
+    const trip=!!c.trip;
+    s=din(23)+'<circle cx="-8" cy="-1" r="6" style="fill:#eef1f4;stroke:#8b939c" stroke-width=".8"/><path d="M-8 -1 L-11 -5" style="stroke:#2f3a48" stroke-width="1.3"/>'+
+      '<circle cx="9" cy="-5" r="4.5" style="fill:#2f6fb0"/><text x="9" y="-3.2" text-anchor="middle" class="ltxt" style="font-size:5px">R</text>'+
+      '<rect x="4" y="2" width="10" height="5" rx="1" style="fill:'+(trip?'#f39c12':'#43b05c')+'"/>'}
+  if(c.type==='btn'){/* botoeira: verde liga (NA), vermelha desliga (NF); afunda quando apertada */
+    const nf=!!c.nf,pr=!!c.pressed;
+    s=placa(17)+'<circle cy="-9" r="13" style="fill:#2a2f36"/><circle cy="-9" r="11" style="fill:#c9cfd6"/>'+
+      '<circle cy="-9" r="'+(pr?8:9.5)+'" style="fill:'+(nf?'#d33a2c':'#2fa84f')+';stroke:rgba(0,0,0,.35)" stroke-width="1.2"/>'+
+      '<text y="-6" text-anchor="middle" class="ltxt" style="font-size:7px">'+(nf?'O':'I')+'</text>'+
+      '<text y="12" text-anchor="middle" class="rtxt" style="font-size:5px">'+(nf?'NF':'NA')+'</text>'+
+      '<rect x="-16" y="18" width="32" height="15" rx="2" class="janela"/>'}
+  if(c.type==='sw4'){/* interruptor intermediário (four-way): 2 bornes em cima, 2 embaixo; a tecla cruza ou não os pares */
+    s=shadow(-17,-41,34,74,4)+'<rect x="-17" y="-41" width="34" height="74" rx="4" class="rbody"/>'+
+      '<rect x="-16" y="-41" width="32" height="14" rx="2" class="janela"/>'+tecla(-10,20,!!c.pos,c.id)+
+      '<path d="M-6 13 L6 9 M-6 9 L6 13" style="stroke:#9aa3ad" stroke-width="1.2" opacity="'+(c.pos?1:.35)+'"/>'+
+      '<rect x="-16" y="18" width="32" height="15" rx="2" class="janela"/>'}
+  if(c.type==='dps'){/* DPS (protetor contra surtos): linha em cima, terra embaixo; janela verde = protegendo */
+    s=din(14)+'<rect x="-8" y="-11" width="16" height="9" rx="1.5" style="fill:#43b05c;stroke:#2c7a3e" stroke-width=".7"/>'+
+      '<text y="5" text-anchor="middle" class="rtxt" style="font-size:5.4px">DPS</text><text y="11.5" text-anchor="middle" class="rtxt" style="font-size:4.4px">275 V</text>'}
+  if(c.type==='foto'){/* fotocélula (relé fotoelétrico): sensor na cúpula; de noite liga a fase na carga */
+    const n=!!c.noite;
+    s=placa(26)+'<circle cy="-11" r="13" style="fill:#2a2f36"/><circle cy="-11" r="11" style="fill:'+(n?'#26324a':'#cfe3f2')+';stroke:#8b939c" stroke-width=".8"/>'+
+      (n?'<path d="M3 -18 a7 7 0 1 0 0 14 a5.5 5.5 0 1 1 0 -14 Z" style="fill:#f2e6a0"/>':'<circle cy="-11" r="4.5" style="fill:#f4c430"/><path d="M0 -20 V-18 M0 -4 V-2 M-9 -11 H-7 M7 -11 H9" style="stroke:#f4c430" stroke-width="1.2"/>')+
+      '<text y="10" text-anchor="middle" class="rtxt" style="font-size:5px">'+(n?'NOITE':'DIA')+'</text>'+
+      '<rect x="-25" y="18" width="50" height="15" rx="2" class="janela"/>'}
+  if(c.type==='ri'){/* relé de impulso: cada pulso na bobina (A1-A2) inverte o contato 1-2; indicador mostra o estado */
+    const on=!!c.on;
+    s=din(21)+'<rect x="-12" y="-9" width="24" height="16" rx="2" style="fill:#d9dee4;stroke:#9aa3ad" stroke-width=".8"/>'+
+      '<rect x="'+(on?1:-10)+'" y="-6" width="9" height="10" rx="1.5" style="fill:'+(on?'#f39c12':'#5b646e')+'"/>'+
+      '<text x="'+(on?5.5:-5.5)+'" y="0.8" text-anchor="middle" class="ltxt">'+(on?'I':'O')+'</text>'}
   if(o.pickComp&&c.type!=='src'){const r=REAL_BOX[c.type];s+='<rect class="chit" data-c="'+c.id+'" x="'+(r[0]-6)+'" y="'+(r[1]-4)+'" width="'+(r[2]-r[0]+12)+'" height="'+(r[3]-r[1]+8)+'"/>'}
   const [X,Y]=RP(c);return '<g transform="translate('+X+' '+Y+')">'+s+'</g>';
 }
@@ -176,20 +262,33 @@ function realComp(c,b,o){
 /* Parafuso do borne (com fenda em cruz) e o nome impresso ao lado. */
 function realScrew(cl,p){return '<circle class="'+cl+'" cx="'+p[0]+'" cy="'+p[1]+'" r="6.2"/><path class="slot" d="M'+(p[0]-3.4)+' '+p[1]+' H'+(p[0]+3.4)+' M'+p[0]+' '+(p[1]-3.4)+' V'+(p[1]+3.4)+'"/>'}
 function realBorneLab(c,k,text){
-  const T=realTerms(c)[k];if(!T)return '';const [x,y]=T.p,d=T.d,n=text===undefined?T.n:text;if(!n)return '';
+  const T=realTerms(c)[k];if(!T)return '';const [x,y]=T.p,d=T.d;
+  let n=text===undefined?T.n:text;if(c.type==='btn'&&c.nf&&text===undefined)n=['1','2'][k];if(!n)return '';
   const st='';
   if(c.type==='src')/* só aparece no Caça-Defeito (letra da medição), acima do parafuso */
     return '<text class="lab bn" x="'+x+'" y="'+(y-10)+'" text-anchor="middle">'+n+'</text>';
-  if(c.type==='sw'||c.type==='lamp')/* par de bornes embaixo: nome por fora de cada parafuso */
-    return '<text class="lab bn"'+st+' x="'+(k===0?x-9:x+9)+'" y="'+(y+3)+'" text-anchor="'+(k===0?'end':'start')+'">'+n+'</text>';
+  if(c.type==='sw2'||c.type==='sw3'||c.type==='foto')/* 3 bornes embaixo: nome impresso na placa, acima de cada parafuso */
+    return '<text class="lab bn bnd" x="'+x+'" y="'+(y-11)+'" text-anchor="middle">'+n+'</text>';
+  if(c.type==='motor')return '<text class="lab bn" x="'+x+'" y="'+(y-11)+'" text-anchor="middle">'+n+'</text>';
+  if(c.type==='dr'||c.type==='kc'||c.type==='ft'||c.type==='ri')/* módulo DIN de vários polos: marcação impressa no corpo, junto do borne */
+    return '<text class="lab bn bnd" x="'+x+'" y="'+(RP(c)[1]+(d[1]<0?-11:15))+'" text-anchor="middle">'+n+'</text>';
+  if(c.type==='sw'||c.type==='lamp'||c.type==='btn'||c.type==='sw4')/* pares de bornes: nome por fora de cada parafuso */
+    return '<text class="lab bn"'+st+' x="'+(k%2===0?x-9:x+9)+'" y="'+(y+3)+'" text-anchor="'+(k%2===0?'end':'start')+'">'+n+'</text>';
   if(d[0])return '<text class="lab bn"'+st+' x="'+x+'" y="'+(y+(y>200?-10:16))+'" text-anchor="middle">'+n+'</text>';
   /* borne em cima/embaixo: nome do lado de fora do corpo (no disjuntor o corpo é largo) */
   const left=c.x>250,gap=Math.max(10,REAL_BOX[c.type][2]+4);
   return '<text class="lab bn"'+st+' x="'+(RP(c)[0]+(left?-gap:gap))+'" y="'+(y+3)+'" text-anchor="'+(left?'end':'start')+'">'+n+'</text>';
 }
 /* Nome da peça (L1, S1, DJ...) ao lado do corpo. */
-function realCompLab(c,lab){const r=REAL_BOX[c.type],left=c.x>250,[X,Y]=RP(c);
-  return '<text class="lab" x="'+(left?X+r[0]-5:X+r[2]+5)+'" y="'+(Y-6)+'" text-anchor="'+(left?'end':'start')+'">'+lab+'</text>'}
+/* O nome procura um lugar livre: à direita, à esquerda, em cima ou embaixo da peça,
+   sem cobrir outra peça nem sair da bancada. */
+function realCompLab(c,lab,comps){const r=REAL_BOX[c.type],[X,Y]=RP(c),w=lab.length*7.2+2,h=11;
+  const cands=[[X+r[2]+5,Y-6,'start'],[X+r[0]-5,Y-6,'end'],[X,Y+r[1]-5,'middle'],[X,Y+r[3]+12,'middle']];
+  if(c.x>250)cands.unshift(cands.splice(1,1)[0]);
+  const caixa=([x,y,a])=>{const x0=a==='start'?x:a==='end'?x-w:x-w/2;return [x0,y-h+2,x0+w,y+2]};
+  const bate=b=>b[0]<2||b[2]>338||b[1]<2||b[3]>248||(comps||[]).some(o=>o!==c&&(()=>{const q=realBounds(o,1);return b[0]<q[2]&&b[2]>q[0]&&b[1]<q[3]&&b[3]>q[1]})());
+  const [x,y,a]=cands.find(p=>!bate(caixa(p)))||cands[0];
+  return '<text class="lab" x="'+x+'" y="'+y+'" text-anchor="'+a+'">'+lab+'</text>'}
 
 /* Bancada inteira na vista real. Ordem de desenho: peças → fios (chegam por cima até o parafuso) → anilhas
    → parafusos e nomes → áreas de toque. Mesmas opções de board(): sel, probes, letters, tags, pick*, move, toggle. */
@@ -209,7 +308,7 @@ function realBoard(st,o,r){
     realTerms(c).forEach((T,k)=>{const t=c.id+'.'+k;let cl='term scr';
       if(o.sel===t)cl+=' sel';if(o.probes&&o.probes[0]===t)cl+=' probe-r';if(o.probes&&o.probes[1]===t)cl+=' probe-b';
       s+=realScrew(cl,T.p)+(o.letters&&o.letters[t]?realBorneLab(c,k,'<tspan class="kl">'+o.letters[t]+'</tspan>'):realBorneLab(c,k))});
-    if(c.type!=='src')s+=realCompLab(c,c.lab||c.id);
+    if(c.type!=='src')s+=realCompLab(c,c.lab||c.id,st.comps);
     if(o.tags&&o.tags[c.id]!==undefined){const ok=o.tags[c.id],b=realBounds(c);
       /* selo no canto da peça, para não cobrir fio nem etiqueta */
       s+='<g class="selo '+(ok?'ok':'no')+'" transform="translate('+b[2]+' '+b[1]+')"><circle r="8"/><text y="3.6" text-anchor="middle">'+(ok?'✓':'✗')+'</text><title>'+(ok?'passa':'não passa')+'</title></g>'}

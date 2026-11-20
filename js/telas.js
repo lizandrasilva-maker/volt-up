@@ -25,7 +25,8 @@ function showMap(){
   const tabs='<div class="chapters">'+CHAPTERS.map((c,k)=>'<button class="btn" data-ch="'+c.id+'" aria-pressed="'+(c.id===ch.id)+'">Cap. '+(k+1)+(c.soon?' 🔒':'')+'</button>').join('')+'</div>';
   let body;
   if(ch.soon){
-    body='<div class="soonbox"><span class="eyebrow">Em construção</span><h2>'+ch.nome+'</h2><span>Tema: '+ch.tema+'</span><span>O roteiro deste capítulo ainda vai ser escrito.</span></div>';
+    body='<div class="soonbox"><span class="eyebrow">Em construção</span><h2>'+ch.nome+'</h2><span>Tema: '+ch.tema+'</span>'+
+      (ch.previstas?'<ul class="prev">'+ch.previstas.map(f=>'<li>'+f+'</li>').join('')+'</ul><span>As primeiras peças deste capítulo já estão na Oficina Livre.</span>':'<span>O roteiro deste capítulo ainda vai ser escrito.</span>')+'</div>';
   }else{
     let nextFound=false;
     const ids=ch.fases;

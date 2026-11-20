@@ -3,39 +3,98 @@
    Análise nodal resolve as tensões; brilho = potência relativa a 1 lâmpada sozinha na fonte. */
 const C=(id,type,x,y,v,ex)=>Object.assign({id,type,x,y,v:!!v},ex||{});
 const W=(a,b,e)=>({a,b,e});
-const NAME={src:'rede',lamp:'luminária',sw:'interruptor',fuse:'disjuntor'};
+const NAME={src:'rede',lamp:'luminária',sw:'interruptor',fuse:'disjuntor',sw2:'interruptor duplo',sw3:'interruptor paralelo',sw4:'interruptor intermediário',dr:'DR',dps:'DPS',foto:'fotocélula',ri:'relé de impulso',motor:'motor',kc:'contatora',ft:'relé térmico',btn:'botoeira'};
 /* Posição dos bornes. Na vista real (GEOM_REAL, ligada por board()) cada peça tem os bornes onde o
    equipamento tem (js/bancada-real.js). O cálculo só usa o número do borne, então é o mesmo nas duas vistas.
-   A lâmpada é bocal com 2 bornes (X1/X2), sem PE; só uma luminária com pe:true teria o 3º borne. */
+   A lâmpada é bocal com 2 bornes (X1/X2), sem PE; só uma luminária com pe:true teria o 3º borne.
+   Peças da Oficina (bornes, na ordem do motor):
+     sw2 interruptor duplo: L, 1, 2 (seção a = L-1, seção b = L-2)   sw3 paralelo: C, 1, 2 (C liga em 1 ou 2)
+     dr: entrada F, entrada N, saída F, saída N                         motor: 1, 2, PE (carcaça)
+     kc contatora: A1, A2 (bobina), 1, 2 (contato principal), 13, 14 (auxiliar NA, para o selo)
+     ft relé térmico: 1, 2 (passagem), 95, 96 (NF que abre na sobrecarga)   btn botoeira: 2 bornes (nf = desliga)
+     sw4 intermediário (four-way): 1, 2 (de um lado), 3, 4 (do outro); direto 1-3/2-4 ou cruzado 1-4/2-3
+     dps: L (linha) e PE; não conduz em serviço normal          foto fotocélula: L (fase), N, C (carga); de noite liga L em C
+     ri relé de impulso: A1, A2 (bobina), 1, 2 (contato); cada pulso na bobina inverte o contato */
+const SYM_TERMS={sw2:[[-26,0],[26,-14],[26,14]],sw3:[[-26,0],[26,-14],[26,14]],dr:[[-12,-30],[12,-30],[-12,30],[12,30]],
+  sw4:[[-26,-12],[-26,12],[26,-12],[26,12]],dps:[[0,-26],[0,26]],foto:[[-26,0],[0,26],[26,0]],ri:[[-12,-30],[-12,30],[12,-30],[12,30]],
+  motor:[[-26,0],[26,0],[0,26]],kc:[[-30,-30],[-30,30],[0,-30],[0,30],[30,-30],[30,30]],ft:[[-12,-30],[-12,30],[14,-30],[14,30]],btn:[[-26,0],[26,0]]};
 let GEOM_REAL=false;
 function terms(c){const d=26;
   if(GEOM_REAL&&typeof realTerms==='function')return realTerms(c).map(t=>t.p);
   if(c.type==='src')return [[c.x,c.y-30],[c.x,c.y+30],[c.x+28,c.y]];
+  if(SYM_TERMS[c.type])return SYM_TERMS[c.type].map(([x,y])=>[c.x+x,c.y+y]);
   const t=c.v?[[c.x,c.y-d],[c.x,c.y+d]]:[[c.x-d,c.y],[c.x+d,c.y]];
   if(c.type==='lamp'&&c.pe===true)t.push(c.v?[c.x+(c.x>250?24:-24),c.y]:[c.x,c.y+(c.y>200?-24:24)]);
   return t}
 function tpos(comps,t){const [id,k]=t.split('.');const c=comps.find(x=>x.id===id);return terms(c)[+k]}
 function UF(){const p={};const find=x=>{if(p[x]===undefined)p[x]=x;while(p[x]!==x){p[x]=p[p[x]];x=p[x]}return x};return{find,union:(a,b)=>{const ra=find(a),rb=find(b);if(ra!==rb)p[ra]=rb}}}
-function solve(comps,wires){
+/* Pares de bornes ligados por dentro da peça (contato fechado). */
+function links(c){
+  switch(c.type){
+    case 'sw':return c.closed&&!c.broken?[[0,1]]:[];
+    case 'fuse':return c.broken?[]:[[0,1]];
+    case 'sw2':return [c.a?[0,1]:0,c.b?[0,2]:0].filter(Boolean);
+    case 'sw3':return [[0,c.pos?2:1]];
+    case 'dr':return c.trip?[]:[[0,2],[1,3]];
+    case 'btn':return (c.nf?!c.pressed:c.pressed)?[[0,1]]:[];
+    case 'kc':return c.on?[[2,3],[4,5]]:[];
+    case 'ft':return c.trip?[[0,1]]:[[0,1],[2,3]];
+    case 'sw4':return c.pos?[[0,3],[1,2]]:[[0,2],[1,3]];
+    case 'foto':return c.noite?[[0,2]]:[];
+    case 'ri':return c.on?[[2,3]]:[];
+  }
+  return [];
+}
+/* Cargas: [borne A, borne B]. Lâmpada, motor e bobinas (contatora, relé de impulso) são resistores (1 Ω no modelo). */
+const BOBINA={kc:1,ri:1};
+const loadsOf=c=>c.broken?[]:(c.type==='lamp'||c.type==='motor'||BOBINA[c.type])?[[0,1]]:[];
+function solveOnce(comps,wires){
   const u=UF();
-  comps.forEach(c=>{terms(c).forEach((_,k)=>u.find(c.id+'.'+k));
-    if((c.type==='sw'&&c.closed&&!c.broken)||(c.type==='fuse'&&!c.broken))u.union(c.id+'.0',c.id+'.1')});
+  comps.forEach(c=>{terms(c).forEach((_,k)=>u.find(c.id+'.'+k));links(c).forEach(([a,b])=>u.union(c.id+'.'+a,c.id+'.'+b))});
   wires.forEach(w=>{if(!w.broken)u.union(w.a,w.b)});
   const src=comps.find(c=>c.type==='src'),V=src.V||220;
   const P=u.find(src.id+'.0'),N=u.find(src.id+'.1'),PE=u.find(src.id+'.2');
-  const out={V,short:P===N||P===PE,lamp:{},P,N,PE,net:t=>u.find(t)};
-  if(out.short){comps.forEach(c=>{if(c.type==='lamp')out.lamp[c.id]=0});out.vAt=()=>0;return out}
+  const out={V,short:P===N||P===PE,lamp:{},coil:{},P,N,PE,net:t=>u.find(t)};
+  const cargas=comps.filter(c=>loadsOf(c).length||c.type==='lamp'||c.type==='motor'||BOBINA[c.type]);
+  const setPow=(c,v)=>{if(BOBINA[c.type])out.coil[c.id]=v;else out.lamp[c.id]=v};
+  if(out.short){cargas.forEach(c=>setPow(c,0));out.vAt=()=>0;return out}
   const known=n=>n===P?V:(n===N||n===PE)?0:null;
-  const nets=[...new Set(comps.flatMap(c=>[u.find(c.id+'.0'),u.find(c.id+'.1')]))].filter(n=>known(n)===null);
+  const nets=[...new Set(cargas.flatMap(c=>[u.find(c.id+'.0'),u.find(c.id+'.1')]))].filter(n=>known(n)===null);
   const idx={};nets.forEach((n,i)=>idx[n]=i);const m=nets.length;
   const G=Array.from({length:m},(_,i)=>{const r=Array(m+1).fill(0);r[i]=1e-9;return r});
-  comps.filter(c=>c.type==='lamp'&&!c.broken).forEach(l=>{
-    const a=u.find(l.id+'.0'),b=u.find(l.id+'.1'),g=1/(l.R||1);
-    [[a,b],[b,a]].forEach(([x,y])=>{if(known(x)!==null)return;const i=idx[x];G[i][i]+=g;if(known(y)!==null)G[i][m]+=g*known(y);else G[i][idx[y]]-=g})});
+  cargas.forEach(l=>loadsOf(l).forEach(([ka,kb])=>{
+    const a=u.find(l.id+'.'+ka),b=u.find(l.id+'.'+kb),g=1/(l.R||1);
+    [[a,b],[b,a]].forEach(([x,y])=>{if(known(x)!==null)return;const i=idx[x];G[i][i]+=g;if(known(y)!==null)G[i][m]+=g*known(y);else G[i][idx[y]]-=g})}));
   for(let c=0;c<m;c++){let p=c;for(let r=c+1;r<m;r++)if(Math.abs(G[r][c])>Math.abs(G[p][c]))p=r;[G[c],G[p]]=[G[p],G[c]];const d=G[c][c];if(Math.abs(d)<1e-15)continue;for(let r=0;r<m;r++){if(r===c)continue;const k=G[r][c]/d;if(k)for(let j=c;j<=m;j++)G[r][j]-=k*G[c][j]}}
   const vn=n=>{const k=known(n);if(k!==null)return k;const i=idx[n];if(i===undefined)return 0;return G[i][i]?G[i][m]/G[i][i]:0};
   out.vAt=t=>vn(u.find(t));
-  comps.filter(c=>c.type==='lamp').forEach(l=>{if(l.broken){out.lamp[l.id]=0;return}const dv=out.vAt(l.id+'.0')-out.vAt(l.id+'.1');out.lamp[l.id]=Math.min(1,dv*dv/(l.R||1)/(V*V))});
+  cargas.forEach(l=>{if(l.broken){setPow(l,0);return}const dv=out.vAt(l.id+'.0')-out.vAt(l.id+'.1');setPow(l,Math.min(1,dv*dv/(l.R||1)/(V*V)))});
+  return out;
+}
+/* Resolve o circuito com a lógica de comando:
+   - contatora: bobina com tensão fecha os contatos; contatos fechados podem manter a bobina (selo).
+     O estado (c.on) fica guardado na peça, então a contatora continua ligada depois que a botoeira solta.
+   - DR: desarma (c.trip) se, com ele ligado, houver carga entre a saída dele e o terra (fuga)
+     ou se o neutro depois dele estiver unido ao PE. */
+function solve(comps,wires,_fundo){
+  let out;
+  for(let it=0;it<8;it++){
+    out=solveOnce(comps,wires);let mudou=false;
+    comps.forEach(c=>{const en=!out.short&&(out.coil[c.id]||0)>0.2;
+      if(c.type==='kc'&&!!c.on!==en){c.on=en;mudou=true}
+      /* relé de impulso: inverte o contato só na subida do pulso (bobina passa de sem tensão para com tensão) */
+      if(c.type==='ri'){if(en&&!c.pulso){c.on=!c.on;mudou=true}c.pulso=en}});
+    if(!mudou)break;
+  }
+  if((_fundo||0)<3&&!out.short)for(const d of comps.filter(c=>c.type==='dr'&&!c.trip)){
+    if(out.vAt(d.id+'.0')<1)continue;
+    const aberto=solveOnce(comps.map(x=>x===d?Object.assign({},x,{trip:true}):x),wires);
+    const jusante=t=>out.vAt(t)>1&&aberto.vAt(t)<=1;
+    let fuga=out.net(d.id+'.3')===out.PE;
+    comps.forEach(l=>loadsOf(l).forEach(([a,b])=>{const ta=l.id+'.'+a,tb=l.id+'.'+b;
+      if((out.net(ta)===out.PE&&jusante(tb))||(out.net(tb)===out.PE&&jusante(ta)))fuga=true}));
+    if(fuga){d.trip=true;d.porFuga=true;return solve(comps,wires,(_fundo||0)+1)}
+  }
   return out;
 }
 function sim(st,sws,mods){return solve(st.comps.map(c=>Object.assign({},c,sws&&(c.id in sws)?{closed:!!sws[c.id]}:{},mods&&mods[c.id]||{})),st.wires)}
@@ -46,7 +105,21 @@ function bright(b){return b<=0.04?'apagada':b>=0.9?'forte':b>=0.2?'média':'frac
 function wirePath(comps,w){const [x1,y1]=tpos(comps,w.a),[x2,y2]=tpos(comps,w.b);
   if(w.e==='h')return 'M'+x1+' '+y1+' H'+x2+' V'+y2; if(w.e==='v')return 'M'+x1+' '+y1+' V'+y2+' H'+x2;
   return 'M'+x1+' '+y1+' L'+x2+' '+y2}
+/* Símbolo das peças da Oficina (Diagrama): caixa com a letra de identificação e os condutores até os bornes. */
+const SYM_TXT={sw2:'S 2×',sw3:'S ⇅',sw4:'S ⤨',dr:'DR',dps:'DPS',foto:'FC',ri:'RI',motor:'M',kc:'K',ft:'FT',btn:'B'};
+function symGeneric(c,b,o){
+  const hw=c.type==='kc'?22:c.type==='motor'?14:16,hh=c.type==='kc'||c.type==='dr'||c.type==='ft'||c.type==='ri'?18:12;
+  let s=SYM_TERMS[c.type].map(([x,y])=>{const ex=Math.max(-hw,Math.min(hw,x)),ey=Math.max(-hh,Math.min(hh,y));return '<line class="sym" x1="'+x+'" y1="'+y+'" x2="'+ex+'" y2="'+ey+'"/>'}).join('');
+  const ativo=c.type==='motor'?b>0.04:c.type==='kc'||c.type==='ri'?!!c.on:c.type==='foto'?!!c.noite:c.type==='dps'?false:c.type==='dr'||c.type==='ft'?!c.trip:c.type==='btn'?!!c.pressed:c.type==='sw2'?(c.a||c.b):!!c.pos;
+  const shape=c.type==='motor'?'<circle r="'+hw+'" style="fill:'+(ativo?'color-mix(in srgb,var(--amber) 35%,var(--panel2))':'var(--panel2)')+';stroke:var(--ink)" stroke-width="2.5"/>'
+    :'<rect x="'+(-hw)+'" y="'+(-hh)+'" width="'+2*hw+'" height="'+2*hh+'" rx="3" style="fill:'+(ativo?'color-mix(in srgb,var(--terra) 30%,var(--panel2))':'var(--panel2)')+';stroke:var(--ink)" stroke-width="2"/>';
+  const txt=c.type==='btn'?(c.nf?'B NF':'B NA'):SYM_TXT[c.type];
+  s+=shape+'<text y="4" text-anchor="middle" style="fill:var(--ink);font:900 '+(txt.length>2?9:12)+'px var(--body)">'+txt+'</text>';
+  if(o.pickComp)s+='<rect class="chit" data-c="'+c.id+'" x="-28" y="-24" width="56" height="48"/>';
+  return '<g transform="translate('+c.x+' '+c.y+')">'+s+'</g>';
+}
 function compSVG(c,b,o){
+  if(SYM_TERMS[c.type])return symGeneric(c,b,o);
   const leads='<line class="sym" x1="-26" y1="0" x2="-14" y2="0"/><line class="sym" x1="14" y1="0" x2="26" y2="0"/>';
   let s='';
   if(c.type==='src')return '<g transform="translate('+c.x+' '+c.y+')"><line class="sym" x1="0" y1="-30" x2="0" y2="-20"/><line class="sym" x1="0" y1="20" x2="0" y2="30"/><line class="sym" x1="18" y1="0" x2="28" y2="0"/>'+

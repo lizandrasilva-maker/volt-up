@@ -147,6 +147,20 @@ Os scripts são clássicos (sem `import`), então tudo é global e a ordem no `i
 - Para virar admin: a conta é criada em `login.html` e o papel `admin` é definido no banco (`update perfis set papel='admin' where id=...`).
 - Ainda não implementado: painel do professor, pagamento (Mercado Pago), bloqueio dos capítulos pagos (só o Cap. 1 existe).
 
+## Capítulos e bibliotecas de peças (decisão da Liz, 20/11/2026)
+Cada capítulo é uma história própria e tem a sua biblioteca de peças (`BIBLIOTECAS` em `js/fases.js`; na Oficina Livre ficam na "🧰 Caixa de ferramentas").
+| Cap. | História | Biblioteca | Situação |
+|---|---|---|---|
+| 1 | A Casa Acesa · fundamentos | ⚡ Fundamentos: lâmpada, interruptor, disjuntor | jogável |
+| 2 | O Quadro da Dona Fátima · predial | 🏠 Predial: interruptor duplo, paralelo (three-way), intermediário (four-way), DR, DPS, fotocélula, relé de impulso, pulsador | peças prontas na Oficina; fases por escrever |
+| 3 | Chão de Fábrica · industrial | 🏭 Industrial: motor monofásico, contatora (A1-A2, 1-2, 13-14), relé térmico (1-2, 95-96), botoeiras NA/NF | peças monofásicas prontas; fases por escrever |
+| 4 | Sol no Telhado | (CC fotovoltaica) | por fazer |
+| 5 | Ventos do Litoral | (eólica) | por fazer |
+
+Lógica das peças (em `solve()`, `js/motor.js`): `links()` diz quais bornes cada contato liga por dentro; `loadsOf()` diz quais são cargas. A contatora energiza quando a bobina tem tensão e o selo (13-14) a mantém; o relé de impulso inverte a cada pulso; o DR desarma com fuga para o PE ou neutro unido ao PE depois dele; a fotocélula liga L em C à noite. Testado: partida direta com selo e relé térmico, DR com fuga, three-way + four-way, relé de impulso, fotocélula.
+
+Próximo passo do industrial: **motor de cálculo trifásico** (contatora 3 polos + blocos auxiliares, relé térmico 3 polos 95-96/97-98, disjuntor-motor, motor de 6 pontas U1…W2) para partida direta trifásica, reversão e estrela-triângulo; e boia de nível para a caixa d'água.
+
 ## Plano "Realismo da bancada: SimuCir x Volt Up" (20/11/2026)
 - [x] Etapa 1 · Bancada real básica: vista real da tomada de bancada, disjuntor, interruptor e luminária; bornes com nome; fios em ângulo reto com anilha numerada; chave Símbolo/Real; zoom com pinça. Ativa no Primeiro Circuito e na Oficina Livre. O zoom vale em todas as bancadas de montar.
 - [ ] Etapa 2 · Simulação viva: Montar/Simular, potência real nas cargas, corrente em A, disjuntor desarma com faísca, borne errado pisca, multímetro e alicate na vista real.

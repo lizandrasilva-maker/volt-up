@@ -126,6 +126,17 @@ input[type=text]{font:inherit;font-weight:800;width:100%;min-height:52px;padding
 @keyframes eled{50%{fill:#7a2a24}}
 .benchwrap .bench{border-radius:0 0 18px 18px}
 .node .cad{font-size:15px;opacity:.6}
+.soonbox .prev{text-align:left;margin:4px 0;padding-left:18px;color:var(--ink);font-size:14px;line-height:1.5}
+/* Oficina: caixa de ferramentas */
+.caixa-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.caixa-bar #cx{flex:1;min-height:46px}
+.caixa-bar #cx[aria-expanded="true"]{border-color:var(--amber);background:var(--panel2)}
+.chip.modo{gap:6px;font-size:12.5px;min-height:34px}
+.caixa{display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:16px;background:var(--panel);border:2px solid var(--amber)}
+.caixa .seg{margin-bottom:2px}.caixa .seg3 .btn{font-size:12.5px;padding:4px}
+.pecas{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:6px}
+.peca{min-height:62px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px 4px;font-size:12px;line-height:1.15;text-align:center}
+.peca .pe{font-size:20px}
 .mais{display:flex;flex-direction:column}
 .mais>summary{list-style:none;display:grid;place-items:center;cursor:pointer}
 .mais>summary::-webkit-details-marker{display:none}
@@ -172,6 +183,10 @@ input[type=text]{font:inherit;font-weight:800;width:100%;min-height:52px;padding
 .slot{stroke:#4a535d;stroke-width:1.5;stroke-linecap:round;fill:none;pointer-events:none}
 .lab.bn{fill:var(--ink);font-size:8.5px;font-weight:900}
 .lab .kl{fill:var(--neutro);font-size:11px}
+.lab.bn.bnd{fill:#2f3a48;font-size:6.6px}
+/* motor ligado: o acoplamento do eixo gira */
+.giro{transform-box:fill-box;transform-origin:center}.giro.gira{animation:gira .45s linear infinite}
+@keyframes gira{to{transform:rotate(360deg)}}
 /* selo ✓/✗ do teste de peça no Caça-Defeito */
 .selo circle{stroke:#fff;stroke-width:1.5}.selo.ok circle{fill:var(--terra)}.selo.no circle{fill:var(--fase)}
 .selo text{fill:#fff;font:900 10px var(--body)}
