@@ -198,7 +198,8 @@ input[type=text]{font:inherit;font-weight:800;width:100%;min-height:52px;padding
 .pnome{font-size:8px;fill:#4b5563;letter-spacing:.06em}.parea{font-size:6px;fill:#c0392b}
 .pluz{fill:none;stroke:#2346c8;stroke-width:1.6}.pcmd{fill:#2346c8;font-size:7.5px}.ppot{fill:#26303b;font-size:6.5px}
 .pqd{fill:#fff;stroke:#1f2a44;stroke-width:1.4}.pqdh{stroke:#1f2a44;stroke-width:.8}.pid{fill:#4b5563;font-size:6.2px}
-.pcmdsym{fill:#43b05c;stroke:#1f5e2c;stroke-width:1}.ptipo{fill:#1f5e2c;font-size:7.5px}
+.pcmdsym{fill:#fff;stroke:#1f5e2c;stroke-width:1.2}.pcmdsym.cheio,.pcmdmeio{fill:#1f5e2c}.pfc{fill:#1f5e2c;font-size:4.6px}
+.pleg{width:18px;height:14px;vertical-align:-3px;margin-right:4px;overflow:visible}.ptipo{fill:#1f5e2c;font-size:7.5px}
 .planta-leg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11.5px;font-weight:700;color:#3b4552}
 .planta-leg i{display:inline-block;width:3px;height:12px;margin-right:4px;vertical-align:-2px;border-radius:1px}
 .planta .help{color:#4b5563;margin:0}
