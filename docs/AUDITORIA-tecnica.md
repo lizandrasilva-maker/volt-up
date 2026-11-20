@@ -17,10 +17,9 @@ Serve de roteiro para a revisão da professora.
 | NBR 5410:2004 (instalações de baixa tensão) | Itens citados abaixo lidos no texto |
 | Especificação técnica de fornecimento da Enel CE (CNC-OMBR-MAT-18-0124) | Esquema de aterramento e limites de motor lidos |
 | NBR 16690 (projeto de 2019, sistemas fotovoltaicos) | Fora do escopo do jogo hoje; guardada para uma fase solar futura |
-| NBR NM 60898 (disjuntores) | **Não disponível.** Curvas B/C/D seguem pendentes (seção 3) |
+| NBR NM 60898:2004 (disjuntores) | Tabelas 2 e 6 e seção 6 lidas |
 
-> A NBR 5444 é de 1989. Confirmar com a escola se ela ainda é a referência de símbolos usada no curso
-> ou se a escola segue a IEC 60617.
+> A NBR 5444 é de 1989. **Decisão:** o jogo segue a NBR 5444, que é a referência usada no curso.
 
 ## 1. Corrigido nesta etapa
 
@@ -59,13 +58,13 @@ Serve de roteiro para a revisão da professora.
 | Motores: até 3 CV monofásico; partida direta trifásica até 5 CV; acima disso, estrela-triângulo, soft-starter ou inversor; FP ≥ 0,92 | Especificação da Enel CE. Ainda não aparece no jogo; entra na Etapa 5 |
 | Ligações dos 27 gabaritos | São as ligações clássicas: three-way, four-way, relé de impulso (A1/A2), selo 13-14 em paralelo com o LIGA, 95-96 em série com a bobina, boia cortando a fase. **Ressalva:** o teste automático confere o gabarito com o próprio motor, o que é circular. A validação independente é a revisão humana |
 
-## 3. Pendente
+## 3. Decidido (antes pendente)
 
-| Prioridade | Afirmação do jogo | O que falta |
-|---|---|---|
-| Média | Curvas B 3–5, C 5–10, D 10–20 × In | Vem da NBR NM 60898 (disjuntores), que não temos. Os valores batem com a IEC 60898-1, da qual a NM deriva |
-| Baixa | "Verde liga, vermelho desliga" (nível leve) | Costume comum no Brasil, mas a IEC 60204-1 recomenda outras cores para LIGA/DESLIGA e reserva o vermelho à emergência. Decidir com a professora o que ensinar |
-| Baixa | Símbolos da planta pela NBR 5444:1989 | Confirmar se a escola ainda usa a 5444 ou a IEC 60617 |
+| Afirmação do jogo | Decisão |
+|---|---|
+| Curvas B 3–5, C 5–10, D 10–20 × In | **Confere** com a NBR NM 60898, tabela 2. A faixa D de 10 a 20 × In é a nota Mercosul (a IEC permite até 50 × In). A tabela 6 dá os valores que a Etapa 4 vai usar: 1,13 In não atua em 1 h; 1,45 In atua em menos de 1 h; 2,55 In atua entre 1 s e 60 s (até 32 A) |
+| "Verde liga, vermelho desliga" | **Mantido como costume no Brasil.** Coerente com a NM 60898, seção 6: em disjuntor de duas botoeiras, só a de abrir pode ser vermelha. A emergência continua vermelha sobre amarelo, como na IEC 60204-1 |
+| Símbolos da planta | **NBR 5444**, por decisão do curso |
 
 ## 4. Limites do motor (vão para as Etapas 3 e 4)
 
