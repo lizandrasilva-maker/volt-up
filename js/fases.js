@@ -77,11 +77,14 @@ function acionarPeca(c,lx,depois){
 /* ---------- Bancada: montar ---------- */
 function runBuild(p,task){
   const st={comps:clone(task.comps),wires:[]};let sel=null,tries=0,msg=null,won=false,cor='fase';
-  const zm=benchZoom();let drawn=false;BANCADA_ID++;
+  const zm=benchZoom();let drawn=false,verPlanta=false;BANCADA_ID++;
   const render=()=>{
     const r=solve(st.comps,st.wires),R=vistaReal();
     const help='Toque em dois '+(R?'parafusos':'pontos ⚪')+' para ligar um fio.'+(L()?' Toque no fio para tirar.':'');
+    const pl=typeof PLANTAS!=='undefined'&&PLANTAS[p.id];
     frame(p,missao(task.goal,task.real)+
+      /* fases com projeto: a planta de fiação abre e fecha acima da bancada */
+      (pl?'<button class="btn planta-btn" id="vplanta" aria-expanded="'+verPlanta+'">📄 '+(verPlanta?'Fechar a planta':'Ver a planta do projeto')+'</button>'+(verPlanta?plantaHTML(pl):''):'')+
       (won?'':palette(cor))+benchWrap(board(st,{res:r,sel,pickTerm:!won,pickWire:!won,toggle:true,real:R,vb:zm.vb()}),'',zm)+statusChips(st,r)+
       (msg?'<div class="fb '+(won?'good':'bad')+'">'+(won?pick(PRAISE[S.mode])+' ':'')+msg+(won&&L()?'<br><small>Na vida real, só eletricista mexe na rede, e com tudo desligado.</small>':'')+'</div>':st.wires.length?'':'<p class="help">'+help+'</p>')+
       (won?'<button class="btn main" id="end">Concluir ⚡</button>':'<div class="row"><button class="btn ghost" id="clr">Limpar fios</button><button class="btn main" id="chk">Verificar</button></div>'));
@@ -89,6 +92,7 @@ function runBuild(p,task){
     const svg=app.querySelector('.bench svg');
     zm.bind(app.querySelector('.bench'),app);
     const ts=document.getElementById('tSol');if(ts)ts.onclick=()=>{st.wires=testeSol(p.id);sel=null;msg=null;render()};
+    const vp=document.getElementById('vplanta');if(vp)vp.onclick=()=>{verPlanta=!verPlanta;render()};
     app.querySelectorAll('[data-vista]').forEach(b=>b.onclick=()=>{setVista(b.dataset.vista==='real');render()});
     app.querySelectorAll('[data-cor]').forEach(b=>b.onclick=()=>{cor=b.dataset.cor;render()});
     svg.querySelectorAll('[data-sw]').forEach(h=>h.addEventListener('click',ev=>{if(zm.busy())return;const c=st.comps.find(x=>x.id===h.dataset.sw);
