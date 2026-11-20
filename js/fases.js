@@ -45,7 +45,9 @@ function runSort(p,list){
 /* Cartão da missão: objetivo + etiquetas "peça = objeto real" numa linha só. */
 function missao(goal,real,nota,rotulo){return '<div class="goal"><span class="gi">'+(rotulo||'MISSÃO')+'</span><div class="gtx"><span>'+goal+'</span>'+(nota?'<small>'+nota+'</small>':'')+realHTML(real)+'</div></div>'}
 /* Bancada com a cadeia de energia (poste → medidor → quadro) colada em cima. */
-function benchWrap(svg,id){return '<div class="benchwrap">'+entrada()+'<div class="bench"'+(id?' id="'+id+'"':'')+'>'+svg+'</div></div>'}
+/* O estado da faixa (energia passando ou curto) vem da classe que board() põe no <svg>. */
+function benchWrap(svg,id){const m=/^<svg[^>]*class="(\w*)/.exec(svg),est=m?m[1]:'';
+  return '<div class="benchwrap">'+entrada(est)+'<div class="bench"'+(id?' id="'+id+'"':'')+'>'+svg+'</div></div>'}
 
 /* frame() sobe a tela para o topo. Na bancada, a partir do 2º desenho, volta para onde o aluno estava
    (no celular a bancada fica abaixo da dobra e cada fio ligado fazia a página pular). */

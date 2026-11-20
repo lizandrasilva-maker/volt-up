@@ -21,7 +21,7 @@ const CHAPTERS=[
 const SCENES={
   faisca:[['chico','Antes de mexer em qualquer coisa, me responde umas perguntas. Quero ver como você pensa.']],
   entrada:[['chico','Olha pela janela da oficina: lá no poste tem o transformador, e na parede tem o medidor.'],['chico','É por esse caminho que a energia chega. {nome}, me mostra que você entendeu.']],
-  primeiro:[['chico','Essa é a sua bancada de treino. Tem a energia da rede, um interruptor e uma lâmpada.'],['chico','Ligue do jeito da NBR 5410: fase no interruptor, retorno até a lâmpada e neutro azul-claro direto no bocal.']],
+  primeiro:[['chico','Essa é a sua bancada de treino. Tem a energia da rede, um interruptor e uma lâmpada.'],['chico','Olhando a tomada de frente: o pino do meio é o terra, a fase fica à direita e o neutro à esquerda.'],['chico','Ligue do jeito da NBR 5410: fase no interruptor, retorno até a lâmpada e neutro azul-claro direto no bocal.']],
   previsao:[['chico','Ainda na bancada: eletricista bom prevê o que vai acontecer antes de ligar. Topa um desafio?'],['eu','Topo! Vou pensar antes de responder.']],
   paralelo:[['fatima','Bom dia! Sou a Dona Fátima, moro aqui na rua. Quero colocar duas lâmpadas na minha sala.'],['fatima','E quero as duas bem fortes, viu?'],['chico','Primeira cliente, {nome}! Cuidado: tem um jeito de ligar que deixa as duas fraquinhas.']],
   defeito:[['fatima','Mestre, a lâmpada da minha cozinha não acende mais! As outras luzes da casa estão funcionando.'],['chico','Se só a cozinha apagou, o problema está no circuito da cozinha. Vamos testar peça por peça: aqui não se troca nada no chute.']],

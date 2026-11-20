@@ -8,14 +8,16 @@
 
 /* Bornes de cada peça na vista real: posição relativa ao centro (p), lado por onde o fio sai (d) e nome impresso (n). */
 const REAL_TERMS={
-  /* chegada da rede: 3 bornes lado a lado. Sem nome impresso: quem diz o que é cada um é a cor do condutor que chega do quadro. */
-  src:[{p:[-18,22],d:[0,1],n:''},{p:[0,22],d:[0,1],n:''},{p:[18,22],d:[0,1],n:''}],
+  /* tomada 2P+T: 3 bornes lado a lado embaixo, na ordem dos pinos vistos de frente.
+     Terra no meio; fase à direita e neutro à esquerda (recomendação usual da NBR 14136). Sem letra impressa:
+     o aluno precisa saber a ligação. Índices do motor: .0 fase, .1 neutro, .2 PE. */
+  src:[{p:[17,25],d:[0,1],n:''},{p:[-17,25],d:[0,1],n:''},{p:[0,25],d:[0,1],n:''}],
   fuse:[{p:[0,-26],d:[0,-1],n:'1'},{p:[0,26],d:[0,1],n:'2'}],
   sw:[{p:[-10,26],d:[0,1],n:'L'},{p:[10,26],d:[0,1],n:'R'}],
   lamp:[{p:[-10,27],d:[0,1],n:'X1'},{p:[10,27],d:[0,1],n:'X2'},{p:[22,8],d:[1,0],n:'PE'}]
 };
 /* Retângulo do corpo de cada peça [x0,y0,x1,y1]: usado para o fio desviar e para a área de toque. */
-const REAL_BOX={src:[-27,-36,27,31],fuse:[-14,-36,14,36],sw:[-17,-29,17,33],lamp:[-14,-28,14,34]};
+const REAL_BOX={src:[-27,-30,27,33],fuse:[-14,-36,14,36],sw:[-17,-29,17,33],lamp:[-14,-28,14,34]};
 
 /* Posição da peça na vista real. As fases foram posicionadas para o diagrama; as peças reais são mais altas
    e os fios saem por baixo, então a altura fica entre 46 e 184 para sobrar canaleta em cima e embaixo. */
@@ -122,14 +124,15 @@ function flipSwitch(c){c.closed=!c.closed;SW_FLIP=c.id}
 const shadow=(x,y,w,h,rx)=>'<rect x="'+(x+1.8)+'" y="'+(y+2.4)+'" width="'+w+'" height="'+h+'" rx="'+rx+'" style="fill:#000" opacity=".35"/>';
 function realComp(c,b,o){
   let s='';
-  if(c.type==='src'){/* caixa de ligação: o cabo que vem do quadro entra por cima e abre em fase, neutro e terra,
-       cada condutor no seu borne, lado a lado. A cor do condutor é a identificação (não há letra impressa). */
-    const cond=(d,cor,terra)=>'<path d="'+d+'" class="cond-o"/><path d="'+d+'" class="cond" style="stroke:'+cor+'"/>'+(terra?'<path d="'+d+'" class="cond t"/>':'');
-    s='<rect x="-6.5" y="-36" width="13" height="20" rx="3" style="fill:#4a525c"/><rect x="-6.5" y="-36" width="4" height="20" rx="2" style="fill:#6b747e"/>'+
-      shadow(-27,-18,54,49,4)+'<rect x="-27" y="-18" width="54" height="49" rx="4" class="rbody"/>'+
-      '<rect x="-9" y="-21" width="18" height="7" rx="2" style="fill:#2e343b"/>'+
-      cond('M-3 -15 V-4 H-18 V14','var(--fase)')+cond('M0 -15 V14','var(--neutro)')+cond('M3 -15 V-4 H18 V14','var(--terra)',1)+
-      '<rect x="-25" y="13" width="50" height="17" rx="2" class="janela"/>';
+  if(c.type==='src'){/* tomada 2P+T (padrão brasileiro), genérica e sem marca, alimentada pela rede 220 V~.
+       Placa, módulo e o rebaixo com os 3 furos (o do terra um pouco acima, com o símbolo ⏚ como na peça real).
+       Embaixo, a régua com os 3 bornes alinhados com os pinos. */
+    s=shadow(-27,-30,54,48,6)+'<rect x="-27" y="-30" width="54" height="48" rx="6" class="rbody"/>'+
+      '<rect x="-23" y="-20" width="46" height="26" rx="3" style="fill:#f3f5f7;stroke:#b9c0c8" stroke-width="1"/>'+
+      '<path d="M-11 -14 H11 L18 -7 L11 0 H-11 L-18 -7 Z" style="fill:#dde1e6;stroke:#a7afb8" stroke-width="1"/>'+
+      '<circle cx="-9" cy="-6" r="2.2" class="furo"/><circle cx="9" cy="-6" r="2.2" class="furo"/><circle cx="0" cy="-8.4" r="2.2" class="furo"/>'+
+      '<path d="M0 -12.4 V-11 M-2 -11 H2 M-1.3 -10.2 H1.3 M-.6 -9.5 H.6" style="stroke:#6f7882" stroke-width=".6" transform="translate(0 -1)"/>'+
+      '<rect x="-26" y="17" width="52" height="16" rx="2" class="janela"/>';
   }
   if(c.type==='fuse'){/* disjuntor DIN unipolar: alavanca em cima = ligado; desarmado = alavanca embaixo */
     const trip=c.broken&&c.show;
@@ -211,7 +214,7 @@ function realBoard(st,o,r){
       /* selo no canto da peça, para não cobrir fio nem etiqueta */
       s+='<g class="selo '+(ok?'ok':'no')+'" transform="translate('+b[2]+' '+b[1]+')"><circle r="8"/><text y="3.6" text-anchor="middle">'+(ok?'✓':'✗')+'</text><title>'+(ok?'passa':'não passa')+'</title></g>'}
   });
-  if(o.pickTerm)st.comps.forEach(c=>realTerms(c).forEach((T,k)=>{s+='<circle class="thit" data-t="'+c.id+'.'+k+'" cx="'+T.p[0]+'" cy="'+T.p[1]+'" r="'+(c.type==='src'?9:12)+'"/>'}));
+  if(o.pickTerm)st.comps.forEach(c=>realTerms(c).forEach((T,k)=>{s+='<circle class="thit" data-t="'+c.id+'.'+k+'" cx="'+T.p[0]+'" cy="'+T.p[1]+'" r="'+(c.type==='src'?8:12)+'"/>'}));
   SW_FLIP=null;
   return s;
 }

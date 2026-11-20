@@ -90,15 +90,48 @@ function board(st,o){
   return s+'</svg>';
 }
 function realHTML(list){if(!list)return '';return '<div class="real" aria-label="O que cada peça é na vida real">'+list.map(([k,e,t])=>'<span class="rchip"><b>'+k+'</b><span>'+e+' '+t+'</span></span>').join('')+'</div>'}
-function entrada(){
+/* Caminho da energia até a bancada, desenhado como os equipamentos reais:
+   poste com transformador → medidor de energia → quadro de distribuição → circuito (lâmpada).
+   estado: 'on' (alguma lâmpada acesa: a energia corre pelo cabo, o medidor pisca, a lâmpada acende),
+   'short' (curto: o cabo pisca em vermelho) ou '' (parado). */
+function entrada(estado){
+  const on=estado==='on',sc=estado==='short';
   const t=L()?['Poste','Medidor','Quadro','Circuito']:['Trafo 13,8 kV→220 V','Medidor kWh','Quadro + DJ','220 V~ · 60 Hz'];
-  return '<div class="entrada" aria-label="Caminho da energia: '+t.join(', ')+'"><svg viewBox="0 0 340 58" aria-hidden="true">'+
-   '<path d="M40 30 H300" style="stroke:var(--fase)" stroke-width="3" stroke-dasharray="6 5"/>'+
-   '<g transform="translate(40 26)"><rect x="-3" y="-20" width="6" height="40" style="fill:var(--muted)"/><circle cx="-6" cy="-2" r="9" style="fill:none;stroke:var(--amber)" stroke-width="2.5"/><circle cx="6" cy="-2" r="9" style="fill:none;stroke:var(--amber)" stroke-width="2.5"/></g>'+
-   '<g transform="translate(125 28)"><rect x="-15" y="-16" width="30" height="32" rx="4" style="fill:var(--panel2);stroke:var(--ink)" stroke-width="2"/><rect x="-10" y="-11" width="20" height="9" rx="1" style="fill:var(--lcd)"/><text y="11" text-anchor="middle" style="fill:var(--ink);font:900 8px var(--body)">kWh</text></g>'+
-   '<g transform="translate(210 28)"><rect x="-15" y="-16" width="30" height="32" rx="3" style="fill:#e9edf3;stroke:var(--ink)" stroke-width="2"/><rect x="-9" y="-10" width="5" height="14" style="fill:#2f4a6e"/><rect x="-2" y="-10" width="5" height="14" style="fill:#2f4a6e"/><rect x="5" y="-10" width="5" height="14" style="fill:var(--terra)"/></g>'+
-   '<g transform="translate(298 28)"><circle r="13" style="fill:var(--amber)" opacity=".85"/><path d="M-6 -6 L6 6 M6 -6 L-6 6" style="stroke:#3a2a00" stroke-width="2.5"/></g>'+
-   [[6,'start'],[125,'middle'],[210,'middle'],[336,'end']].map(([x,an],i)=>'<text x="'+x+'" y="56" text-anchor="'+an+'" class="lab" style="font-size:'+(L()?10:8.5)+'px">'+t[i]+'</text>').join('')+
+  const cabo='M66 33 H111 M139 33 H193 M227 33 H289';
+  return '<div class="entrada'+(on?' on':sc?' short':'')+'" aria-label="Caminho da energia: '+t.join(', ')+(on?' (energia passando)':sc?' (curto-circuito)':'')+'"><svg viewBox="0 0 340 66" aria-hidden="true">'+
+   '<defs><linearGradient id="eMetal" x1="0" x2="1"><stop offset="0" stop-color="#7c858f"/><stop offset=".45" stop-color="#d7dce1"/><stop offset="1" stop-color="#6c747d"/></linearGradient>'+
+   '<linearGradient id="eBody" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#c9cfd6"/></linearGradient>'+
+   '<radialGradient id="eHalo"><stop offset="0" stop-color="#ffe680" stop-opacity=".9"/><stop offset="1" stop-color="#ffe680" stop-opacity="0"/></radialGradient></defs>'+
+   /* cabo de ligação (por trás das peças) */
+   '<path d="'+cabo+'" class="ecabo-o"/><path d="'+cabo+'" class="ecabo"/>'+(on?'<path d="'+cabo+'" class="eflow"/>':sc?'<path d="'+cabo+'" class="esc"/>':'')+
+   /* poste de concreto com cruzeta, isoladores e transformador */
+   '<g><path d="M38 52 L40.5 4 H44.5 L47 52 Z" style="fill:url(#eMetal)"/>'+
+   '<rect x="24" y="8" width="38" height="3" rx="1" style="fill:#5d666f"/>'+
+   '<path d="M28 8 v-3 M42.5 8 v-3 M57 8 v-3" style="stroke:#a5c6dc" stroke-width="2.4" stroke-linecap="round"/>'+
+   '<path d="M20 4 Q42 9 64 4" style="fill:none;stroke:#2b3036" stroke-width="1"/>'+
+   '<rect x="47" y="16" width="17" height="22" rx="4" style="fill:url(#eMetal);stroke:#4f5760" stroke-width=".8"/>'+
+   '<path d="M50 19 v16 M53.5 19 v16 M57 19 v16 M60.5 19 v16" style="stroke:#5f6871" stroke-width=".7"/>'+
+   '<rect x="50" y="12.5" width="3" height="4" rx="1" style="fill:#a5c6dc"/><rect x="58" y="12.5" width="3" height="4" rx="1" style="fill:#a5c6dc"/>'+
+   '<path d="M64 33 H66" style="stroke:#2b3036" stroke-width="2"/></g>'+
+   /* medidor de energia: caixa, visor LCD com kWh e LED de pulso */
+   '<g><rect x="111" y="9" width="28" height="42" rx="3" style="fill:url(#eBody);stroke:#8b939c" stroke-width="1"/>'+
+   '<rect x="114" y="13" width="22" height="26" rx="2" style="fill:#dde4ea;stroke:#a9b2bb" stroke-width=".8"/>'+
+   '<rect x="116" y="16" width="18" height="8" rx="1" style="fill:var(--lcd)"/>'+
+   '<text x="125" y="22.4" text-anchor="middle" class="elcd">0427</text>'+
+   '<text x="125" y="31" text-anchor="middle" class="etxt">kWh</text>'+
+   '<circle cx="131" cy="35.5" r="1.6" class="eled'+(on?' pisca':'')+'"/>'+
+   '<rect x="118" y="42" width="14" height="6" rx="1" style="fill:#3a4048"/></g>'+
+   /* quadro de distribuição com a porta aberta e disjuntores no trilho */
+   '<g><rect x="193" y="7" width="34" height="46" rx="2.5" style="fill:url(#eBody);stroke:#8b939c" stroke-width="1"/>'+
+   '<rect x="197" y="11" width="26" height="38" rx="1.5" style="fill:#3a4048"/>'+
+   '<rect x="197" y="25" width="26" height="3" style="fill:#9aa3ad"/>'+
+   [200,206.5,213,219.5].map((x,i)=>'<rect x="'+x+'" y="19" width="5.5" height="15" rx="1" style="fill:#f1f3f5"/><rect x="'+(x+1.4)+'" y="'+(i===3&&sc?26:21)+'" width="2.7" height="4" rx=".6" style="fill:'+(i===3&&sc?'var(--fase)':'#22272c')+'"/>').join('')+
+   '<path d="M227 9 l7 3 v38 l-7 3" style="fill:#e3e7eb;stroke:#8b939c" stroke-width=".8"/></g>'+
+   /* circuito: lâmpada que acende junto com a bancada */
+   '<g transform="translate(301 30)">'+(on?'<circle cy="-6" r="20" style="fill:url(#eHalo)"/>':'')+
+   '<path d="M-4 6 L-4 3 C-4 1 -9 -1 -9 -7 A9 9 0 1 1 9 -7 C9 -1 4 1 4 3 L4 6 Z" style="fill:'+(on?'#ffe680':'#cfd8e3')+';fill-opacity:'+(on?1:.45)+';stroke:'+(on?'#e0a800':'#9aa7b5')+'" stroke-width="1"/>'+
+   '<rect x="-4.5" y="6" width="9" height="6" rx="1" style="fill:url(#eMetal)"/><path d="M-12 3 H-4" style="stroke:#2b3036" stroke-width="2"/></g>'+
+   [[6,'start'],[125,'middle'],[210,'middle'],[336,'end']].map(([x,an],i)=>'<text x="'+x+'" y="63" text-anchor="'+an+'" class="lab" style="font-size:'+(L()?10:8.5)+'px">'+t[i]+'</text>').join('')+
    '</svg></div>'}
 function statusChips(st,r){
   if(r.short)return '<div class="status"><span class="chip sc">⚡ Curto-circuito!</span></div>';

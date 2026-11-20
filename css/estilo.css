@@ -113,7 +113,17 @@ input[type=text]{font:inherit;font-weight:800;width:100%;min-height:52px;padding
 .goal .gtx small{color:var(--muted);font-weight:700}
 .goal .real .rchip{background:var(--panel);font-size:12px}
 .benchwrap{display:flex;flex-direction:column}
-.benchwrap .entrada{border-radius:14px 14px 0 0;border-bottom:0;opacity:.9}
+.benchwrap .entrada{border-radius:14px 14px 0 0;border-bottom:0}
+/* faixa poste → medidor → quadro → circuito */
+.ecabo-o{fill:none;stroke:#05080d;stroke-width:5}
+.ecabo{fill:none;stroke:#3a4048;stroke-width:3}
+.eflow{fill:none;stroke:#ffe680;stroke-width:2;stroke-dasharray:3 9;stroke-linecap:round;animation:eflow .7s linear infinite}
+@keyframes eflow{to{stroke-dashoffset:-12}}
+.esc{fill:none;stroke:var(--fase);stroke-width:3;animation:blink .35s 4}
+.elcd{fill:var(--lcdink);font:900 6.4px ui-monospace,Consolas,monospace;letter-spacing:.06em}
+.etxt{fill:#46505b;font:900 5.5px var(--body)}
+.eled{fill:#7a2a24}.eled.pisca{fill:#ff5a4a;animation:eled .6s steps(2) infinite}
+@keyframes eled{50%{fill:#7a2a24}}
 .benchwrap .bench{border-radius:0 0 18px 18px}
 .mais{display:flex;flex-direction:column}
 .mais>summary{list-style:none;display:grid;place-items:center;cursor:pointer}
@@ -159,9 +169,6 @@ input[type=text]{font:inherit;font-weight:800;width:100%;min-height:52px;padding
 .slot{stroke:#4a535d;stroke-width:1.5;stroke-linecap:round;fill:none;pointer-events:none}
 .lab.bn{fill:var(--ink);font-size:8.5px;font-weight:900}
 .lab .kl{fill:var(--neutro);font-size:11px}
-/* condutores que chegam do quadro na caixa de ligação da rede */
-.cond-o{fill:none;stroke:#05080d;stroke-width:5;stroke-linejoin:round}
-.cond{fill:none;stroke-width:3.2;stroke-linejoin:round}.cond.t{stroke:#f2d22e;stroke-dasharray:4 4}
 /* selo ✓/✗ do teste de peça no Caça-Defeito */
 .selo circle{stroke:#fff;stroke-width:1.5}.selo.ok circle{fill:var(--terra)}.selo.no circle{fill:var(--fase)}
 .selo text{fill:#fff;font:900 10px var(--body)}
