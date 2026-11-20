@@ -42,25 +42,37 @@ function runSort(p,list){
   render();
 }
 
+/* frame() sobe a tela para o topo. Na bancada, a partir do 2º desenho, volta para onde o aluno estava
+   (no celular a bancada fica abaixo da dobra e cada fio ligado fazia a página pular). */
+let benchY=0;
+function keepScroll(again){if(again)window.scrollTo(0,benchY);benchY=window.scrollY}
+window.addEventListener('scroll',()=>{benchY=window.scrollY},{passive:true});
+
 /* ---------- Bancada: montar ---------- */
 function runBuild(p,task){
   const st={comps:clone(task.comps),wires:[]};let sel=null,tries=0,msg=null,won=false,cor='fase';
+  /* Vista real (Etapa 1 do plano de realismo): por enquanto só no Primeiro Circuito. Zoom em todas as bancadas de montar. */
+  const realOk=p.id==='primeiro',zm=benchZoom();let drawn=false;
   const help=L()?'Toque num ponto ⚪ e depois em outro para ligar um fio (ou arraste). Toque no fio para tirar. Toque no interruptor para abrir e fechar.':'Toque/arraste entre terminais para ligar. Toque no fio para remover. Toque na chave para comutar e testar ao vivo.';
   const render=()=>{
-    const r=solve(st.comps,st.wires);
+    const r=solve(st.comps,st.wires),R=realOk&&vistaReal();
     frame(p,'<div class="goal"><span class="gi">MISSÃO</span><span>'+task.goal+(L()?'<br><small>Cores: fase vermelha · neutro azul · terra verde-amarelo. Na vida real, só eletricista mexe na rede, com tudo desligado.</small>':' Cores da NBR 5410: neutro azul-claro, PE verde-amarelo.')+'</span></div>'+
-      realHTML(task.real)+(won?'':palette(cor))+entrada()+'<div class="bench">'+board(st,{res:r,sel,pickTerm:!won,pickWire:!won,toggle:true})+'</div>'+statusChips(st,r)+
+      realHTML(task.real)+(won?'':palette(cor))+entrada()+benchBar(zm,realOk)+'<div class="bench">'+board(st,{res:r,sel,pickTerm:!won,pickWire:!won,toggle:true,real:R,vb:zm.vb()})+'</div>'+statusChips(st,r)+
       (msg?'<div class="fb '+(won?'good':'bad')+'">'+msg+'</div>':'<p class="help">'+help+'</p>')+
       (won?'<button class="btn main" id="end">Concluir ⚡</button>':'<div class="row"><button class="btn ghost" id="clr">Limpar fios</button><button class="btn main" id="chk">Verificar</button></div>'),
       won?pick(PRAISE[S.mode])+' Missão cumprida!':tries?'Teste mexendo nos interruptores.':pick(CHEER[S.mode]));
+    keepScroll(drawn);drawn=true;
     const svg=app.querySelector('.bench svg');
+    zm.bind(app.querySelector('.bench'),app);
+    app.querySelectorAll('[data-vista]').forEach(b=>b.onclick=()=>{setVista(b.dataset.vista==='real');render()});
     app.querySelectorAll('[data-cor]').forEach(b=>b.onclick=()=>{cor=b.dataset.cor;render()});
-    svg.querySelectorAll('[data-sw]').forEach(h=>h.addEventListener('click',()=>{const c=st.comps.find(x=>x.id===h.dataset.sw);c.closed=!c.closed;msg=null;render()}));
-    svg.querySelectorAll('[data-w]').forEach(h=>h.addEventListener('click',()=>{st.wires.splice(+h.dataset.w,1);msg=null;render()}));
+    svg.querySelectorAll('[data-sw]').forEach(h=>h.addEventListener('click',()=>{if(zm.busy())return;const c=st.comps.find(x=>x.id===h.dataset.sw);c.closed=!c.closed;msg=null;render()}));
+    svg.querySelectorAll('[data-w]').forEach(h=>h.addEventListener('click',()=>{if(zm.busy())return;st.wires.splice(+h.dataset.w,1);msg=null;render()}));
     svg.querySelectorAll('[data-t]').forEach(h=>h.addEventListener('pointerdown',e=>{
       e.preventDefault();const a=h.dataset.t,p0=tpos(st.comps,a);let line=null;
-      const move=ev=>{const q=svgPoint(svg,ev);if(!line&&Math.hypot(q.x-p0[0],q.y-p0[1])>12){line=document.createElementNS('http://www.w3.org/2000/svg','line');line.setAttribute('class','w tmp');line.setAttribute('x1',p0[0]);line.setAttribute('y1',p0[1]);svg.appendChild(line)}if(line){line.setAttribute('x2',q.x);line.setAttribute('y2',q.y)}};
+      const move=ev=>{if(zm.busy()){if(line){line.remove();line=null}return}const q=svgPoint(svg,ev);if(!line&&Math.hypot(q.x-p0[0],q.y-p0[1])>12){line=document.createElementNS('http://www.w3.org/2000/svg','line');line.setAttribute('class','w tmp');line.setAttribute('x1',p0[0]);line.setAttribute('y1',p0[1]);svg.appendChild(line)}if(line){line.setAttribute('x2',q.x);line.setAttribute('y2',q.y)}};
       const up=ev=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',up);
+        if(zm.busy()){if(line)line.remove();return}
         if(line){line.remove();const el=document.elementFromPoint(ev.clientX,ev.clientY);const b=el&&el.getAttribute&&el.getAttribute('data-t');if(b&&b!==a)addWire(a,b);else render()}
         else{if(sel===null)sel=a;else if(sel===a)sel=null;else{addWire(sel,a);return}render()}};
       window.addEventListener('pointermove',move);window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up);
@@ -150,11 +162,12 @@ function runSandbox(){
   setMode();
   let sb=S.sandbox&&S.sandbox.comps&&S.sandbox.comps.some(c=>c.type==='src')?clone(S.sandbox):{comps:[BAT()],wires:[]};
   let tool='build',cor='fase',sel=null,selC=null,probes=[],reading=null,msg=null,sure=false;
+  const zm=benchZoom();let drawn=false;
   const persist=()=>{S.sandbox=sb;save()};
   const SPOTS=[[170,55],[280,55],[170,195],[280,195],[120,125],[225,125],[300,125],[110,55],[110,195],[225,55]];
   const getSvg=()=>document.querySelector('#bench svg');
   const sc=()=>sb.comps.find(c=>c.id===selC);
-  const benchHTML=()=>{const r=solve(sb.comps,sb.wires);return '<div class="bench" id="bench">'+board(sb,{res:r,sel,selC,move:tool==='build',pickTerm:true,pickWire:tool==='build',probes:tool==='meter'?probes:null})+'</div>'+statusChips(sb,r)};
+  const benchHTML=()=>{const r=solve(sb.comps,sb.wires);return '<div class="bench" id="bench">'+board(sb,{res:r,sel,selC,move:tool==='build',pickTerm:true,pickWire:tool==='build',probes:tool==='meter'?probes:null,real:vistaReal(),vb:zm.vb()})+'</div>'+statusChips(sb,r)};
   const redrawBench=()=>{document.getElementById('bw').innerHTML=benchHTML();bindBench()};
   const add=type=>{
     if(sb.comps.length>=9){msg={bad:1,t:'Bancada cheia: no máximo 8 peças além da bateria.'};render();return}
@@ -168,14 +181,16 @@ function runSandbox(){
       '<div class="seg"><button class="btn" id="tb" aria-pressed="'+(tool==='build')+'">🔌 Montar</button><button class="btn" id="tm" aria-pressed="'+(tool==='meter')+'">📏 Medir</button></div>'+
       (tool==='build'?'<div class="row"><button class="btn sm" data-add="lamp">+ Lâmpada</button><button class="btn sm" data-add="sw">+ Interruptor</button><button class="btn sm" data-add="fuse">+ Disjuntor</button></div>'+palette(cor)
         :'<div class="meter"><div><small>MULTÍMETRO</small><small>V~ (CA)</small></div><div class="lcd">'+(reading===null?'– – –':reading.toFixed(2).replace('.',',')+' V')+'</div></div><p class="help">'+(probes.length===1?'Agora o 2º ponto (ponta preta).':'Toque em dois terminais para medir a tensão entre eles.')+'</p>')+
-      entrada()+'<div id="bw">'+benchHTML()+'</div>'+
+      entrada()+benchBar(zm,true)+'<div id="bw">'+benchHTML()+'</div>'+
       (c&&tool==='build'?'<div class="row" style="align-items:center"><span class="chip">'+c.id+'</span><button class="btn sm" id="rot">↻ Girar</button>'+(c.type==='sw'?'<button class="btn sm" id="tog">'+(c.closed?'Abrir':'Fechar')+'</button>':'')+(c.type!=='bat'?'<button class="btn sm danger" id="del">🗑 Remover</button>':'')+'</div>':'')+
       (msg?'<div class="fb '+(msg.bad?'bad':'good')+'">'+msg.t+'</div>':'<p class="help">'+(tool==='build'?'Arraste as peças pelo corpo. Toque numa peça para selecionar (no interruptor, isso também liga e desliga). Ligue fios entre os terminais ⚪. Toque no fio para tirar.':'')+'</p>')+
       '<div class="row"><button class="btn ghost" id="clr">'+(sure?'Toque de novo para limpar':'Limpar bancada')+'</button><button class="btn main" id="insp">🔎 Inspecionar</button></div>',
       'Aqui é livre! Invente, teste e meça.');
+    keepScroll(drawn);drawn=true;
     document.getElementById('tb').onclick=()=>{tool='build';probes=[];reading=null;msg=null;render()};
     document.getElementById('tm').onclick=()=>{tool='meter';sel=null;selC=null;msg=null;render()};
     app.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>add(b.dataset.add));
+    app.querySelectorAll('[data-vista]').forEach(b=>b.onclick=()=>{setVista(b.dataset.vista==='real');render()});
     app.querySelectorAll('[data-cor]').forEach(b=>b.onclick=()=>{cor=b.dataset.cor;render()});
     const rot=document.getElementById('rot');if(rot)rot.onclick=()=>{c.v=!c.v;persist();render()};
     const tog=document.getElementById('tog');if(tog)tog.onclick=()=>{c.closed=!c.closed;persist();render()};
@@ -191,20 +206,24 @@ function runSandbox(){
   };
   const bindBench=()=>{
     const svg=getSvg();
-    svg.querySelectorAll('[data-w]').forEach(h=>h.addEventListener('click',()=>{sb.wires.splice(+h.dataset.w,1);persist();render()}));
+    zm.bind(document.getElementById('bench'),app);
+    svg.querySelectorAll('[data-w]').forEach(h=>h.addEventListener('click',()=>{if(zm.busy())return;sb.wires.splice(+h.dataset.w,1);persist();render()}));
     svg.querySelectorAll('[data-mv]').forEach(h=>h.addEventListener('pointerdown',e=>{
       e.preventDefault();const c=sb.comps.find(x=>x.id===h.dataset.mv),q0=svgPoint(svg,e),ox=c.x,oy=c.y;let moved=false;
-      const move=ev=>{const q=svgPoint(getSvg(),ev),dx=q.x-q0.x,dy=q.y-q0.y;if(!moved&&Math.hypot(dx,dy)<6)return;moved=true;
+      const move=ev=>{if(zm.busy())return;const q=svgPoint(getSvg(),ev),dx=q.x-q0.x,dy=q.y-q0.y;if(!moved&&Math.hypot(dx,dy)<6)return;moved=true;
         c.x=Math.max(34,Math.min(306,Math.round((ox+dx)/5)*5));c.y=Math.max(34,Math.min(216,Math.round((oy+dy)/5)*5));redrawBench()};
       const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',up);
+        if(zm.busy()){c.x=ox;c.y=oy;render();return}
         if(!moved){selC=c.id;if(c.type==='sw')c.closed=!c.closed}msg=null;persist();render()};
       window.addEventListener('pointermove',move);window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up)}));
     svg.querySelectorAll('[data-t]').forEach(h=>h.addEventListener('pointerdown',e=>{
       e.preventDefault();const a=h.dataset.t;
+      if(zm.busy())return;
       if(tool==='meter'){if(probes.length>=2)probes=[];probes.push(a);if(probes.length===2){const r=solve(sb.comps,sb.wires);reading=Math.abs(r.vAt(probes[0])-r.vAt(probes[1]))}else reading=null;render();return}
       const p0=tpos(sb.comps,a);let line=null;
-      const move=ev=>{const s2=getSvg(),q=svgPoint(s2,ev);if(!line&&Math.hypot(q.x-p0[0],q.y-p0[1])>12){line=document.createElementNS('http://www.w3.org/2000/svg','line');line.setAttribute('class','w tmp');line.setAttribute('x1',p0[0]);line.setAttribute('y1',p0[1]);s2.appendChild(line)}if(line){line.setAttribute('x2',q.x);line.setAttribute('y2',q.y)}};
+      const move=ev=>{if(zm.busy()){if(line){line.remove();line=null}return}const s2=getSvg(),q=svgPoint(s2,ev);if(!line&&Math.hypot(q.x-p0[0],q.y-p0[1])>12){line=document.createElementNS('http://www.w3.org/2000/svg','line');line.setAttribute('class','w tmp');line.setAttribute('x1',p0[0]);line.setAttribute('y1',p0[1]);s2.appendChild(line)}if(line){line.setAttribute('x2',q.x);line.setAttribute('y2',q.y)}};
       const up=ev=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',up);
+        if(zm.busy()){if(line)line.remove();return}
         if(line){line.remove();const el=document.elementFromPoint(ev.clientX,ev.clientY);const b=el&&el.getAttribute&&el.getAttribute('data-t');if(b&&b!==a)addWire(a,b);else render()}
         else{if(sel===null)sel=a;else if(sel===a)sel=null;else{addWire(sel,a);return}render()}};
       window.addEventListener('pointermove',move);window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up)}));

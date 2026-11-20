@@ -1,5 +1,5 @@
 const STORE='neuro-eletricista-v2';
-const FRESH=()=>({mode:null,char:null,name:'',xp:0,cards:[],done:{},seen:{},chap:'cap1',sandbox:null,attr:{},days:[],daily:null,ach:[],flags:{},start:null});
+const FRESH=()=>({mode:null,char:null,name:'',xp:0,cards:[],done:{},seen:{},chap:'cap1',sandbox:null,attr:{},days:[],daily:null,ach:[],flags:{},start:null,vista:{}});
 let S=FRESH();
 try{const r=localStorage.getItem(STORE)||localStorage.getItem('neuro-eletricista-v1');if(r){const o=JSON.parse(r);S=Object.assign(S,o);if(!localStorage.getItem(STORE)){S.cards=[];S.done={}}}}catch(e){}
 ensure();

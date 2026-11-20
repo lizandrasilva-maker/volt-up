@@ -91,6 +91,7 @@ Capítulos previstos, ainda "em construção":
 | `css/estilo.css` | Todo o visual (paleta de cores de fio, bancada, cenas, ficha). |
 | `js/estado.js` | Estado do jogador `S`, `save()` (localStorage), utilitários, `CHARS`. |
 | `js/motor.js` | Motor elétrico e desenho da bancada. |
+| `js/bancada-real.js` | Vista real da bancada (peças como o equipamento, bornes com nome, fios em ângulo reto com anilha), chave Símbolo/Real e zoom. |
 | `js/conteudo.js` | Cenários de previsão e checagens NBR 5410 (`normCheck`, `colorCheck`). |
 | `js/imagens.js` | Mapa `IMG` → arquivos em `img/`. |
 | `js/historia.js` | `NPC`, `CHAPTERS`, `PHASES`, `SCENES`, `showScene()`. |
@@ -108,6 +109,10 @@ Os scripts são clássicos (sem `import`), então tudo é global e a ordem no `i
   - `solve()`: análise nodal (lâmpadas resistivas, valores eficazes).
   - `sim()`: simula posições de interruptor ou defeitos.
 - Desenho da bancada: `board()`, `compSVG()`, `entrada()` (faixa poste → medidor → quadro) e `realHTML()` (etiquetas da vida real).
+  - `board(st,{real:true})` troca o desenho pela vista real (`realComp()`, `realWirePts()`, `anilhas()` em `js/bancada-real.js`). Os terminais e o cálculo são os mesmos nas duas vistas.
+  - A vista escolhida fica em `S.vista[nível]`. Padrão: Leve abre na vista real; Técnico e Profissional, no símbolo.
+  - Bornes impressos: disjuntor `1` (entrada) e `2` (saída); interruptor `L` e `R` (retorno); luminária `F/R`, `N` e `PE`; rede `F`, `N` e `PE`.
+  - `benchZoom()`: pinça, arrastar com um dedo no fundo quando ampliado, Ctrl+roda e botões − + ⤢. Durante a pinça (`zm.busy()`) os toques não ligam fio nem mexem peça.
 - `/* CONTEÚDO */`:
   - Cenários de previsão `sc*()`, com `withPE()` e `autoColor()`.
   - Checagens: `tableCheck()`, `normCheck()`, `colorCheck()`.
@@ -130,6 +135,14 @@ Os scripts são clássicos (sem `import`), então tudo é global e a ordem no `i
 - Telas: `login.html` (aluno e e-mail) e `admin.html` (painel). Os arquivos em `prototipos/` são só os desenhos iniciais.
 - Para virar admin: a conta é criada em `login.html` e o papel `admin` é definido no banco (`update perfis set papel='admin' where id=...`).
 - Ainda não implementado: painel do professor, pagamento (Mercado Pago), bloqueio dos capítulos pagos (só o Cap. 1 existe).
+
+## Plano "Realismo da bancada: SimuCir x Volt Up" (20/11/2026)
+- [x] Etapa 1 · Bancada real básica: vista real da tomada de bancada, disjuntor, interruptor e luminária; bornes com nome; fios em ângulo reto com anilha numerada; chave Símbolo/Real; zoom com pinça. Ativa no Primeiro Circuito e na Oficina Livre. O zoom vale em todas as bancadas de montar.
+- [ ] Etapa 2 · Simulação viva: Montar/Simular, potência real nas cargas, corrente em A, disjuntor desarma com faísca, borne errado pisca, multímetro e alicate na vista real.
+- [ ] Etapa 3 · Quadro residencial: trilho DIN, caixa, IDR, DPS, tomada, three-way, medidor kWh contando.
+- [ ] Etapa 4 · Todas as bancadas do Capítulo 1 na vista real.
+- [ ] Etapa 5 · Comandos elétricos (contator, botoeira, relé térmico, motor), com lógica simplificada.
+- Limite conhecido da Etapa 1: a rota do fio desvia de peças e bornes por algumas opções de L e Z, mas com muitas peças juntas o fio ainda pode cruzar uma etiqueta ou outro fio.
 
 ## Pendências e próximos passos sugeridos
 - [ ] Falas por nível: Leve com frases de até 8 palavras e imagem do cômodo.
