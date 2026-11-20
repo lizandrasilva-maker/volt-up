@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Testes do Volt Up</title></head>
+<body><div id="app"></div><pre id="out">rodando</pre>
+<script>try{localStorage.clear();sessionStorage.clear()}catch(e){}</script>
+<script src="../js/estado.js"></script><script src="../js/motor.js"></script><script src="../js/bancada-real.js"></script><script src="../js/multifilar.js"></script><script src="../js/planta.js"></script>
+<script src="../js/conteudo.js"></script><script src="../js/imagens.js"></script><script src="../js/historia.js"></script>
+<script src="../js/telas.js"></script><script src="../js/fases.js"></script><script src="../js/carreira.js"></script><script src="../js/teste.js"></script>
+<script>
+/* Testes das fases: gabaritos, erros comuns, previsões, quizzes, cenas e trava de capítulos.
+   Rode com: node tests/rodar.js */
+const R={};S.char='aprendiz';S.name='Teste';
+const W2=(l)=>l.map(([a,b,cor])=>Object.assign(W(a,b),{cor}));
+const verifica=(pid,md,wires)=>{S.mode=md;const t=phaseById(pid).dados[md];const st={comps:clone(t.comps),wires};return t.check(st)||normCheck(st)||colorCheck(st)||'OK'};
+try{
+  // 1) todos os gabaritos de bancada passam, em todos os níveis
+  const g={};for(const p of PHASES.filter(p=>p.tipo==='build'))for(const md of ['leve','moderado','full']){S.mode=md;const sol=testeSol(p.id);g[p.id+':'+md]=sol?verifica(p.id,md,sol):'SEM GABARITO'}
+  R.gabaritos=g;
+  // 2) erros comuns são pegos (escada_retornoTrocado funciona de verdade: o three-way é simétrico)
+  const sem=(pid,md,tira)=>{S.mode=md;const s=testeSol(pid).filter(w=>!tira(w));return verifica(pid,md,s)};
+  R.erros={
+    quadro_neutroPorFora:(()=>{S.mode='moderado';const s=testeSol('quadronovo').map(w=>w.b==='DR.3'?Object.assign(W(w.a,'B.1'),{cor:'neutro'}):w);return verifica('quadronovo','moderado',s)})(),
+    quadro_semDR:(()=>{S.mode='leve';return verifica('quadronovo','leve',W2([['B.0','DG.0','fase'],['DG.1','L1.0','fase'],['L1.1','B.1','neutro']]))})(),
+    escada_retornoTrocado:(()=>{S.mode='leve';return verifica('escada','leve',W2([['B.0','SP1.0','fase'],['SP1.1','SP2.2','retorno'],['SP1.2','SP2.1','retorno'],['SP2.0','L1.0','retorno'],['L1.1','B.1','neutro']]))})(),
+    escada_neutroNoComando:(()=>{S.mode='leve';return verifica('escada','leve',W2([['B.1','SP1.0','neutro'],['SP1.1','SP2.1','retorno'],['SP1.2','SP2.2','retorno'],['SP2.0','L1.0','retorno'],['L1.1','B.0','fase']]))})(),
+    corredor_semIntermediario:(()=>{S.mode='leve';return verifica('corredor','leve',W2([['B.0','SP1.0','fase'],['SP1.1','SP2.1','retorno'],['SP1.2','SP2.2','retorno'],['SP2.0','L1.0','retorno'],['L1.1','B.1','neutro']]))})(),
+    garagem_semNeutro:sem('garagem','leve',w=>w.b==='FC.1'),
+    impulso_semRele:(()=>{S.mode='leve';return verifica('impulso','leve',W2([['B.0','P1.0','fase'],['P1.1','L1.0','retorno'],['L1.1','B.1','neutro']]))})(),
+    partida_semSelo:sem('partida','moderado',w=>w.a==='BD.1'&&w.b==='K.4'),
+    partida_semPEmotor:sem('partida','moderado',w=>w.a==='M.2'),
+    partida_95_96_fora:(()=>{S.mode='moderado';const s=testeSol('partida').filter(w=>!(w.a==='B.0'&&w.b==='FT.2')&&!(w.a==='FT.3'));s.push(Object.assign(W('B.0','BD.0'),{cor:'fase'}));return verifica('partida','moderado',s)})(),
+    caixa_boiaNoNeutro:(()=>{S.mode='leve';return verifica('caixa','leve',W2([['B.0','M.0','fase'],['M.1','BO.0','neutro'],['BO.1','B.1','neutro'],['M.2','B.2','terra']]))})()
+  };
+  // 3) previsões: a resposta certa (opção 0) bate com o que acontece
+  const pv={};for(const md of ['leve','moderado','full']){S.mode=md;phaseById('sobrecarga').dados[md].forEach((it,i)=>{const st=it.sc(),antes=solve(st.comps,st.wires).lamp.M>0.04;it.act(st);const depois=solve(st.comps,st.wires).lamp.M>0.04;pv[md+':'+i]=(antes?'girando':'parado')+' → '+(depois?'girando':'parado')})}
+  R.previsao=pv;
+  // 4) quizzes têm 3 perguntas por nível e 3 opções
+  const qz={};for(const p of PHASES.filter(p=>p.tipo==='quiz'))for(const md of ['leve','moderado','full']){const l=p.dados[md];qz[p.id+':'+md]=l.length+'q/'+l.map(x=>x.o.length).join('')}
+  R.quizzes=qz;
+  // 5) pistas que entregam a resposta: a certa (opção 0) não pode ser a mais longa com frequência,
+  //    nem as erradas concentrarem palavras absolutas ("qualquer", "nunca"...)
+  const abs=/(^|[^\wÀ-ú])(qualquer|sempre|nunca|tudo|todo|toda|todos|todas|só|nada|nenhum)([^\wÀ-ú]|$)/i;
+  let n=0,longa=0,absErr=0,absCerta=0;
+  for(const p of PHASES.filter(p=>p.tipo==='quiz'))for(const md of ['leve','moderado','full'])for(const x of p.dados[md]){n++;
+    const L=x.o.map(t=>t.length);if(L[0]>Math.max(...L.slice(1)))longa++;
+    if(abs.test(x.o[0]))absCerta++;if(x.o.slice(1).some(t=>abs.test(t))&&!abs.test(x.o[0]))absErr++}
+  R.pistas={perguntas:n,certaMaisLonga:longa,absolutaSoNasErradas:absErr,absolutaNaCerta:absCerta};
+  // 6) cenas e personagens existem
+  const falta=[];CHAPTERS.filter(c=>!c.soon).forEach(c=>{[...(c.intro||[]),...(c.fim||[])].forEach(([w])=>{if(w!=='eu'&&!NPC[w])falta.push(c.id+':'+w)});c.fases.forEach(id=>{if(!phaseById(id))falta.push('fase '+id);(SCENES[id]||[]).forEach(([w])=>{if(w!=='eu'&&!NPC[w])falta.push(id+':'+w)});if(!ICONS[phaseById(id).ic])falta.push('icone '+id)})});
+  R.faltando=falta;
+  // 7) trava de capítulos
+  S.mode='leve';S.chap='cap2';S.seen={};S.done={};showMap();R.cap2_semCap1=document.querySelector('.soonbox .eyebrow').textContent;
+  CHAPTERS[0].fases.forEach(id=>S.done['leve:'+id]=3);S.seen['leve:cap2:intro']=1;showMap();R.cap2_comCap1=document.querySelectorAll('.node').length+' fases';
+  S.chap='cap3';showMap();R.cap3_semCap2=document.querySelector('.soonbox .eyebrow').textContent;
+}catch(e){R.ERRO=e.message+' '+e.stack}
+document.getElementById('out').textContent=JSON.stringify(R,null,1);
+</script></body></html>
