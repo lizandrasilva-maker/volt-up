@@ -26,12 +26,13 @@ const REAL_TERMS={
   sw4:[{p:[-10,-34],d:[0,-1],n:'1'},{p:[10,-34],d:[0,-1],n:'2'},{p:[-10,26],d:[0,1],n:'3'},{p:[10,26],d:[0,1],n:'4'}],
   dps:[{p:[0,-26],d:[0,-1],n:'L'},{p:[0,26],d:[0,1],n:'⏚'}],
   foto:[{p:[-20,26],d:[0,1],n:'L'},{p:[0,26],d:[0,1],n:'N'},{p:[20,26],d:[0,1],n:'C'}],
+  boia:[{p:[-10,26],d:[0,1],n:'1'},{p:[10,26],d:[0,1],n:'2'}],
   ri:[{p:[-10,-26],d:[0,-1],n:'A1'},{p:[-10,26],d:[0,1],n:'A2'},{p:[10,-26],d:[0,-1],n:'1'},{p:[10,26],d:[0,1],n:'2'}]
 };
 /* Retângulo do corpo de cada peça [x0,y0,x1,y1]: usado para o fio desviar e para a área de toque. */
 const REAL_BOX={src:[-27,-30,27,33],fuse:[-14,-36,14,36],sw:[-17,-29,17,33],lamp:[-14,-28,14,34],
   sw2:[-26,-29,26,33],sw3:[-26,-29,26,33],dr:[-21,-36,21,36],motor:[-41,-30,33,34],kc:[-29,-36,29,36],ft:[-23,-36,23,36],btn:[-17,-29,17,33],
-  sw4:[-17,-41,17,33],dps:[-14,-36,14,36],foto:[-26,-29,26,33],ri:[-21,-36,21,36]};
+  sw4:[-17,-41,17,33],dps:[-14,-36,14,36],foto:[-26,-29,26,33],ri:[-21,-36,21,36],boia:[-22,-34,22,33]};
 
 /* Posição da peça na vista real. As fases foram posicionadas para o diagrama; as peças reais são mais altas
    e os fios saem por baixo, então a altura fica entre 46 e 184 para sobrar canaleta em cima e embaixo. */
@@ -255,6 +256,17 @@ function realComp(c,b,o){
     s=din(21)+'<rect x="-12" y="-9" width="24" height="16" rx="2" style="fill:#d9dee4;stroke:#9aa3ad" stroke-width=".8"/>'+
       '<rect x="'+(on?1:-10)+'" y="-6" width="9" height="10" rx="1.5" style="fill:'+(on?'#f39c12':'#5b646e')+'"/>'+
       '<text x="'+(on?5.5:-5.5)+'" y="0.8" text-anchor="middle" class="ltxt">'+(on?'I':'O')+'</text>'}
+  if(c.type==='boia'){/* boia de nível dentro da caixa d'água: com a caixa vazia a pera desce e o contato fecha */
+    const v=!!c.vazia,nv=v?4:-20;
+    s=shadow(-22,-34,44,52,4)+'<rect x="-22" y="-34" width="44" height="52" rx="4" style="fill:#d7dde3;stroke:#8b939c" stroke-width="1"/>'+
+      '<rect x="-19" y="'+nv+'" width="38" height="'+(15-nv)+'" rx="2" style="fill:#5aa9e6" opacity=".85"/>'+
+      '<path d="M-19 '+nv+' q4.75 -2 9.5 0 t9.5 0 t9.5 0 t9.5 0" style="fill:none;stroke:#cfe8fa" stroke-width="1"/>'+
+      '<path d="M12 -34 V'+(nv-6)+'" style="stroke:#2a2f36" stroke-width="1.4"/>'+
+      '<ellipse cx="12" cy="'+(nv-2)+'" rx="4.5" ry="6.5" style="fill:#eef3f7;stroke:#59616b" stroke-width="1" transform="rotate('+(v?35:-25)+' 12 '+(nv-2)+')"/>'+
+      '<text x="-7" y="-25" text-anchor="middle" class="rtxt" style="font-size:5px">'+(v?'VAZIA':'CHEIA')+'</text>'+
+      '<rect x="-21" y="18" width="42" height="15" rx="2" class="janela"/>'}
+  /* toque no corpo aciona a peça (o interruptor simples já tem a sua área) */
+  if(o.toggle&&typeof ACION!=='undefined'&&ACION[c.type]&&c.type!=='sw'){const r=REAL_BOX[c.type];s+='<rect class="chit" data-sw="'+c.id+'" x="'+r[0]+'" y="'+r[1]+'" width="'+(r[2]-r[0])+'" height="'+(r[3]-r[1]-15)+'"/>'}
   if(o.pickComp&&c.type!=='src'){const r=REAL_BOX[c.type];s+='<rect class="chit" data-c="'+c.id+'" x="'+(r[0]-6)+'" y="'+(r[1]-4)+'" width="'+(r[2]-r[0]+12)+'" height="'+(r[3]-r[1]+8)+'"/>'}
   const [X,Y]=RP(c);return '<g transform="translate('+X+' '+Y+')">'+s+'</g>';
 }
@@ -272,7 +284,7 @@ function realBorneLab(c,k,text){
   if(c.type==='motor')return '<text class="lab bn" x="'+x+'" y="'+(y-11)+'" text-anchor="middle">'+n+'</text>';
   if(c.type==='dr'||c.type==='kc'||c.type==='ft'||c.type==='ri')/* módulo DIN de vários polos: marcação impressa no corpo, junto do borne */
     return '<text class="lab bn bnd" x="'+x+'" y="'+(RP(c)[1]+(d[1]<0?-11:15))+'" text-anchor="middle">'+n+'</text>';
-  if(c.type==='sw'||c.type==='lamp'||c.type==='btn'||c.type==='sw4')/* pares de bornes: nome por fora de cada parafuso */
+  if(c.type==='sw'||c.type==='lamp'||c.type==='btn'||c.type==='sw4'||c.type==='boia')/* pares de bornes: nome por fora de cada parafuso */
     return '<text class="lab bn"'+st+' x="'+(k%2===0?x-9:x+9)+'" y="'+(y+3)+'" text-anchor="'+(k%2===0?'end':'start')+'">'+n+'</text>';
   if(d[0])return '<text class="lab bn"'+st+' x="'+x+'" y="'+(y+(y>200?-10:16))+'" text-anchor="middle">'+n+'</text>';
   /* borne em cima/embaixo: nome do lado de fora do corpo (no disjuntor o corpo é largo) */
@@ -282,12 +294,13 @@ function realBorneLab(c,k,text){
 /* Nome da peça (L1, S1, DJ...) ao lado do corpo. */
 /* O nome procura um lugar livre: à direita, à esquerda, em cima ou embaixo da peça,
    sem cobrir outra peça nem sair da bancada. */
-function realCompLab(c,lab,comps){const r=REAL_BOX[c.type],[X,Y]=RP(c),w=lab.length*7.2+2,h=11;
+function realCompLab(c,lab,comps,usados){usados=usados||[];const r=REAL_BOX[c.type],[X,Y]=RP(c),w=lab.length*7.2+2,h=11;
   const cands=[[X+r[2]+5,Y-6,'start'],[X+r[0]-5,Y-6,'end'],[X,Y+r[1]-5,'middle'],[X,Y+r[3]+12,'middle']];
   if(c.x>250)cands.unshift(cands.splice(1,1)[0]);
   const caixa=([x,y,a])=>{const x0=a==='start'?x:a==='end'?x-w:x-w/2;return [x0,y-h+2,x0+w,y+2]};
-  const bate=b=>b[0]<2||b[2]>338||b[1]<2||b[3]>248||(comps||[]).some(o=>o!==c&&(()=>{const q=realBounds(o,1);return b[0]<q[2]&&b[2]>q[0]&&b[1]<q[3]&&b[3]>q[1]})());
-  const [x,y,a]=cands.find(p=>!bate(caixa(p)))||cands[0];
+  const cruza=(b,q)=>b[0]<q[2]&&b[2]>q[0]&&b[1]<q[3]&&b[3]>q[1];
+  const bate=b=>b[0]<2||b[2]>338||b[1]<2||b[3]>248||(comps||[]).some(o=>o!==c&&cruza(b,realBounds(o,1)))||usados.some(q=>cruza(b,q));
+  const pos=cands.find(p=>!bate(caixa(p)))||cands[0],[x,y,a]=pos;usados.push(caixa(pos));
   return '<text class="lab" x="'+x+'" y="'+y+'" text-anchor="'+a+'">'+lab+'</text>'}
 
 /* Bancada inteira na vista real. Ordem de desenho: peças → fios (chegam por cima até o parafuso) → anilhas
@@ -295,7 +308,7 @@ function realCompLab(c,lab,comps){const r=REAL_BOX[c.type],[X,Y]=RP(c),w=lab.len
 function realBoard(st,o,r){
   let s=realBg();
   st.comps.forEach(c=>{s+=realComp(c,r.lamp[c.id]||0,o)});
-  let rings='',hits='';const taken=[];
+  let rings='',hits='';const taken=[],labs=[];
   st.wires.forEach((w,i)=>{const rt=realWireRoute(st.comps,w,taken),d=ptsPath(rt.pts);
     for(let j=1;j<rt.pts.length;j++)taken.push([rt.pts[j-1],rt.pts[j]]);
     s+='<path class="wo" d="'+d+'"/><path class="w '+(w.cor||'cobre')+'" d="'+d+'"/>'+(w.cor==='terra'?'<path class="w2" d="'+d+'"/>':'');
@@ -308,7 +321,7 @@ function realBoard(st,o,r){
     realTerms(c).forEach((T,k)=>{const t=c.id+'.'+k;let cl='term scr';
       if(o.sel===t)cl+=' sel';if(o.probes&&o.probes[0]===t)cl+=' probe-r';if(o.probes&&o.probes[1]===t)cl+=' probe-b';
       s+=realScrew(cl,T.p)+(o.letters&&o.letters[t]?realBorneLab(c,k,'<tspan class="kl">'+o.letters[t]+'</tspan>'):realBorneLab(c,k))});
-    if(c.type!=='src')s+=realCompLab(c,c.lab||c.id,st.comps);
+    if(c.type!=='src')s+=realCompLab(c,c.lab||c.id,st.comps,labs);
     if(o.tags&&o.tags[c.id]!==undefined){const ok=o.tags[c.id],b=realBounds(c);
       /* selo no canto da peça, para não cobrir fio nem etiqueta */
       s+='<g class="selo '+(ok?'ok':'no')+'" transform="translate('+b[2]+' '+b[1]+')"><circle r="8"/><text y="3.6" text-anchor="middle">'+(ok?'✓':'✗')+'</text><title>'+(ok?'passa':'não passa')+'</title></g>'}

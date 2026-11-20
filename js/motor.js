@@ -3,7 +3,7 @@
    Análise nodal resolve as tensões; brilho = potência relativa a 1 lâmpada sozinha na fonte. */
 const C=(id,type,x,y,v,ex)=>Object.assign({id,type,x,y,v:!!v},ex||{});
 const W=(a,b,e)=>({a,b,e});
-const NAME={src:'rede',lamp:'luminária',sw:'interruptor',fuse:'disjuntor',sw2:'interruptor duplo',sw3:'interruptor paralelo',sw4:'interruptor intermediário',dr:'DR',dps:'DPS',foto:'fotocélula',ri:'relé de impulso',motor:'motor',kc:'contatora',ft:'relé térmico',btn:'botoeira'};
+const NAME={src:'rede',lamp:'luminária',sw:'interruptor',fuse:'disjuntor',sw2:'interruptor duplo',sw3:'interruptor paralelo',sw4:'interruptor intermediário',dr:'DR',dps:'DPS',foto:'fotocélula',ri:'relé de impulso',boia:'boia de nível',motor:'motor',kc:'contatora',ft:'relé térmico',btn:'botoeira'};
 /* Posição dos bornes. Na vista real (GEOM_REAL, ligada por board()) cada peça tem os bornes onde o
    equipamento tem (js/bancada-real.js). O cálculo só usa o número do borne, então é o mesmo nas duas vistas.
    A lâmpada é bocal com 2 bornes (X1/X2), sem PE; só uma luminária com pe:true teria o 3º borne.
@@ -16,7 +16,7 @@ const NAME={src:'rede',lamp:'luminária',sw:'interruptor',fuse:'disjuntor',sw2:'
      dps: L (linha) e PE; não conduz em serviço normal          foto fotocélula: L (fase), N, C (carga); de noite liga L em C
      ri relé de impulso: A1, A2 (bobina), 1, 2 (contato); cada pulso na bobina inverte o contato */
 const SYM_TERMS={sw2:[[-26,0],[26,-14],[26,14]],sw3:[[-26,0],[26,-14],[26,14]],dr:[[-12,-30],[12,-30],[-12,30],[12,30]],
-  sw4:[[-26,-12],[-26,12],[26,-12],[26,12]],dps:[[0,-26],[0,26]],foto:[[-26,0],[0,26],[26,0]],ri:[[-12,-30],[-12,30],[12,-30],[12,30]],
+  boia:[[-26,0],[26,0]],sw4:[[-26,-12],[-26,12],[26,-12],[26,12]],dps:[[0,-26],[0,26]],foto:[[-26,0],[0,26],[26,0]],ri:[[-12,-30],[-12,30],[12,-30],[12,30]],
   motor:[[-26,0],[26,0],[0,26]],kc:[[-30,-30],[-30,30],[0,-30],[0,30],[30,-30],[30,30]],ft:[[-12,-30],[-12,30],[14,-30],[14,30]],btn:[[-26,0],[26,0]]};
 let GEOM_REAL=false;
 function terms(c){const d=26;
@@ -42,6 +42,7 @@ function links(c){
     case 'sw4':return c.pos?[[0,3],[1,2]]:[[0,2],[1,3]];
     case 'foto':return c.noite?[[0,2]]:[];
     case 'ri':return c.on?[[2,3]]:[];
+    case 'boia':return c.vazia?[[0,1]]:[];
   }
   return [];
 }
@@ -91,8 +92,11 @@ function solve(comps,wires,_fundo){
     const aberto=solveOnce(comps.map(x=>x===d?Object.assign({},x,{trip:true}):x),wires);
     const jusante=t=>out.vAt(t)>1&&aberto.vAt(t)<=1;
     let fuga=out.net(d.id+'.3')===out.PE;
+    /* carga alimentada pela saída do DR cuja volta não passa pelo DR (vai direto ao neutro da rede ou ao PE):
+       a corrente de ida e a de volta ficam diferentes e o DR atua */
+    const foraDoDR=t=>aberto.net(t)===aberto.N||aberto.net(t)===aberto.PE;
     comps.forEach(l=>loadsOf(l).forEach(([a,b])=>{const ta=l.id+'.'+a,tb=l.id+'.'+b;
-      if((out.net(ta)===out.PE&&jusante(tb))||(out.net(tb)===out.PE&&jusante(ta)))fuga=true}));
+      if((jusante(ta)&&foraDoDR(tb))||(jusante(tb)&&foraDoDR(ta)))fuga=true}));
     if(fuga){d.trip=true;d.porFuga=true;return solve(comps,wires,(_fundo||0)+1)}
   }
   return out;
@@ -106,16 +110,19 @@ function wirePath(comps,w){const [x1,y1]=tpos(comps,w.a),[x2,y2]=tpos(comps,w.b)
   if(w.e==='h')return 'M'+x1+' '+y1+' H'+x2+' V'+y2; if(w.e==='v')return 'M'+x1+' '+y1+' V'+y2+' H'+x2;
   return 'M'+x1+' '+y1+' L'+x2+' '+y2}
 /* Símbolo das peças da Oficina (Diagrama): caixa com a letra de identificação e os condutores até os bornes. */
-const SYM_TXT={sw2:'S 2×',sw3:'S ⇅',sw4:'S ⤨',dr:'DR',dps:'DPS',foto:'FC',ri:'RI',motor:'M',kc:'K',ft:'FT',btn:'B'};
+/* peças que o aluno aciona com um toque (interruptores, botoeiras, DR/relé em teste, fotocélula, boia) */
+const ACION={sw:1,sw2:1,sw3:1,sw4:1,btn:1,dr:1,ft:1,foto:1,boia:1};
+const SYM_TXT={boia:'BÓIA',sw2:'S 2×',sw3:'S ⇅',sw4:'S ⤨',dr:'DR',dps:'DPS',foto:'FC',ri:'RI',motor:'M',kc:'K',ft:'FT',btn:'B'};
 function symGeneric(c,b,o){
   const hw=c.type==='kc'?22:c.type==='motor'?14:16,hh=c.type==='kc'||c.type==='dr'||c.type==='ft'||c.type==='ri'?18:12;
   let s=SYM_TERMS[c.type].map(([x,y])=>{const ex=Math.max(-hw,Math.min(hw,x)),ey=Math.max(-hh,Math.min(hh,y));return '<line class="sym" x1="'+x+'" y1="'+y+'" x2="'+ex+'" y2="'+ey+'"/>'}).join('');
-  const ativo=c.type==='motor'?b>0.04:c.type==='kc'||c.type==='ri'?!!c.on:c.type==='foto'?!!c.noite:c.type==='dps'?false:c.type==='dr'||c.type==='ft'?!c.trip:c.type==='btn'?!!c.pressed:c.type==='sw2'?(c.a||c.b):!!c.pos;
+  const ativo=c.type==='motor'?b>0.04:c.type==='kc'||c.type==='ri'?!!c.on:c.type==='foto'?!!c.noite:c.type==='boia'?!!c.vazia:c.type==='dps'?false:c.type==='dr'||c.type==='ft'?!c.trip:c.type==='btn'?!!c.pressed:c.type==='sw2'?(c.a||c.b):!!c.pos;
   const shape=c.type==='motor'?'<circle r="'+hw+'" style="fill:'+(ativo?'color-mix(in srgb,var(--amber) 35%,var(--panel2))':'var(--panel2)')+';stroke:var(--ink)" stroke-width="2.5"/>'
     :'<rect x="'+(-hw)+'" y="'+(-hh)+'" width="'+2*hw+'" height="'+2*hh+'" rx="3" style="fill:'+(ativo?'color-mix(in srgb,var(--terra) 30%,var(--panel2))':'var(--panel2)')+';stroke:var(--ink)" stroke-width="2"/>';
   const txt=c.type==='btn'?(c.nf?'B NF':'B NA'):SYM_TXT[c.type];
   s+=shape+'<text y="4" text-anchor="middle" style="fill:var(--ink);font:900 '+(txt.length>2?9:12)+'px var(--body)">'+txt+'</text>';
   if(o.pickComp)s+='<rect class="chit" data-c="'+c.id+'" x="-28" y="-24" width="56" height="48"/>';
+  else if(o.toggle&&ACION[c.type])s+='<rect class="chit" data-sw="'+c.id+'" x="'+(-hw-4)+'" y="'+(-hh-4)+'" width="'+(2*hw+8)+'" height="'+(2*hh+8)+'"/>';
   return '<g transform="translate('+c.x+' '+c.y+')">'+s+'</g>';
 }
 function compSVG(c,b,o){
@@ -211,7 +218,9 @@ function entrada(estado){
 function statusChips(st,r,sempre){
   if(r.short)return '<div class="status"><span class="chip sc">⚡ Curto-circuito!</span></div>';
   if(!sempre&&typeof vistaReal==='function'&&vistaReal())return '';
-  return '<div class="status">'+st.comps.filter(c=>c.type==='lamp').map(c=>{const b=r.lamp[c.id];return '<span class="chip'+(b>0.04?' lit':'')+'">'+c.id+': '+(L()?bright(b):bright(b)+(b>0.04?' · '+Math.round(b*100)+'%':''))+'</span>'}).join('')+'</div>';
+  return '<div class="status">'+st.comps.filter(c=>c.type==='lamp'||c.type==='motor').map(c=>{const b=r.lamp[c.id];
+    if(c.type==='motor')return '<span class="chip'+(b>0.04?' lit':'')+'">'+c.id+': '+(b>0.04?'girando':'parado')+'</span>';
+    return '<span class="chip'+(b>0.04?' lit':'')+'">'+c.id+': '+(L()?bright(b):bright(b)+(b>0.04?' · '+Math.round(b*100)+'%':''))+'</span>'}).join('')+'</div>';
 }
 function svgPoint(svg,ev){const p=svg.createSVGPoint();p.x=ev.clientX;p.y=ev.clientY;return p.matrixTransform(svg.getScreenCTM().inverse())}
 

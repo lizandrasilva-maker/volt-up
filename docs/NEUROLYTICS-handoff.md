@@ -149,13 +149,27 @@ Os scripts são clássicos (sem `import`), então tudo é global e a ordem no `i
 
 ## Capítulos e bibliotecas de peças (decisão da Liz, 20/11/2026)
 Cada capítulo é uma história própria e tem a sua biblioteca de peças (`BIBLIOTECAS` em `js/fases.js`; na Oficina Livre ficam na "🧰 Caixa de ferramentas").
-| Cap. | História | Biblioteca | Situação |
-|---|---|---|---|
-| 1 | A Casa Acesa · fundamentos | ⚡ Fundamentos: lâmpada, interruptor, disjuntor | jogável |
-| 2 | O Quadro da Dona Fátima · predial | 🏠 Predial: interruptor duplo, paralelo (three-way), intermediário (four-way), DR, DPS, fotocélula, relé de impulso, pulsador | peças prontas na Oficina; fases por escrever |
-| 3 | Chão de Fábrica · industrial | 🏭 Industrial: motor monofásico, contatora (A1-A2, 1-2, 13-14), relé térmico (1-2, 95-96), botoeiras NA/NF | peças monofásicas prontas; fases por escrever |
-| 4 | Sol no Telhado | (CC fotovoltaica) | por fazer |
-| 5 | Ventos do Litoral | (eólica) | por fazer |
+| Cap. | História e personagens | Fases | Biblioteca | Situação |
+|---|---|---|---|---|
+| 1 | **A Casa Acesa** · Mestre Chico (mentor), Dona Fátima | 9 | ⚡ Fundamentos: lâmpada, interruptor, disjuntor | jogável |
+| 2 | **Do Quadro ao Condomínio** · Eng.ª Lia (RT, mentora), Dona Socorro (síndica do Condomínio Mandacaru), Seu Raimundo (porteiro); abre no quadro da Dona Fátima | 7: O Quadro (quiz), Quadro Novo (DG+DR+DJs), Luz da Escada (three-way), Corredor Comprido (four-way), Luz da Garagem (fotocélula), Hall com Pulsadores (relé de impulso), Raio na Serra (quiz DPS) | 🏠 Predial | jogável |
+| 3 | **Chão de Fábrica** · Seu Damião (dono da beneficiadora de castanha Caju Dourado), Rayane (técnica de manutenção, mentora) | 5: Primeiro Turno (quiz NR-10/NR-12), Partida Direta, Sobrecarga! (prever), Caixa d'Água (boia), Fim de Turno (quiz reversão e Y-Δ) | 🏭 Industrial (+ boia de nível) | jogável; reversão e Y-Δ "em breve" (trifásico) |
+| 4 | **Sol no Telhado** · Professora Iara, escola rural do Assentamento Boa Esperança | previstas | (CC fotovoltaica) | enredo definido |
+| 5 | **Ventos do Litoral** · Seu Zé Maré, colônia de pescadores de Icapuí | previstas | (eólica) | enredo definido |
+
+- Um capítulo só abre quando o anterior estiver completo no nível atual (no modo teste, tudo abre).
+- Retratos dos personagens novos são SVG no código (`NPC` em `js/historia.js`); dá para trocar por arte do Canva depois, como no Chico e na Fátima. As cenas dos capítulos 2 e 3 ainda usam o fundo da oficina: falta arte do condomínio e da fábrica.
+- Checagens das fases novas em `js/conteudo.js`: `quadroCheck`, `comandoCheck` (three/four-way: qualquer interruptor inverte a luz e a luz apagada fica sem tensão), `fotoCheck`, `impulsoCheck`, `partidaCheck` (liga, selo, desliga, relé térmico), `boiaCheck`. Gabaritos do modo teste em `TESTE_SOL` (`js/teste.js`). Todos conferidos em teste automático.
+- Peças acionáveis com um toque também dentro das fases (`acionarPeca()` em `js/fases.js`): interruptores, botoeiras (apertam e soltam), DR/relé térmico (testar/rearmar), fotocélula (dia/noite), boia (vazia/cheia).
+
+### Laboratório de componentes para o Cap. 1 (próximo passo)
+Base: relatório "Bancada de teste de componentes" (20/11/2026), feito na extensão do Claude no simulador de referência. Ideia: transformar o "Mestre Ohm" (hoje só quiz) numa bancada de medição por contato.
+- Multímetro com seletor por passos (Ω 200 Ω–20 MΩ, V⎓, V~, A⎓, diodo/continuidade, capacitância) e ponteiras arrastáveis com "ímã" no terminal mais próximo.
+- Bornes funcionais (VΩ, mA, 20A): ponta no borne de corrente medindo tensão dá aviso e, no desafio, queima o fusível interno do multímetro.
+- Tabela de respostas por peça, por par de terminais e por função: resistor (valor ± tolerância, OL em faixa menor), potenciômetro (A-cursor + cursor-B = total), capacitor (capacitância), LED (≈1,8 V e acende; invertido OL), diodo (0,5–0,7 V), fusível (≈0 Ω e bip; queimado OL). Valores "típicos" do relatório (transistores, MOSFET, TRIAC) devem ser conferidos com peça real.
+- Resistor com código de cores configurável; trocar de faixa mostra OL / 5,02 kΩ / 0,005 MΩ (ensina escala).
+- Desafios com nota: achar o ânodo, conferir o 470 Ω pelas cores, descobrir a peça com defeito.
+- Lei de Ohm com pilha/fonte CC (CC real permitida pela regra de conteúdo): medir V, R e conferir I = V/R.
 
 Lógica das peças (em `solve()`, `js/motor.js`): `links()` diz quais bornes cada contato liga por dentro; `loadsOf()` diz quais são cargas. A contatora energiza quando a bobina tem tensão e o selo (13-14) a mantém; o relé de impulso inverte a cada pulso; o DR desarma com fuga para o PE ou neutro unido ao PE depois dele; a fotocélula liga L em C à noite. Testado: partida direta com selo e relé térmico, DR com fuga, three-way + four-way, relé de impulso, fotocélula.
 

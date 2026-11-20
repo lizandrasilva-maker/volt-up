@@ -58,10 +58,26 @@ let benchY=0;
 function keepScroll(again){if(again)window.scrollTo(0,benchY);benchY=window.scrollY}
 window.addEventListener('scroll',()=>{benchY=window.scrollY},{passive:true});
 
+/* Acionar a peça com um toque no corpo: interruptores mudam de posição, botoeira aperta e solta sozinha,
+   DR e relé térmico disparam (teste/sobrecarga) ou rearmam, fotocélula vira dia/noite, boia enche/esvazia.
+   lx = posição do toque em relação ao centro (no interruptor duplo, esquerda = seção 1).
+   depois() redesenha quando a botoeira solta; BANCADA_ID evita redesenhar uma tela que já foi trocada. */
+let BANCADA_ID=0;
+function acionarPeca(c,lx,depois){
+  if(c.type==='sw')flipSwitch(c);
+  else if(c.type==='sw2'){const k=lx<0?'a':'b';c[k]=!c[k];SW_FLIP=c.id+'.'+k}
+  else if(c.type==='sw3'||c.type==='sw4'){c.pos=c.pos?0:1;SW_FLIP=c.id}
+  else if(c.type==='foto')c.noite=!c.noite;
+  else if(c.type==='boia')c.vazia=!c.vazia;
+  else if(c.type==='dr'){c.trip=!c.trip;c.porFuga=false}
+  else if(c.type==='ft')c.trip=!c.trip;
+  else if(c.type==='btn'){c.pressed=true;const id=BANCADA_ID;setTimeout(()=>{c.pressed=false;if(id===BANCADA_ID&&document.querySelector('.bench'))depois&&depois()},700)}
+}
+
 /* ---------- Bancada: montar ---------- */
 function runBuild(p,task){
   const st={comps:clone(task.comps),wires:[]};let sel=null,tries=0,msg=null,won=false,cor='fase';
-  const zm=benchZoom();let drawn=false;
+  const zm=benchZoom();let drawn=false;BANCADA_ID++;
   const render=()=>{
     const r=solve(st.comps,st.wires),R=vistaReal();
     const help='Toque em dois '+(R?'parafusos':'pontos ⚪')+' para ligar um fio.'+(L()?' Toque no fio para tirar.':'');
@@ -75,7 +91,8 @@ function runBuild(p,task){
     const ts=document.getElementById('tSol');if(ts)ts.onclick=()=>{st.wires=testeSol(p.id);sel=null;msg=null;render()};
     app.querySelectorAll('[data-vista]').forEach(b=>b.onclick=()=>{setVista(b.dataset.vista==='real');render()});
     app.querySelectorAll('[data-cor]').forEach(b=>b.onclick=()=>{cor=b.dataset.cor;render()});
-    svg.querySelectorAll('[data-sw]').forEach(h=>h.addEventListener('click',()=>{if(zm.busy())return;const c=st.comps.find(x=>x.id===h.dataset.sw);flipSwitch(c);msg=null;render()}));
+    svg.querySelectorAll('[data-sw]').forEach(h=>h.addEventListener('click',ev=>{if(zm.busy())return;const c=st.comps.find(x=>x.id===h.dataset.sw);
+      acionarPeca(c,svgPoint(svg,ev).x-(R?RP(c)[0]:c.x),render);msg=null;render()}));
     svg.querySelectorAll('[data-w]').forEach(h=>h.addEventListener('click',()=>{if(zm.busy())return;st.wires.splice(+h.dataset.w,1);msg=null;render()}));
     svg.querySelectorAll('[data-t]').forEach(h=>h.addEventListener('pointerdown',e=>{
       e.preventDefault();const a=h.dataset.t,p0=tpos(st.comps,a);let line=null;
@@ -87,7 +104,10 @@ function runBuild(p,task){
       window.addEventListener('pointermove',move);window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up);
     }));
     const c=document.getElementById('clr');if(c)c.onclick=()=>{st.wires=[];sel=null;msg=null;render()};
-    const k=document.getElementById('chk');if(k)k.onclick=()=>{tries++;const m=task.check(st)||normCheck(st)||colorCheck(st);if(m){msg=m}else{won=true;st.comps.forEach(c=>{if(c.type==='sw')c.closed=true});/* liga tudo: a luz acende como recompensa */msg='Testei todas as posições dos interruptores e conferi as cores: aprovado!';S.xp+=tries===1?30:15;save()}render()};
+    const k=document.getElementById('chk');if(k)k.onclick=()=>{tries++;const m=task.check(st)||normCheck(st)||colorCheck(st);if(m){msg=m}else{won=true;st.comps.forEach(c=>{if(c.type==='sw')c.closed=true});/* liga tudo: a luz acende como recompensa */
+      /* comandos: um toque no LIGA / pulsador e a caixa vazia, para o motor girar e a luz do relé acender */
+      st.comps.forEach(c=>{if(c.type==='ft'||c.type==='dr')c.trip=false;if(c.type==='boia')c.vazia=true;if(c.type==='foto')c.noite=true});
+      st.comps.filter(c=>c.type==='btn'&&!c.nf).slice(0,1).forEach(c=>{c.pressed=true;solve(st.comps,st.wires);c.pressed=false;solve(st.comps,st.wires)});msg='Testei todas as posições dos interruptores e conferi as cores: aprovado!';S.xp+=tries===1?30:15;save()}render()};
     const e=document.getElementById('end');if(e)e.onclick=()=>finish(p,Math.max(1,4-tries),3);
   };
   const addWire=(a,b)=>{sel=null;msg=null;if(!st.wires.some(w=>(w.a===a&&w.b===b)||(w.a===b&&w.b===a)))st.wires.push(Object.assign(W(a,b),{cor}));render()};
@@ -178,7 +198,7 @@ const BIBLIOTECAS={
   fundamentos:{nome:'⚡ Fundamentos',pecas:[['lamp','💡','Lâmpada'],['sw','🔘','Interruptor simples'],['fuse','🎚️','Disjuntor']]},
   predial:{nome:'🏠 Predial',pecas:[['sw2','🔘','Interruptor duplo'],['sw3','🔀','Interruptor paralelo'],['sw4','✖️','Interruptor intermediário'],
     ['dr','🛡️','DR (diferencial)'],['dps','⚡','DPS (surto)'],['foto','🌙','Fotocélula'],['ri','🔁','Relé de impulso'],['btnNA','🟢','Pulsador (NA)']]},
-  industrial:{nome:'🏭 Industrial',pecas:[['motor','⚙️','Motor monofásico'],['kc','🧲','Contatora'],['ft','🌡️','Relé térmico'],['btnNA','🟢','Botoeira liga (NA)'],['btnNF','🔴','Botoeira desliga (NF)']]}
+  industrial:{nome:'🏭 Industrial',pecas:[['motor','⚙️','Motor monofásico'],['kc','🧲','Contatora'],['ft','🌡️','Relé térmico'],['btnNA','🟢','Botoeira liga (NA)'],['btnNF','🔴','Botoeira desliga (NF)'],['boia','💧','Boia de nível']]}
 };
 
 /* ---------- Oficina livre (sandbox) ---------- */
@@ -189,20 +209,10 @@ function runSandbox(){
   sb.wires=sb.wires.filter(w=>[w.a,w.b].every(t=>{const [id,k]=t.split('.'),c=sb.comps.find(x=>x.id===id);return c&&+k<terms(c).length}));
   sb.comps.forEach(c=>{if(c.type==='btn')c.pressed=false});
   let tool='build',cor='fase',sel=null,selC=null,probes=[],reading=null,msg=null,sure=false,box=false,cat='fundamentos';
-  const zm=benchZoom();let drawn=false;
+  const zm=benchZoom();let drawn=false;BANCADA_ID++;
   const persist=()=>{S.sandbox=sb;save()};
   const SPOTS=[[115,60],[185,60],[255,60],[308,60],[115,165],[185,165],[255,165],[308,165],[150,112],[230,112],[290,112]];
-  /* Acionar a peça (toque no corpo): interruptores mudam de posição, botoeira aperta e solta,
-     DR e relé térmico disparam (teste/sobrecarga) ou rearmam. lx = posição do toque em relação ao centro. */
-  const acionar=(c,lx)=>{
-    if(c.type==='sw')flipSwitch(c);
-    else if(c.type==='sw2'){const k=lx<0?'a':'b';c[k]=!c[k];SW_FLIP=c.id+'.'+k}
-    else if(c.type==='sw3'||c.type==='sw4'){c.pos=c.pos?0:1;SW_FLIP=c.id}
-    else if(c.type==='foto')c.noite=!c.noite;
-    else if(c.type==='dr'){c.trip=!c.trip;c.porFuga=false}
-    else if(c.type==='ft')c.trip=!c.trip;
-    else if(c.type==='btn'){c.pressed=true;setTimeout(()=>{c.pressed=false;persist();if(document.getElementById('bw'))render()},700)}
-  };
+  const acionar=(c,lx)=>acionarPeca(c,lx,()=>{persist();render()});
   const getSvg=()=>document.querySelector('#bench svg');
   const sc=()=>sb.comps.find(c=>c.id===selC);
   const benchHTML=()=>{const r=solve(sb.comps,sb.wires);return benchWrap(board(sb,{res:r,sel,selC,move:tool==='build',pickTerm:true,pickWire:tool==='build',probes:tool==='meter'?probes:null,real:vistaReal(),vb:zm.vb()}),'bench',zm)+statusChips(sb,r)};
@@ -210,15 +220,15 @@ function runSandbox(){
   const add=key=>{
     if(sb.comps.length>=12){msg={bad:1,t:'Bancada cheia: no máximo 11 peças além da rede.'};render();return}
     const type=key.startsWith('btn')?'btn':key;
-    const pre={lamp:'L',sw:'S',sw2:'SD',sw3:'SP',sw4:'SI',fuse:'DJ',dr:'DR',dps:'DPS',foto:'FC',ri:'RI',motor:'M',kc:'K',ft:'FT',btnNA:'BL',btnNF:'BD'}[key];let n=1;while(sb.comps.some(c=>c.id===pre+n))n++;
-    const ex={sw:{closed:false},sw2:{a:false,b:false},sw3:{pos:0},sw4:{pos:0},foto:{noite:false},btnNA:{nf:false},btnNF:{nf:true}}[key]||{};
+    const pre={lamp:'L',sw:'S',sw2:'SD',sw3:'SP',sw4:'SI',fuse:'DJ',dr:'DR',dps:'DPS',foto:'FC',ri:'RI',boia:'BO',motor:'M',kc:'K',ft:'FT',btnNA:'BL',btnNF:'BD'}[key];let n=1;while(sb.comps.some(c=>c.id===pre+n))n++;
+    const ex={sw:{closed:false},sw2:{a:false,b:false},sw3:{pos:0},sw4:{pos:0},foto:{noite:false},boia:{vazia:true},btnNA:{nf:false},btnNF:{nf:true}}[key]||{};
     const spot=SPOTS.find(([x,y])=>!sb.comps.some(c=>Math.hypot(c.x-x,c.y-y)<60))||[185,112];
     sb.comps.push(C(pre+n,type,spot[0],spot[1],0,ex));selC=pre+n;msg=null;persist();render()};
   const addWire=(a,b)=>{sel=null;msg=null;if(a.split('.')[0]!==b.split('.')[0]||true){if(!sb.wires.some(w=>(w.a===a&&w.b===b)||(w.a===b&&w.b===a)))sb.wires.push(Object.assign(W(a,b),{cor}))}persist();render()};
   const render=()=>{
     const c=sc();
     /* botões de ação da peça selecionada */
-    const acoes=c?({sw:[['x',c.closed?'Abrir':'Fechar']],sw2:[['-1','Seção 1'],['1','Seção 2']],sw3:[['x','Inverter']],sw4:[['x','Inverter']],foto:[['x',c.noite?'Virar dia':'Virar noite']],dr:[['x',c.trip?'Rearmar':'Testar']],
+    const acoes=c?({sw:[['x',c.closed?'Abrir':'Fechar']],sw2:[['-1','Seção 1'],['1','Seção 2']],sw3:[['x','Inverter']],sw4:[['x','Inverter']],foto:[['x',c.noite?'Virar dia':'Virar noite']],boia:[['x',c.vazia?'Encher a caixa':'Esvaziar a caixa']],dr:[['x',c.trip?'Rearmar':'Testar']],
       ft:[['x',c.trip?'Rearmar':'Simular sobrecarga']],btn:[['x','Apertar']]}[c.type]||[]):[];
     const drFuga=sb.comps.find(x=>x.type==='dr'&&x.trip&&x.porFuga);
     frame({nome:'Oficina Livre'},

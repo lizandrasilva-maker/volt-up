@@ -72,6 +72,24 @@ const TESTE_SOL={
   'paralelo:full':[['B.0','S0.0','fase'],['S0.1','L1.0','retorno'],['S0.1','S2.0','retorno'],['S2.1','L2.0','retorno'],['L1.1','B.1','neutro'],['L2.1','B.1','neutro']]
 };
 TESTE_SOL['primeiro:full']=TESTE_SOL['primeiro:moderado'];
+/* capítulo 2 */
+Object.assign(TESTE_SOL,{
+  'quadronovo:leve':[['B.0','DG.0','fase'],['DG.1','DR.0','fase'],['B.1','DR.1','neutro'],['DR.2','L1.0','fase'],['L1.1','DR.3','neutro']],
+  'quadronovo:moderado':[['B.0','DG.0','fase'],['DG.1','DR.0','fase'],['B.1','DR.1','neutro'],['DR.2','D1.0','fase'],['DR.2','D2.0','fase'],['D1.1','L1.0','fase'],['D2.1','L2.0','fase'],['L1.1','DR.3','neutro'],['L2.1','DR.3','neutro']],
+  'escada:leve':[['B.0','SP1.0','fase'],['SP1.1','SP2.1','retorno'],['SP1.2','SP2.2','retorno'],['SP2.0','L1.0','retorno'],['L1.1','B.1','neutro']],
+  'corredor:leve':[['B.0','SP1.0','fase'],['SP1.1','SI.0','retorno'],['SP1.2','SI.1','retorno'],['SI.2','SP2.1','retorno'],['SI.3','SP2.2','retorno'],['SP2.0','L1.0','retorno'],['L1.1','B.1','neutro']],
+  'garagem:leve':[['B.0','FC.0','fase'],['B.1','FC.1','neutro'],['FC.2','L1.0','retorno'],['L1.1','B.1','neutro']],
+  'impulso:leve':[['B.0','P1.0','fase'],['P1.1','RI.0','retorno'],['RI.1','B.1','neutro'],['B.0','RI.2','fase'],['RI.3','L1.0','retorno'],['L1.1','B.1','neutro']],
+  'impulso:moderado':[['B.0','P1.0','fase'],['B.0','P2.0','fase'],['P1.1','RI.0','retorno'],['P2.1','RI.0','retorno'],['RI.1','B.1','neutro'],['B.0','RI.2','fase'],['RI.3','L1.0','retorno'],['L1.1','B.1','neutro']],
+  /* capítulo 3 */
+  'partida:leve':[['B.0','BD.0','fase'],['BD.1','BL.0','fase'],['BL.1','K.0','retorno'],['K.1','B.1','neutro'],['BD.1','K.4','fase'],['K.5','K.0','retorno'],['B.0','K.2','fase'],['K.3','M.0','retorno'],['M.1','B.1','neutro'],['M.2','B.2','terra']],
+  'partida:moderado':[['B.0','FT.2','fase'],['FT.3','BD.0','fase'],['BD.1','BL.0','fase'],['BL.1','K.0','retorno'],['K.1','B.1','neutro'],['BD.1','K.4','fase'],['K.5','K.0','retorno'],['B.0','K.2','fase'],['K.3','FT.0','retorno'],['FT.1','M.0','retorno'],['M.1','B.1','neutro'],['M.2','B.2','terra']],
+  'partida:full':[['B.0','DJ.0','fase'],['DJ.1','FT.2','fase'],['FT.3','BD.0','fase'],['BD.1','BL.0','fase'],['BL.1','K.0','retorno'],['K.1','B.1','neutro'],['BD.1','K.4','fase'],['K.5','K.0','retorno'],['DJ.1','K.2','fase'],['K.3','FT.0','retorno'],['FT.1','M.0','retorno'],['M.1','B.1','neutro'],['M.2','B.2','terra']],
+  'caixa:leve':[['B.0','BO.0','fase'],['BO.1','M.0','retorno'],['M.1','B.1','neutro'],['M.2','B.2','terra']],
+  'caixa:moderado':[['B.0','BO.0','fase'],['BO.1','K.0','retorno'],['K.1','B.1','neutro'],['B.0','K.2','fase'],['K.3','M.0','retorno'],['M.1','B.1','neutro'],['M.2','B.2','terra']]
+});
+['escada','corredor','garagem'].forEach(f=>{TESTE_SOL[f+':moderado']=TESTE_SOL[f+':full']=TESTE_SOL[f+':leve']});
+TESTE_SOL['quadronovo:full']=TESTE_SOL['quadronovo:moderado'];TESTE_SOL['impulso:full']=TESTE_SOL['impulso:moderado'];TESTE_SOL['caixa:full']=TESTE_SOL['caixa:moderado'];
 function testeSol(pid){const s=TESTE_SOL[pid+':'+S.mode];return s?s.map(([a,b,cor])=>Object.assign(W(a,b),{cor})):null}
 
 /* ---------- Roteiro: a história inteira em texto, com atalho para ver cada cena ou jogar a fase ---------- */

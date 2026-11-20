@@ -20,13 +20,19 @@ function showChar(){
 function showMap(){
   setMode();const m=MODES[S.mode];
   const ch=CHAPTERS.find(c=>c.id===S.chap)||CHAPTERS[0];
+  /* um capítulo só abre quando o anterior (jogável) estiver completo no nível atual; no modo teste tudo abre */
+  const completo=c=>!c.soon&&c.fases.every(id=>S.done[S.mode+':'+id]);
+  const fechado=c=>{const k=CHAPTERS.indexOf(c);return !window.VOLT_TESTE&&!c.soon&&k>0&&!completo(CHAPTERS[k-1])};
   const seenKey=S.mode+':'+ch.id+':intro';
-  if(!ch.soon&&ch.intro&&!S.seen[seenKey]){S.seen[seenKey]=1;save();showScene(ch.intro,showMap);return}
-  const tabs='<div class="chapters">'+CHAPTERS.map((c,k)=>'<button class="btn" data-ch="'+c.id+'" aria-pressed="'+(c.id===ch.id)+'">Cap. '+(k+1)+(c.soon?' 🔒':'')+'</button>').join('')+'</div>';
+  if(!ch.soon&&!fechado(ch)&&ch.intro&&!S.seen[seenKey]){S.seen[seenKey]=1;save();showScene(ch.intro,showMap);return}
+  const tabs='<div class="chapters">'+CHAPTERS.map((c,k)=>'<button class="btn" data-ch="'+c.id+'" aria-pressed="'+(c.id===ch.id)+'">Cap. '+(k+1)+(c.soon||fechado(c)?' 🔒':'')+'</button>').join('')+'</div>';
   let body;
   if(ch.soon){
-    body='<div class="soonbox"><span class="eyebrow">Em construção</span><h2>'+ch.nome+'</h2><span>Tema: '+ch.tema+'</span>'+
-      (ch.previstas?'<ul class="prev">'+ch.previstas.map(f=>'<li>'+f+'</li>').join('')+'</ul><span>As primeiras peças deste capítulo já estão na Oficina Livre.</span>':'<span>O roteiro deste capítulo ainda vai ser escrito.</span>')+'</div>';
+    body='<div class="soonbox"><span class="eyebrow">Em construção</span><h2>'+ch.nome+'</h2><span>Tema: '+ch.tema+'</span>'+(ch.enredo?'<span>'+ch.enredo+'</span>':'')+
+      (ch.previstas?'<ul class="prev">'+ch.previstas.map(f=>'<li>'+f+'</li>').join('')+'</ul>':'<span>O roteiro deste capítulo ainda vai ser escrito.</span>')+'</div>';
+  }else if(fechado(ch)){
+    const k=CHAPTERS.indexOf(ch);
+    body='<div class="soonbox"><span class="eyebrow">🔒 Bloqueado</span><h2>'+ch.nome+'</h2><span>Tema: '+ch.tema+'</span><span>Complete o Capítulo '+k+' ('+CHAPTERS[k-1].nome+') para abrir esta história.</span></div>';
   }else{
     let nextFound=false;
     const ids=ch.fases;
@@ -36,12 +42,14 @@ function showMap(){
       /* fase bloqueada: só o nome e o cadeado, sem subtítulo nem tipo */
       return '<button class="node '+cls+'" data-i="'+PHASES.indexOf(p)+'"><span class="dot">'+icon(p.ic)+'</span><span class="tt"><b>'+p.nome+'</b>'+(open?'<small>'+p.sub+'</small><span class="kind">'+p.kind+'</span>':'')+'</span>'+(done?stars(done):open?'':'<span class="cad" aria-label="bloqueada">🔒</span>')+'</button>';
     }).join('');
-    body='<div class="map">'+nodes+'</div><button class="btn ghost sm" id="replay">▶ Rever a abertura do capítulo</button>';
+    body='<div class="map">'+nodes+'</div>'+
+      (ch.breve?'<div class="soonbox"><span class="eyebrow">Em breve neste capítulo</span><ul class="prev">'+ch.breve.map(f=>'<li>'+f+'</li>').join('')+'</ul></div>':'')+
+      '<button class="btn ghost sm" id="replay">▶ Rever a abertura do capítulo</button>';
   }
-  const all=!ch.soon&&ch.fases.every(id=>S.done[S.mode+':'+id]);
+  const all=!ch.soon&&!fechado(ch)&&ch.fases.every(id=>S.done[S.mode+':'+id]);
   const tb=typeof testeBarHTML==='function'?testeBarHTML():'';
   /* o balão do personagem só aparece quando tem algo a dizer (capítulo completo) */
-  app.innerHTML=hud()+tb+(all?talk('Capítulo completo! Bora pro próximo quando sair.'):'')+tabs+
+  app.innerHTML=hud()+tb+(all?talk(CHAPTERS[CHAPTERS.indexOf(ch)+1]&&!CHAPTERS[CHAPTERS.indexOf(ch)+1].soon?'Capítulo completo! O próximo já está aberto lá em cima.':'Capítulo completo! O próximo está em construção.'):'')+tabs+
   '<div class="chcard'+(ch.id==='cap1'?' art':'')+'"><span class="eyebrow">Capítulo '+(CHAPTERS.indexOf(ch)+1)+' · '+ch.tema+'</span><div class="world"><h2>'+ch.nome+'</h2><span class="tag" style="--c:'+m.c+'">'+m.nome+'</span></div></div>'+body+
   '<button class="btn" id="sandbox">🛠 Oficina livre <small class="muted">· monte o que quiser</small></button>'+
   /* o resto fica recolhido para o mapa mostrar só o caminho das fases */
