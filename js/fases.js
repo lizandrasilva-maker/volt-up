@@ -53,9 +53,9 @@ function runBuild(p,task){
   const st={comps:clone(task.comps),wires:[]};let sel=null,tries=0,msg=null,won=false,cor='fase';
   /* Vista real (Etapa 1 do plano de realismo): por enquanto só no Primeiro Circuito. Zoom em todas as bancadas de montar. */
   const realOk=p.id==='primeiro',zm=benchZoom();let drawn=false;
-  const help=L()?'Toque num ponto ⚪ e depois em outro para ligar um fio (ou arraste). Toque no fio para tirar. Toque no interruptor para abrir e fechar.':'Toque/arraste entre terminais para ligar. Toque no fio para remover. Toque na chave para comutar e testar ao vivo.';
   const render=()=>{
     const r=solve(st.comps,st.wires),R=realOk&&vistaReal();
+    const help=L()?'Toque num '+(R?'parafuso 🔩':'ponto ⚪')+' e depois em outro para ligar um fio (ou arraste). Toque no fio para tirar. Toque no interruptor para abrir e fechar.':'Toque/arraste entre '+(R?'bornes':'terminais')+' para ligar. Toque no fio para remover. Toque na chave para comutar e testar ao vivo.';
     frame(p,'<div class="goal"><span class="gi">MISSÃO</span><span>'+task.goal+(L()?'<br><small>Cores: fase vermelha · neutro azul · terra verde-amarelo. Na vida real, só eletricista mexe na rede, com tudo desligado.</small>':' Cores da NBR 5410: neutro azul-claro, PE verde-amarelo.')+'</span></div>'+
       realHTML(task.real)+(won?'':palette(cor))+entrada()+benchBar(zm,realOk)+'<div class="bench">'+board(st,{res:r,sel,pickTerm:!won,pickWire:!won,toggle:true,real:R,vb:zm.vb()})+'</div>'+statusChips(st,r)+
       (msg?'<div class="fb '+(won?'good':'bad')+'">'+msg+'</div>':'<p class="help">'+help+'</p>')+
@@ -64,6 +64,7 @@ function runBuild(p,task){
     keepScroll(drawn);drawn=true;
     const svg=app.querySelector('.bench svg');
     zm.bind(app.querySelector('.bench'),app);
+    const ts=document.getElementById('tSol');if(ts)ts.onclick=()=>{st.wires=testeSol(p.id);sel=null;msg=null;render()};
     app.querySelectorAll('[data-vista]').forEach(b=>b.onclick=()=>{setVista(b.dataset.vista==='real');render()});
     app.querySelectorAll('[data-cor]').forEach(b=>b.onclick=()=>{cor=b.dataset.cor;render()});
     svg.querySelectorAll('[data-sw]').forEach(h=>h.addEventListener('click',()=>{if(zm.busy())return;const c=st.comps.find(x=>x.id===h.dataset.sw);c.closed=!c.closed;msg=null;render()}));
@@ -78,7 +79,7 @@ function runBuild(p,task){
       window.addEventListener('pointermove',move);window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up);
     }));
     const c=document.getElementById('clr');if(c)c.onclick=()=>{st.wires=[];sel=null;msg=null;render()};
-    const k=document.getElementById('chk');if(k)k.onclick=()=>{tries++;const m=task.check(st)||normCheck(st)||colorCheck(st);if(m){msg=m}else{won=true;msg='Testei todas as posições dos interruptores e conferi as cores: aprovado!';S.xp+=tries===1?30:15;save()}render()};
+    const k=document.getElementById('chk');if(k)k.onclick=()=>{tries++;const m=task.check(st)||normCheck(st)||colorCheck(st);if(m){msg=m}else{won=true;st.comps.forEach(c=>{if(c.type==='sw')c.closed=true});/* liga tudo: a luz acende como recompensa */msg='Testei todas as posições dos interruptores e conferi as cores: aprovado!';S.xp+=tries===1?30:15;save()}render()};
     const e=document.getElementById('end');if(e)e.onclick=()=>finish(p,Math.max(1,4-tries),3);
   };
   const addWire=(a,b)=>{sel=null;msg=null;if(!st.wires.some(w=>(w.a===a&&w.b===b)||(w.a===b&&w.b===a)))st.wires.push(Object.assign(W(a,b),{cor}));render()};
@@ -170,7 +171,7 @@ function runSandbox(){
   const benchHTML=()=>{const r=solve(sb.comps,sb.wires);return '<div class="bench" id="bench">'+board(sb,{res:r,sel,selC,move:tool==='build',pickTerm:true,pickWire:tool==='build',probes:tool==='meter'?probes:null,real:vistaReal(),vb:zm.vb()})+'</div>'+statusChips(sb,r)};
   const redrawBench=()=>{document.getElementById('bw').innerHTML=benchHTML();bindBench()};
   const add=type=>{
-    if(sb.comps.length>=9){msg={bad:1,t:'Bancada cheia: no máximo 8 peças além da bateria.'};render();return}
+    if(sb.comps.length>=9){msg={bad:1,t:'Bancada cheia: no máximo 8 peças além da rede.'};render();return}
     const pre={lamp:'L',sw:'S',fuse:'DJ'}[type];let n=1;while(sb.comps.some(c=>c.id===pre+n))n++;
     const spot=SPOTS.find(([x,y])=>!sb.comps.some(c=>Math.hypot(c.x-x,c.y-y)<50))||[170,125];
     sb.comps.push(C(pre+n,type,spot[0],spot[1],0,type==='sw'?{closed:false}:{}));selC=pre+n;msg=null;persist();render()};
@@ -182,8 +183,8 @@ function runSandbox(){
       (tool==='build'?'<div class="row"><button class="btn sm" data-add="lamp">+ Lâmpada</button><button class="btn sm" data-add="sw">+ Interruptor</button><button class="btn sm" data-add="fuse">+ Disjuntor</button></div>'+palette(cor)
         :'<div class="meter"><div><small>MULTÍMETRO</small><small>V~ (CA)</small></div><div class="lcd">'+(reading===null?'– – –':reading.toFixed(2).replace('.',',')+' V')+'</div></div><p class="help">'+(probes.length===1?'Agora o 2º ponto (ponta preta).':'Toque em dois terminais para medir a tensão entre eles.')+'</p>')+
       entrada()+benchBar(zm,true)+'<div id="bw">'+benchHTML()+'</div>'+
-      (c&&tool==='build'?'<div class="row" style="align-items:center"><span class="chip">'+c.id+'</span><button class="btn sm" id="rot">↻ Girar</button>'+(c.type==='sw'?'<button class="btn sm" id="tog">'+(c.closed?'Abrir':'Fechar')+'</button>':'')+(c.type!=='bat'?'<button class="btn sm danger" id="del">🗑 Remover</button>':'')+'</div>':'')+
-      (msg?'<div class="fb '+(msg.bad?'bad':'good')+'">'+msg.t+'</div>':'<p class="help">'+(tool==='build'?'Arraste as peças pelo corpo. Toque numa peça para selecionar (no interruptor, isso também liga e desliga). Ligue fios entre os terminais ⚪. Toque no fio para tirar.':'')+'</p>')+
+      (c&&tool==='build'?'<div class="row" style="align-items:center"><span class="chip">'+c.id+'</span><button class="btn sm" id="rot">↻ Girar</button>'+(c.type==='sw'?'<button class="btn sm" id="tog">'+(c.closed?'Abrir':'Fechar')+'</button>':'')+(c.type!=='src'?'<button class="btn sm danger" id="del">🗑 Remover</button>':'')+'</div>':'')+
+      (msg?'<div class="fb '+(msg.bad?'bad':'good')+'">'+msg.t+'</div>':'<p class="help">'+(tool==='build'?'Arraste as peças pelo corpo. Toque numa peça para selecionar (no interruptor, isso também liga e desliga). Ligue fios entre os '+(vistaReal()?'bornes 🔩':'terminais ⚪')+'. Toque no fio para tirar.':'')+'</p>')+
       '<div class="row"><button class="btn ghost" id="clr">'+(sure?'Toque de novo para limpar':'Limpar bancada')+'</button><button class="btn main" id="insp">🔎 Inspecionar</button></div>',
       'Aqui é livre! Invente, teste e meça.');
     keepScroll(drawn);drawn=true;

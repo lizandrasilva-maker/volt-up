@@ -264,4 +264,19 @@ body.leve .vn-box{font-size:17px}
 .ring{width:220px;height:220px;max-width:100%;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle,color-mix(in srgb,var(--terra) 45%,transparent) 0 40%,color-mix(in srgb,var(--terra) 15%,transparent) 41% 100%);transform:scale(.6);transition:transform 4s ease-in-out}
 .ring.in{transform:scale(1)}
 .ring b{font-family:var(--display);font-weight:400;font-size:26px}
+/* Modo teste (js/teste.js): faixa tracejada roxa, para nunca ser confundida com o jogo */
+.teste{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border-radius:14px;border:2px dashed #b48cff;background:color-mix(in srgb,#b48cff 12%,var(--panel))}
+.teste-h{display:flex;flex-direction:column;gap:2px}.teste-h b{color:#cdb4ff;letter-spacing:.06em}.teste-h span{font-size:12px;color:var(--muted);font-weight:700}
+.teste-b,.teste-f{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.teste-f{flex-direction:row}
+.teste .btn{min-height:40px;font-size:14px;padding:4px 12px}
+.teste-chip{background:color-mix(in srgb,#b48cff 35%,var(--panel2))}
+.teste-in{align-self:flex-start;border-style:dashed;border-color:#b48cff;min-height:40px}
+.seg3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.seg3 .btn{min-height:42px}.seg3 .btn[aria-pressed="true"]{border-color:var(--amber);background:var(--panel2)}
+.rot-cap{display:flex;flex-direction:column;gap:10px;padding-top:6px}
+.rot-item{display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:14px;background:var(--panel);border:2px solid var(--line)}
+.rot-h{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.falas{display:flex;flex-direction:column;gap:4px;font-size:14px;line-height:1.4;padding-left:10px;border-left:3px solid var(--line)}
+.falas b{color:var(--amber)}
+.rot-card{font-size:13px;font-weight:800;color:var(--muted)}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}

@@ -6,7 +6,11 @@ Atualizado em 02/11/2026. Para continuar o desenvolvimento em outra conta ou con
 1. O código mora no GitHub: `github.com/lizandrasilva-maker/volt-up`. As duas contas do Claude trabalham no mesmo repositório (em projetos do Claude Code com esse repositório configurado).
 2. Peça: *"Leia docs/NEUROLYTICS-handoff.md e vamos continuar o game."*
 3. Cada mudança entra por um pull request. Depois do merge na `main`, o GitHub Pages atualiza o jogo no link fixo (o progresso dos jogadores fica salvo no navegador por causa do link fixo).
-4. Para testar localmente: `python3 -m http.server` na pasta do repositório e abrir `http://localhost:8000`. Abrir o `index.html` direto do disco também funciona.
+4. **Modo teste** (para revisar sem jogar tudo): abra o jogo com `?teste=1` no fim do endereço (ex.: `.../volt-up/?teste=1`) ou entre com conta admin/professor, e toque em "🧪 Entrar no modo teste" no mapa.
+   - Libera todas as fases, mostra a cena da história toda vez, tem a tela **📜 Roteiro** (capítulo inteiro em texto, com "Ver cena" e "Jogar") e os atalhos "⏭ Concluir fase" e "🔧 Montar pra mim" (bancadas de montar).
+   - Usa um perfil separado (`neuro-eletricista-teste` no navegador) e não envia nada para a nuvem. "Sair" volta ao progresso real intacto; "Zerar teste" recomeça o perfil de teste. `?teste=0` esconde o botão.
+   - Ao criar uma fase de montar nova, acrescente o gabarito em `TESTE_SOL` (`js/teste.js`).
+5. Para testar localmente: `python3 -m http.server` na pasta do repositório e abrir `http://localhost:8000`. Abrir o `index.html` direto do disco também funciona.
 
 ## O que é o projeto
 Game educativo de elétrica, energia e renováveis no modo história do eletricista, para o SENAI. Tem 3 níveis de público:
@@ -98,6 +102,7 @@ Capítulos previstos, ainda "em construção":
 | `js/telas.js` | HUD, início, escolha de personagem, mapa, cards. |
 | `js/fases.js` | Quiz, classificar, bancadas (montar, prever, caça-defeito), oficina livre. |
 | `js/carreira.js` | Carreira, atributos, plantão, conquistas, fim de fase. |
+| `js/teste.js` | Modo teste: perfil separado, tudo liberado, Roteiro, gabaritos das bancadas (`TESTE_SOL`). |
 | `js/main.js` | Liga o jogo (sempre o último script). |
 | `img/*.webp` | Artes dos personagens e da oficina. Para trocar, substitua o arquivo mantendo o nome; para uma arte nova, coloque em `img/` e acrescente o nome em `js/imagens.js`. |
 

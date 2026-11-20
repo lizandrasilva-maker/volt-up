@@ -178,7 +178,7 @@ function stars(n){let s='';for(let i=1;i<=3;i++)s+=i<=n?'★':'<span class="off"
 function hud(){
   const lvl=Math.floor(S.xp/100)+1,pct=S.xp%100;
   const rk=rankOf(),st=streak();
-  return '<header class="hud"><button class="av" id="toFicha" aria-label="Abrir minha ficha">'+charSVG(S.char)+'</button><div class="who"><div class="nm">'+esc(S.name||charOf().nome)+' · '+rk.r.n+'</div><div class="xpbar"><i style="width:'+Math.round(rk.p*100)+'%"></i></div></div>'+(st?'<span class="chip fire" title="dias seguidos">🔥 '+st+'</span>':'')+'<span class="chip">⚡ '+S.xp+'</span><button class="iconbtn" id="toAlbum" aria-label="Álbum de cards">'+S.cards.length+' 🃏</button></header>';
+  return '<header class="hud"><button class="av" id="toFicha" aria-label="Abrir minha ficha">'+charSVG(S.char)+'</button><div class="who"><div class="nm">'+esc(S.name||charOf().nome)+' · '+rk.r.n+'</div><div class="xpbar"><i style="width:'+Math.round(rk.p*100)+'%"></i></div></div>'+(window.VOLT_TESTE?'<span class="chip teste-chip" title="Modo teste: progresso separado">🧪</span>':'')+(st?'<span class="chip fire" title="dias seguidos">🔥 '+st+'</span>':'')+'<span class="chip">⚡ '+S.xp+'</span><button class="iconbtn" id="toAlbum" aria-label="Álbum de cards">'+S.cards.length+' 🃏</button></header>';
 }
 function setMode(){document.body.classList.toggle('leve',L())}
 function bindHud(){const a=document.getElementById('toAlbum');if(a)a.onclick=showAlbum;const f=document.getElementById('toFicha');if(f)f.onclick=showFicha}
