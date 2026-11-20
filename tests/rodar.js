@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 /* Roda os testes do Volt Up no Chrome sem janela (headless) e confere os resultados.
-   Uso:  node tests/rodar.js
+   Uso:  node tests/rodar.js [--relatorio arquivo.md]
    Precisa só do Node e do Google Chrome. Para indicar outro Chrome: CHROME=/caminho/do/chrome
-   Sai com código 1 se algum teste falhar (é isso que o GitHub Actions usa). */
+   Sai com código 1 se alguma verificação falhar (é isso que bloqueia o PR no GitHub).
+   No GitHub Actions, o relatório também vai para o resumo da execução (GITHUB_STEP_SUMMARY). */
 const http=require('http'),fs=require('fs'),path=require('path'),os=require('os'),{spawn}=require('child_process');
 
 const RAIZ=path.resolve(__dirname,'..');
 const TIPOS={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.webp':'image/webp','.png':'image/png','.svg':'image/svg+xml','.json':'application/json'};
+const iRel=process.argv.indexOf('--relatorio'),ARQ_REL=iRel>0?process.argv[iRel+1]:null;
 
 function acharChrome(){
   if(process.env.CHROME)return process.env.CHROME;
@@ -40,36 +42,53 @@ function abrir(chrome,url){return new Promise((ok,falha)=>{
     try{ok(JSON.parse(txt))}catch{falha(new Error('Resultado não é JSON em '+url+': '+txt.slice(0,300)))}});
 })}
 
-const falhas=[];let total=0;
-const confere=(ok,nome,detalhe)=>{total++;if(!ok)falhas.push(nome+(detalhe?' → '+detalhe:''))};
+/* Cada verificação entra numa categoria, para o relatório mostrar o que foi coberto. */
+const CAT={},falhas=[];
+const confere=(cat,ok,nome,detalhe)=>{(CAT[cat]=CAT[cat]||{ok:0,total:0}).total++;if(ok)CAT[cat].ok++;else falhas.push('['+cat+'] '+nome+(detalhe?' → '+detalhe:''))};
 /* Erros que o jogo aceita de propósito: o three-way funciona com os retornos trocados. */
 const ERROS_QUE_FUNCIONAM=new Set(['escada_retornoTrocado']);
+let pistas={};
 
 (async()=>{
   const chrome=acharChrome(),srv=await servidor(),base='http://127.0.0.1:'+srv.address().port;
   try{
     const t=await abrir(chrome,base+'/tests/testes.html');
-    confere(!t.ERRO,'página de testes sem exceção',t.ERRO);
-    for(const[k,v]of Object.entries(t.gabaritos||{}))confere(v==='OK','gabarito '+k,v);
-    confere(Object.keys(t.gabaritos||{}).length>=27,'pelo menos 27 gabaritos',Object.keys(t.gabaritos||{}).length+' encontrados');
-    for(const[k,v]of Object.entries(t.erros||{}))confere(ERROS_QUE_FUNCIONAM.has(k)?v==='OK':v!=='OK','erro comum detectado: '+k,v);
-    for(const[k,v]of Object.entries(t.previsao||{}))confere(v==='girando → parado','previsão '+k,v);
-    for(const[k,v]of Object.entries(t.quizzes||{}))confere(v==='3q/333','quiz '+k,v);
-    const p=t.pistas||{};
-    confere(p.perguntas>0&&p.certaMaisLonga/p.perguntas<=1/3,'certa não é a mais longa além do acaso (≤ 33 %)',p.certaMaisLonga+' de '+p.perguntas);
-    confere(p.absolutaSoNasErradas<=Math.max(4,p.absolutaNaCerta+3),'palavras absolutas não denunciam as erradas',JSON.stringify(p));
-    confere((t.faltando||[]).length===0,'cenas, personagens e ícones existem',(t.faltando||[]).join(', '));
-    confere(/Bloqueado/.test(t.cap2_semCap1||''),'capítulo 2 travado sem o 1',t.cap2_semCap1);
-    confere(/\d+ fases/.test(t.cap2_comCap1||''),'capítulo 2 abre depois do 1',t.cap2_comCap1);
-    confere(/Bloqueado/.test(t.cap3_semCap2||''),'capítulo 3 travado sem o 2',t.cap3_semCap2);
+    confere('Execução',!t.ERRO,'página de testes sem exceção',t.ERRO);
+    const G=Object.entries(t.gabaritos||{});
+    for(const[k,v]of G)confere('Gabaritos de bancada',v==='OK',k,v);
+    confere('Gabaritos de bancada',G.length>=27,'pelo menos 27 gabaritos',G.length+' encontrados');
+    const E=Object.entries(t.erros||{});
+    for(const[k,v]of E)confere('Erros comuns de montagem',ERROS_QUE_FUNCIONAM.has(k)?v==='OK':v!=='OK',k,v);
+    confere('Erros comuns de montagem',E.length>=11,'pelo menos 11 erros comuns',E.length+' encontrados');
+    for(const[k,v]of Object.entries(t.previsao||{}))confere('Previsões',v==='girando → parado',k,v);
+    for(const[k,v]of Object.entries(t.quizzes||{}))confere('Estrutura dos quizzes',v==='3q/333',k,v);
+    const p=pistas=t.pistas||{};
+    confere('Pistas nos quizzes',p.perguntas===72,'72 perguntas de quiz',p.perguntas+' encontradas');
+    confere('Pistas nos quizzes',p.certaMaisLonga/p.perguntas<=1/3,'certa não é a mais longa além do acaso (≤ 33 %)',p.certaMaisLonga+' de '+p.perguntas);
+    confere('Pistas nos quizzes',p.absolutaSoNasErradas<=Math.max(4,p.absolutaNaCerta+3),'palavras absolutas não denunciam as erradas',p.absolutaSoNasErradas+' só nas erradas, '+p.absolutaNaCerta+' na certa');
+    confere('Pistas nos quizzes',p.ecoDoEnunciado/p.perguntas<=0.10,'certa não é a única a repetir o enunciado (≤ 10 %)',p.ecoDoEnunciado+' de '+p.perguntas);
+    confere('Pistas nos quizzes',p.soCertaJustifica<=3,'certa não é a única com justificativa (≤ 3)',String(p.soCertaJustifica));
+    confere('Pistas nos quizzes',!p.numericas||p.certaNoMeio/p.numericas<=0.5,'numéricas: certa não é sempre o valor do meio (≤ 50 %)',p.certaNoMeio+' de '+p.numericas);
+    confere('Cenas e personagens',(t.faltando||[]).length===0,'cenas, personagens e ícones existem',(t.faltando||[]).join(', '));
+    confere('Trava de capítulos',/Bloqueado/.test(t.cap2_semCap1||''),'capítulo 2 travado sem o 1',t.cap2_semCap1);
+    confere('Trava de capítulos',/\d+ fases/.test(t.cap2_comCap1||''),'capítulo 2 abre depois do 1',t.cap2_comCap1);
+    confere('Trava de capítulos',/Bloqueado/.test(t.cap3_semCap2||''),'capítulo 3 travado sem o 2',t.cap3_semCap2);
 
     const r=await abrir(chrome,base+'/tests/render.html');
-    confere(r.total>=70,'telas de bancada desenhadas',r.total+' telas');
-    confere((r.problemas||[]).length===0,'todas as telas têm bornes',JSON.stringify(r.problemas));
-    confere(/^\d+ bornes$/.test(r.oficina||''),'oficina com todas as peças',r.oficina);
+    confere('Telas de bancada (desenho e aviso)',r.total>=73,'72 telas de bancada + oficina',r.total+' telas');
+    confere('Telas de bancada (desenho e aviso)',(r.problemas||[]).length===0,'todas desenham bornes e mostram o aviso de modelo didático',JSON.stringify(r.problemas));
+    confere('Telas de bancada (desenho e aviso)',/^\d+ bornes$/.test(r.oficina||''),'oficina com todas as peças e o aviso',r.oficina);
+  }catch(e){falhas.push('[Execução] '+e.message)}finally{srv.close()}
 
-    console.log('Pistas do quiz: '+JSON.stringify(p));
-  }catch(e){falhas.push(e.message)}finally{srv.close()}
-  if(falhas.length){console.error('\n✗ '+falhas.length+' de '+total+' verificações falharam:\n  - '+falhas.join('\n  - '));process.exit(1)}
-  console.log('✓ '+total+' verificações passaram.');
+  const total=Object.values(CAT).reduce((s,c)=>s+c.total,0);
+  const linhas=['## Testes do Volt Up','',
+    '| Categoria | Passaram | Total |','|---|---:|---:|',
+    ...Object.entries(CAT).map(([c,v])=>'| '+c+' | '+v.ok+' | '+v.total+' |'),
+    '','Pistas do quiz: `'+JSON.stringify(pistas)+'`','',
+    falhas.length?'**✗ '+falhas.length+' de '+total+' verificações falharam:**\n\n- '+falhas.join('\n- '):'**✓ '+total+' verificações passaram.**',''];
+  const rel=linhas.join('\n');
+  console.log(rel);
+  if(ARQ_REL)fs.writeFileSync(ARQ_REL,rel,'utf8');
+  if(process.env.GITHUB_STEP_SUMMARY)fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,rel+'\n');
+  process.exit(falhas.length?1:0);
 })();

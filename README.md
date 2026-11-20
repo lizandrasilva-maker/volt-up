@@ -8,6 +8,11 @@ Game educativo de elétrica, energia e renováveis (SENAI), no modo história do
 - **Testes automáticos:** `node tests/rodar.js`. Precisa só do Node e do Google Chrome.
   - O que conferem: gabaritos, erros comuns, previsões, quizzes (inclusive as pistas que entregam a resposta), cenas e o desenho de todas as telas.
   - No GitHub, rodam sozinhos a cada push e PR ([.github/workflows/testes.yml](.github/workflows/testes.yml)).
-- **Auditorias:** [técnica](docs/AUDITORIA-tecnica.md) (normas) e [pedagógica](docs/AUDITORIA-pedagogica.md) (quizzes e ligação com o plano de curso SENAI).
+- **Auditorias e rastreabilidade:**
+  - [Auditoria técnica](docs/AUDITORIA-tecnica.md): normas.
+  - [Auditoria pedagógica](docs/AUDITORIA-pedagogica.md): quizzes.
+  - [Registro das perguntas](docs/REGISTRO-perguntas.md): antes, depois e justificativa.
+  - [Matriz curricular](docs/MATRIZ-curricular.md): missões × plano de curso SENAI.
+- **Limite atual:** a bancada é um modelo didático **qualitativo**. Mostra se o circuito liga, comanda e protege, mas não calcula corrente, potência, aquecimento nem a atuação quantitativa das proteções.
 - **Entrar / painel:** [login.html](login.html) e [admin.html](admin.html), ligados ao Supabase.
 - **Protótipos antigos (sem servidor, dados de exemplo):** [login do aluno](prototipos/login-aluno.html) e [painel Adm](prototipos/admin.html).

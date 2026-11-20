@@ -72,8 +72,34 @@ Serve de roteiro para a revisão da professora.
 - O DR desarma com qualquer fuga, sem limiar de 15–30 mA.
 - O relé térmico desarma por ação do aluno, não por I²t.
 - O DPS não tem efeito elétrico.
-- Não há cabo, seção, queda de tensão, curva de disjuntor nem trifásico. Quando entrarem, usar a
-  tabela 36 (capacidade), a tabela 47 (seção mínima) e o limite de queda de 4% (6.2.7) da NBR 5410.
+- Não há cabo, seção, queda de tensão, curva de disjuntor nem trifásico. Quando entrarem, usar:
+  - a tabela 36 (capacidade);
+  - a tabela 47 (seção mínima);
+  - o limite de queda de 4 % nos circuitos terminais (6.2.7.2) da NBR 5410.
 
-O jogo deve deixar claro, na tela, que a bancada é um **modelo lógico**: mostra se o circuito liga,
-comanda e protege; não mostra valores reais de corrente.
+**Feito na Etapa 2b.** Toda bancada mostra o aviso "Modelo didático qualitativo: sem valores reais".
+Ao tocar, ele explica que a bancada mostra se o circuito liga, comanda, protege e segue a norma, mas não
+calcula corrente, potência nem aquecimento, e que as proteções atuam pela lógica da ligação. O teste
+automático falha se alguma bancada ficar sem o aviso.
+
+## 5. Conferências da Etapa 2b
+
+Itens da NBR 5410 conferidos no texto ao revisar os quizzes:
+
+| Item | O que diz | Uso no jogo |
+|---|---|---|
+| 5.3.4.1 | Ib ≤ In ≤ Iz (coordenação entre condutor e proteção) | Mão Segura · full |
+| 6.2.7.2 | Queda nos circuitos terminais ≤ 4 % | Mestre Ohm · full (antes citado só como 6.2.7) |
+| 6.3.3.2.5 | O DR envolve os condutores vivos, nenhum condutor de proteção | O Quadro · full |
+| 6.3.3.2.6 e nota | DR não atua abaixo de 50 % de IΔn; dividir circuitos pela fuga normal | Mão Segura · full |
+| 6.3.5.2.4-a | Up compatível com a categoria II: ≤ 2,5 kV em 220/380 V | Raio na Serra · full |
+| 6.3.5.2.4-b e tabela 49 | Uc mínimo: 1,1 U0 entre fase e PE em TN-S | Raio na Serra · full |
+| 6.3.5.2.4-d | In ≥ 5 kA (8/20 µs) para surtos pela linha; Iimp ≥ 12,5 kA para descarga direta; forma de onda do ensaio de Iimp não fixada | O Quadro · full |
+| 6.3.5.2.9 | Ligação do DPS o mais curta possível, sem curvas ou laços, de preferência ≤ 0,5 m | Raio na Serra · leve e moderado |
+| 6.3.6.2.2 | Interruptor DR sem proteção própria: a sobrecorrente deve ser protegida por outro dispositivo | O Quadro · full |
+| Tabela 36 | B1, 2 condutores carregados: 1,5 mm² = 17,5 A; 2,5 mm² = 24 A | Mão Segura · moderado e full |
+
+**Correções:**
+- **Onda 10/350 µs:** a frase "DPS ensaiado com onda 10/350 µs" contrariava a nota de 6.3.5.2.4-d e foi retirada.
+- **Corrente nominal do DR:** a frase "corrente nominal do DR em geral igual ou maior que a do disjuntor" não tem base na norma e foi trocada pelo requisito de 6.3.6.2.2.
+- **Números sem fonte:** o disparo do disjuntor-motor (12 a 14 ×), a partida de 6 a 8 × In e o consumo de geladeira foram retirados ou passados para o enunciado.

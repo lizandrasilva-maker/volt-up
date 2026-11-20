@@ -125,6 +125,11 @@ input[type=text]{font:inherit;font-weight:800;width:100%;min-height:52px;padding
 .eled{fill:#7a2a24}.eled.pisca{fill:#ff5a4a;animation:eled .6s steps(2) infinite}
 @keyframes eled{50%{fill:#7a2a24}}
 .benchwrap .bench{border-radius:0 0 18px 18px}
+/* aviso fixo: bancada é modelo qualitativo, sem valores reais */
+.modelo{margin:6px 2px 0;font-size:12.5px;color:var(--muted)}
+.modelo summary{cursor:pointer;font-weight:800;list-style-position:inside;padding:4px 2px}
+.modelo summary:focus-visible{outline:2px solid var(--amber);outline-offset:2px;border-radius:6px}
+.modelo p{margin:4px 2px 2px;line-height:1.45;color:var(--ink)}
 .node .cad{font-size:15px;opacity:.6}
 .soonbox .prev{text-align:left;margin:4px 0;padding-left:18px;color:var(--ink);font-size:14px;line-height:1.5}
 /* Oficina: caixa de ferramentas */

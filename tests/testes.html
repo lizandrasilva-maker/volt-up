@@ -43,7 +43,18 @@ try{
   for(const p of PHASES.filter(p=>p.tipo==='quiz'))for(const md of ['leve','moderado','full'])for(const x of p.dados[md]){n++;
     const L=x.o.map(t=>t.length);if(L[0]>Math.max(...L.slice(1)))longa++;
     if(abs.test(x.o[0]))absCerta++;if(x.o.slice(1).some(t=>abs.test(t))&&!abs.test(x.o[0]))absErr++}
-  R.pistas={perguntas:n,certaMaisLonga:longa,absolutaSoNasErradas:absErr,absolutaNaCerta:absCerta};
+  // Outras pistas: a certa ser a única que repete palavra do enunciado ("eco"), a única que traz justificativa
+  // (dois-pontos ou "porque"), ou, nas numéricas, ser sempre o valor do meio.
+  const PARE=new Set('para pela pelo pelos pelas como mais menos quando onde qual quais porque esta este isso essa esse cada outro outra mesmo mesma muito entre depois antes ainda sobre também apenas seja ser está estão fica ficar pode deve tem têm uma umas uns dos das nos nas com sem que não sim'.split(' '));
+  const pal=t=>new Set((t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').match(/[a-z0-9]{4,}/g)||[]).filter(w=>!PARE.has(w)));
+  const ESC={k:1e3,M:1e6,m:1e-3,'µ':1e-6};
+  const num=t=>{const m=t.replace(/^[≈~]\s*/,'').replace(/^R\$\s*/,'').match(/^(-?\d+(?:[.,]\d+)?)\s*([kMmµ]?)[A-Za-zΩ%]/);return m?parseFloat(m[1].replace(',','.'))*(ESC[m[2]]||1):null};
+  let eco=0,justif=0,numQ=0,meio=0;
+  for(const p of PHASES.filter(p=>p.tipo==='quiz'))for(const md of ['leve','moderado','full'])for(const x of p.dados[md]){
+    const S=pal(x.q),ov=x.o.map(o=>[...pal(o)].filter(w=>S.has(w)).length);if(ov[0]>ov[1]&&ov[0]>ov[2])eco++;
+    const J=x.o.map(o=>/:|porque/i.test(o));if(J[0]&&!J[1]&&!J[2])justif++;
+    const v=x.o.map(num);if(v.every(z=>z!==null)){numQ++;const s=[...v].sort((a,b)=>a-b);if(s[1]===v[0])meio++}}
+  R.pistas={perguntas:n,certaMaisLonga:longa,absolutaSoNasErradas:absErr,absolutaNaCerta:absCerta,ecoDoEnunciado:eco,soCertaJustifica:justif,numericas:numQ,certaNoMeio:meio};
   // 6) cenas e personagens existem
   const falta=[];CHAPTERS.filter(c=>!c.soon).forEach(c=>{[...(c.intro||[]),...(c.fim||[])].forEach(([w])=>{if(w!=='eu'&&!NPC[w])falta.push(c.id+':'+w)});c.fases.forEach(id=>{if(!phaseById(id))falta.push('fase '+id);(SCENES[id]||[]).forEach(([w])=>{if(w!=='eu'&&!NPC[w])falta.push(id+':'+w)});if(!ICONS[phaseById(id).ic])falta.push('icone '+id)})});
   R.faltando=falta;
