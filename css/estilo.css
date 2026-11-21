@@ -410,3 +410,66 @@ body.leve .vn-box{font-size:17px}
 @keyframes telaEntra{from{opacity:0;transform:translateY(-10px)}}
 @keyframes brilho{0%,70%{left:-40%}100%{left:130%}}
 @media (max-width:360px){.menu{grid-template-columns:1fr}}
+
+/* ================= IDENTIDADE ANIME (Fase B) =================
+   Céu próprio por capítulo, contorno escuro e sombra chapada (cel-shading) nos elementos de jogo
+   e transições curtas na entrada. "Movimento reduzido" desliga as animações (regra global acima). */
+:root{--contorno:#070c16;--sombra:0 4px 0 var(--contorno)}
+/* céus: o capítulo atual vem em body[data-cap] (setMode) */
+body[data-cap]{background-attachment:fixed}
+body[data-cap="cap1"],body[data-cap="cap3"]{background-size:28px 28px,28px 28px,100% 100%,100% 100%}
+body[data-cap="cap2"]{background-size:100% 100%}
+body[data-cap="cap1"]{background-color:#141533;background-image:
+  linear-gradient(color-mix(in srgb,var(--line) 22%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--line) 22%,transparent) 1px,transparent 1px),
+  radial-gradient(120% 60% at 50% 110%,rgba(255,138,76,.28),transparent 60%),linear-gradient(180deg,#151a3d 0%,#2a1f4d 55%,#3d2346 100%)}
+body[data-cap="cap2"]{background-color:#0a1430;background-image:
+  radial-gradient(1.4px 1.4px at 12% 18%,#fff,transparent),radial-gradient(1.2px 1.2px at 78% 9%,#fff,transparent),radial-gradient(1px 1px at 46% 30%,#dbe8ff,transparent),
+  radial-gradient(1.3px 1.3px at 88% 42%,#fff,transparent),radial-gradient(1px 1px at 25% 56%,#dbe8ff,transparent),radial-gradient(1.2px 1.2px at 63% 70%,#fff,transparent),
+  radial-gradient(90% 50% at 80% 0%,rgba(107,185,232,.22),transparent 60%),linear-gradient(180deg,#081028 0%,#0f2147 60%,#16305e 100%)}
+body[data-cap="cap3"]{background-color:#0d1f24;background-image:
+  linear-gradient(color-mix(in srgb,var(--line) 22%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--line) 22%,transparent) 1px,transparent 1px),
+  radial-gradient(120% 55% at 50% 110%,rgba(67,176,140,.3),transparent 60%),linear-gradient(180deg,#0c1a26 0%,#123236 60%,#1b4a44 100%)}
+body.leve[data-cap="cap1"],body.leve[data-cap="cap3"]{background-size:0 0,0 0,100% 100%,100% 100%}
+.hud{background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(6px)}
+
+/* contorno + sombra chapada */
+.btn{border-color:color-mix(in srgb,var(--line) 70%,var(--contorno));box-shadow:var(--sombra);transition:transform .12s,box-shadow .12s,background .2s}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--contorno)}
+.btn.ghost{box-shadow:none}
+.btn.main{border-color:var(--contorno);box-shadow:0 4px 0 #8a6a08,0 4px 0 1.5px var(--contorno)}
+.btn:disabled{box-shadow:none}
+.qcard{border:2.5px solid var(--contorno);box-shadow:0 5px 0 var(--contorno),inset 0 0 0 2px color-mix(in srgb,var(--neutro) 30%,transparent)}
+.opt{border-width:2.5px}
+.opt.right{box-shadow:0 4px 0 #1d6e34;animation:certa .35s cubic-bezier(.2,.9,.3,1.4)}
+@keyframes certa{40%{transform:scale(1.04)}}
+.chcard{border:2.5px solid var(--contorno);box-shadow:0 5px 0 var(--contorno)}
+.node .dot{box-shadow:0 0 0 3px var(--contorno),0 5px 0 3px var(--contorno)}
+.node::before{background:linear-gradient(var(--copper),#a9622e)}
+.bubble{border:2.5px solid var(--contorno);box-shadow:0 4px 0 var(--contorno)}
+.card{box-shadow:0 6px 0 var(--contorno),0 0 0 2px var(--contorno)}
+.toast{box-shadow:0 4px 0 var(--contorno)}
+.vn{border:2.5px solid var(--contorno);box-shadow:0 6px 0 var(--contorno)}
+.vn-name{border:2px solid var(--contorno);box-shadow:0 3px 0 var(--contorno)}
+.vn-box{border-width:2.5px;box-shadow:0 4px 0 var(--contorno)}
+
+/* transições curtas de entrada */
+@keyframes entraBaixo{from{opacity:0;transform:translateY(12px)}}
+@keyframes entraLado{from{opacity:0;transform:translateX(-14px)}}
+.chcard,.qcard{animation:entraBaixo .3s ease-out both}
+.map .node{animation:entraLado .32s ease-out both}
+.map .node:nth-child(2){animation-delay:.05s}.map .node:nth-child(3){animation-delay:.1s}.map .node:nth-child(4){animation-delay:.15s}
+.map .node:nth-child(5){animation-delay:.2s}.map .node:nth-child(6){animation-delay:.25s}.map .node:nth-child(n+7){animation-delay:.3s}
+.opts .opt{animation:entraBaixo .28s ease-out both}
+.opts .opt:nth-child(2){animation-delay:.06s}.opts .opt:nth-child(3){animation-delay:.12s}.opts .opt:nth-child(4){animation-delay:.18s}
+.vn-box{animation:entraBaixo .22s ease-out}
+
+/* fase concluída: raios girando atrás das estrelas e estrelas que estalam */
+.result{position:relative;isolation:isolate}
+.result::before{content:"";position:absolute;z-index:-1;left:50%;top:30px;width:420px;height:420px;margin-left:-210px;border-radius:50%;
+  background:repeating-conic-gradient(from 0deg,color-mix(in srgb,var(--amber) 22%,transparent) 0 8deg,transparent 8deg 20deg);
+  -webkit-mask:radial-gradient(circle,#000 25%,transparent 68%);mask:radial-gradient(circle,#000 25%,transparent 68%);animation:raios 14s linear infinite}
+@keyframes raios{to{transform:rotate(360deg)}}
+.result .stars{display:inline-flex;gap:2px;filter:drop-shadow(0 3px 0 var(--contorno))}
+.result .stars{animation:estala .5s cubic-bezier(.2,.9,.3,1.5) both .1s}
+@keyframes estala{from{opacity:0;transform:scale(.3) rotate(-12deg)}}
+.result .toast{animation:entraBaixo .3s ease-out both .35s}
