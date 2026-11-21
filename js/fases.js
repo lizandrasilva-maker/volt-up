@@ -50,7 +50,13 @@ function missao(goal,real,nota,rotulo){return '<div class="goal"><span class="gi
    O estado da faixa (energia passando ou curto) vem da classe que board() põe no <svg>. */
 function benchWrap(svg,id,zm){const m=/^<svg[^>]*class="(\w*)/.exec(svg),est=m?m[1]:'',R=vistaReal();
   const ctl=zm?'<div class="bctl">'+'<button class="btn vbtn" data-vista="'+(R?'simb':'real')+'" aria-label="'+(R?'Ver o diagrama multifilar':'Ver as peças reais')+'">'+(R?'📐 Multifilar':'🔌 Real')+'</button>'+zm.ui()+'</div>':'';
-  return '<div class="benchwrap">'+entrada(est)+'<div class="bench"'+(id?' id="'+id+'"':'')+'>'+svg+ctl+'</div></div>'}
+  return '<div class="benchwrap">'+entrada(est)+'<div class="bench"'+(id?' id="'+id+'"':'')+'>'+svg+ctl+'</div>'+avisoModelo()+'</div>'}
+/* Aviso fixo em toda bancada: o motor do jogo é qualitativo (Etapa 2 da revisão).
+   Não apresentar a bancada como simulador quantitativo enquanto o motor V2 não existir. */
+function avisoModelo(){return '<details class="modelo"><summary>ⓘ Modelo didático qualitativo: sem valores reais</summary>'+
+  '<p>A bancada mostra se o circuito <b>liga</b>, <b>comanda</b>, <b>protege</b> e segue a norma. '+
+  'Ela <b>não calcula</b> corrente, potência nem aquecimento, e as proteções atuam pela lógica da ligação, '+
+  'não pelo valor e pelo tempo reais de atuação. O brilho da lâmpada e o giro do motor são ilustrativos.</p></details>'}
 
 /* frame() sobe a tela para o topo. Na bancada, a partir do 2º desenho, volta para onde o aluno estava
    (no celular a bancada fica abaixo da dobra e cada fio ligado fazia a página pular). */

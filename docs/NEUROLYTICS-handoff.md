@@ -5,7 +5,7 @@ Atualizado em 02/11/2026. Para continuar o desenvolvimento em outra conta ou con
 ## Como retomar
 1. O código mora no GitHub: `github.com/lizandrasilva-maker/volt-up`. As duas contas do Claude trabalham no mesmo repositório (em projetos do Claude Code com esse repositório configurado).
 2. Peça: *"Leia docs/NEUROLYTICS-handoff.md e vamos continuar o game."*
-3. Cada mudança entra por um pull request. Depois do merge na `main`, o GitHub Pages atualiza o jogo no link fixo (o progresso dos jogadores fica salvo no navegador por causa do link fixo).
+3. Cada mudança entra por um pull request. Depois do merge na `main`, a `main` é publicada manualmente na Vercel, sempre no mesmo link (o progresso de quem joga sem login fica salvo no navegador por causa do link fixo).
 4. **Modo teste** (para revisar sem jogar tudo): abra o jogo com `?teste=1` no fim do endereço (ex.: `.../volt-up/?teste=1`) ou entre com conta admin/professor, e toque em "🧪 Entrar no modo teste" no mapa.
    - Libera todas as fases, mostra a cena da história toda vez, tem a tela **📜 Roteiro** (capítulo inteiro em texto, com "Ver cena" e "Jogar") e os atalhos "⏭ Concluir fase" e "🔧 Montar pra mim" (bancadas de montar).
    - Usa um perfil separado (`neuro-eletricista-teste` no navegador) e não envia nada para a nuvem. "Sair" volta ao progresso real intacto; "Zerar teste" recomeça o perfil de teste. `?teste=0` esconde o botão.
@@ -13,7 +13,7 @@ Atualizado em 02/11/2026. Para continuar o desenvolvimento em outra conta ou con
 5. Para testar localmente: `python3 -m http.server` na pasta do repositório e abrir `http://localhost:8000`. Abrir o `index.html` direto do disco também funciona.
 
 ## O que é o projeto
-Game educativo de elétrica, energia e renováveis no modo história do eletricista, para o SENAI. Tem 3 níveis de público:
+Game educativo de elétrica, energia e renováveis no modo história do eletricista, para cursos técnicos. Tem 3 níveis de público:
 - **Leve:** crianças ou adultos atípicos. Frases curtas, letra maior, pode tentar de novo, áudio 🔊.
 - **Técnico:** jargão moderado e cálculos simples.
 - **Profissional:** normas, cálculos e diagnóstico de campo.
