@@ -1,4 +1,4 @@
--- Esquema do Volt Up no Supabase (projeto pmhkzxkygvpeyckhnipz, região São Paulo).
+-- Esquema do Volt Up no Supabase (criado no projeto pmhkzxkygvpeyckhnipz; aplicado também no projeto jgsyvjpygusebawsqyjs em 21/11/2026).
 -- Estado final das migrações aplicadas em 02/11/2026: esquema_inicial, validade_somente_propria, politicas_sem_recursao.
 
 create table public.turmas (
