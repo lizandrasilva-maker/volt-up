@@ -6,7 +6,7 @@
    Usa os bornes da vista de símbolo (terms() com GEOM_REAL desligado); o cálculo é o mesmo. */
 
 /* Corpo de cada símbolo [x0,y0,x1,y1] em relação ao centro (peças que giram: sw, fuse, lamp). */
-const SYM_BOX={src:[-18,-20,18,20],lamp:[-12,-12,12,12],sw:[-14,-15,14,6],fuse:[-14,-14,14,6],sw2:[-14,-17,14,17],sw3:[-14,-17,14,17],sw4:[-14,-17,14,17],
+const SYM_BOX={src:[-18,-20,18,20],haste:[-12,-16,12,14],bep:[-24,-8,24,8],lamp:[-12,-12,12,12],sw:[-14,-15,14,6],fuse:[-14,-14,14,6],sw2:[-14,-17,14,17],sw3:[-14,-17,14,17],sw4:[-14,-17,14,17],
   dr:[-21,-16,21,16],dps:[-9,-13,9,13],foto:[-17,-13,17,13],ri:[-22,-15,22,15],kc:[-40,-15,38,15],ft:[-21,-13,23,13],btn:[-14,-17,14,6],motor:[-15,-15,15,15],boia:[-14,-17,14,6]};
 const GIRA={sw:1,fuse:1,lamp:1};
 function symBounds(c,pad){pad=pad||0;const o=SYM_BOX[c.type];
@@ -30,8 +30,15 @@ const elo=(x1,y1,x2,y2)=>ln(x1,y1,x2,y2,'ms elo');   /* ligação mecânica (tra
 function multiSym(c,b,o){
   let s='';const on=b>0.04;
   switch(c.type){
-    case 'src':s='<rect x="-18" y="-20" width="36" height="40" rx="5" class="mbody"/><path d="M-9 -5 q4.5 -8 9 0 t9 0" class="ms" style="stroke:var(--amber)"/><text y="12" text-anchor="middle" class="mtx">220 V~</text>'+
-      ln(0,-30,0,-20)+ln(0,20,0,30)+ln(18,0,28,0);break;
+    case 'src':{const nf=nFases(c);
+      s='<rect x="-18" y="-20" width="36" height="40" rx="5" class="mbody"/><path d="M-9 -7 q4.5 -8 9 0 t9 0" class="ms" style="stroke:var(--amber)"/>'+
+        '<text y="6" text-anchor="middle" class="mtx">'+(nf===1?'1F+N':nf+'F+N')+'</text><text y="15" text-anchor="middle" class="mtx">'+(c.V||220)+' V~</text>'+
+        ln(0,-30,0,-20)+ln(0,20,0,30)+(nf>=2?ln(18,-10,28,-10):'')+(nf>=3?ln(18,10,28,10):'');break}
+    /* haste: símbolo de terra (três traços decrescentes) */
+    case 'haste':s=ln(0,-26,0,-4)+'<path d="M-12 -4 H12 M-8 2 H8 M-4 8 H4" class="ms"/>';break;
+    /* BEP: barra com os bornes em cima */
+    case 'bep':s='<rect x="-24" y="-6" width="48" height="12" rx="2" class="mbody" style="fill:color-mix(in srgb,var(--copper) 45%,var(--panel2))"/>'+
+      [-18,-6,6,18].map(x=>ln(x,-16,x,-6)).join('')+'<text y="3.5" text-anchor="middle" class="mtx">BEP</text>';break;
     case 'lamp':{const sh=c.broken&&c.show;
       s=(on?'<circle r="20" style="fill:var(--amber)" opacity="'+(0.15+0.35*Math.sqrt(b)).toFixed(2)+'"/>':'')+ln(-26,0,-12,0)+ln(12,0,26,0)+
         '<circle r="12" class="mbody" style="'+(on?'fill:color-mix(in srgb,var(--amber) 55%,var(--panel2));':'')+(sh?'stroke:var(--fase);stroke-dasharray:3 3':'')+'"/>'+
@@ -78,8 +85,8 @@ function multiSym(c,b,o){
   if(o.pickComp&&c.type!=='src'){const r=SYM_BOX[c.type];s+='<rect class="chit" data-c="'+c.id+'" x="'+(r[0]-6)+'" y="'+(r[1]-6)+'" width="'+(r[2]-r[0]+12)+'" height="'+(r[3]-r[1]+12)+'"/>'}
   return '<g transform="translate('+c.x+' '+c.y+')'+(GIRA[c.type]&&c.v?' rotate(90)':'')+'">'+s+'</g>';
 }
-/* Nome do borne no multifilar (o mesmo impresso na peça real; a rede mostra F, N e PE). */
-function multiBorne(c,k){if(c.type==='src')return ['F','N','PE'][k];if(c.type==='btn'&&c.nf)return ['1','2'][k];
+/* Nome do borne no multifilar (o mesmo impresso na peça real; a fonte mostra L1, L2, L3 e N). */
+function multiBorne(c,k){if(c.type==='src')return bFonte(k);if(c.type==='bep'||c.type==='haste')return '';if(c.type==='btn'&&c.nf)return ['1','2'][k];
   if(c.type==='lamp')return '';const T=REAL_TERMS[c.type]&&REAL_TERMS[c.type][k];return T?T.n:''}
 
 /* Bancada inteira em multifilar: condutores → símbolos → bornes e nomes → áreas de toque. */
@@ -104,7 +111,7 @@ function multiBoard(st,o,r){
         labs.push(hz?[x-w/2,y-8,x+w/2,y+1]:[x,y-8,x+w,y+1]);
         s+='<text class="lab mb'+(o.letters&&o.letters[t]?' mk':'')+(c.type==='src'?' src'+k:'')+'" x="'+x+'" y="'+y+'" text-anchor="'+(hz?'middle':'start')+'">'+n+'</text>'}}));
   st.comps.forEach(c=>{
-    if(c.type!=='src'){const lab=c.lab||c.id,b=symBounds(c),w=lab.length*7.2+2;
+    if(c.type!=='src'&&c.type!=='bep'){const lab=c.lab||c.id,b=symBounds(c),w=lab.length*7.2+2;
       const cands=[[b[2]+5,c.y-4,'start'],[b[0]-5,c.y-4,'end'],[c.x,b[1]-6,'middle'],[c.x,b[3]+13,'middle']];
       const caixa=([x,y,a])=>{const x0=a==='start'?x:a==='end'?x-w:x-w/2;return [x0,y-9,x0+w,y+2]};
       const cruza=(p,q)=>p[0]<q[2]&&p[2]>q[0]&&p[1]<q[3]&&p[3]>q[1];

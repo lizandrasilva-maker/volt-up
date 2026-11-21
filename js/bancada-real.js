@@ -1,18 +1,20 @@
 /* ================= VISTA REAL DA BANCADA =================
    Peças desenhadas como o equipamento de verdade (plano "Realismo da bancada"):
    disjuntor DIN com os parafusos no corpo (1 em cima, 2 embaixo), interruptor com régua de bornes,
-   bocal de porcelana com lâmpada (X1/X2), tomada de bancada F/N/PE, parafusos com fenda em cruz,
+   bocal de porcelana com lâmpada (X1/X2), fonte de bancada L1/L2/L3/N, haste de aterramento e BEP, parafusos com fenda em cruz,
    fios em ângulo reto com anilha numerada. Desenho próprio, genérico, sem marca (marcação IEC).
    Na vista real os bornes ficam em outro lugar (GEOM_REAL em motor.js), mas o motor só usa o NÚMERO
    do borne (.0, .1, .2): o cálculo e as checagens da NBR 5410 são os mesmos nas duas vistas. */
 
 /* Bornes de cada peça na vista real: posição relativa ao centro (p), lado por onde o fio sai (d) e nome impresso (n). */
 const REAL_TERMS={
-  /* tomada 2P+T: 3 bornes lado a lado embaixo, na ordem dos pinos vistos de frente.
-     Terra no meio; fase à direita e neutro à esquerda: convenção DA BANCADA. A NBR 14136 só fixa dimensões
-     de pinos e contatos, não o lado da fase (conferido no texto da norma). Sem letra impressa:
-     o aluno precisa saber a ligação. Índices do motor: .0 fase, .1 neutro, .2 PE. */
-  src:[{p:[17,25],d:[0,1],n:''},{p:[-17,25],d:[0,1],n:''},{p:[0,25],d:[0,1],n:''}],
+  /* fonte: régua de bornes embaixo, da esquerda para a direita L1, L2, L3, N (marcação impressa).
+     A posição depende de quantas fases a fonte tem (realTerms calcula). Índices do motor: .0 L1, .1 N, .2 L2, .3 L3. */
+  src:[{p:[0,25],d:[0,1],n:'L1'},{p:[0,25],d:[0,1],n:'N'},{p:[0,25],d:[0,1],n:'L2'},{p:[0,25],d:[0,1],n:'L3'}],
+  /* haste: conector no topo, por onde chega o condutor de aterramento */
+  haste:[{p:[0,-20],d:[0,-1],n:''}],
+  /* BEP: barra de cobre com 4 parafusos em cima */
+  bep:[{p:[-18,-4],d:[0,-1],n:''},{p:[-6,-4],d:[0,-1],n:''},{p:[6,-4],d:[0,-1],n:''},{p:[18,-4],d:[0,-1],n:''}],
   fuse:[{p:[0,-26],d:[0,-1],n:'1'},{p:[0,26],d:[0,1],n:'2'}],
   sw:[{p:[-10,26],d:[0,1],n:'L'},{p:[10,26],d:[0,1],n:'R'}],
   lamp:[{p:[-10,27],d:[0,1],n:'X1'},{p:[10,27],d:[0,1],n:'X2'},{p:[22,8],d:[1,0],n:'PE'}],
@@ -31,15 +33,20 @@ const REAL_TERMS={
   ri:[{p:[-10,-26],d:[0,-1],n:'A1'},{p:[-10,26],d:[0,1],n:'A2'},{p:[10,-26],d:[0,-1],n:'1'},{p:[10,26],d:[0,1],n:'2'}]
 };
 /* Retângulo do corpo de cada peça [x0,y0,x1,y1]: usado para o fio desviar e para a área de toque. */
-const REAL_BOX={src:[-27,-30,27,33],fuse:[-14,-36,14,36],sw:[-17,-29,17,33],lamp:[-14,-28,14,34],
+const REAL_BOX={src:[-30,-30,30,33],haste:[-12,-26,12,30],bep:[-27,-12,27,14],fuse:[-14,-36,14,36],sw:[-17,-29,17,33],lamp:[-14,-28,14,34],
   sw2:[-26,-29,26,33],sw3:[-26,-29,26,33],dr:[-21,-36,21,36],motor:[-41,-30,33,34],kc:[-29,-36,29,36],ft:[-23,-36,23,36],btn:[-17,-29,17,33],
   sw4:[-17,-41,17,33],dps:[-14,-36,14,36],foto:[-26,-29,26,33],ri:[-21,-36,21,36],boia:[-22,-34,22,33]};
 
 /* Posição da peça na vista real. As fases foram posicionadas para o diagrama; as peças reais são mais altas
    e os fios saem por baixo, então a altura fica entre 46 e 184 para sobrar canaleta em cima e embaixo. */
 const REAL_Y=[46,184];
-function RP(c){return [c.x,Math.max(REAL_Y[0],Math.min(REAL_Y[1],c.y))]}
-function realTerms(c){const t=c.type==='lamp'?REAL_TERMS.lamp.slice(0,c.pe===true?3:2):REAL_TERMS[c.type];
+/* a haste fica cravada no chão: pode descer até a borda de baixo da bancada */
+function RP(c){return [c.x,Math.max(REAL_Y[0],Math.min(c.type==='haste'?214:REAL_Y[1],c.y))]}
+function realTerms(c){
+  if(c.type==='src'){/* bornes da fonte lado a lado: L1, L2, L3 (as que existem) e o N por último */
+    const nf=nFases(c),ordem=[0,2,3].slice(0,nf).concat(1),[X,Y]=RP(c),passo=nf===1?24:15,x0=-(ordem.length-1)*passo/2;
+    const t=[];ordem.forEach((k,i)=>{t[k]={p:[X+x0+i*passo,Y+25],d:[0,1],n:bFonte(k)}});return t}
+  const t=c.type==='lamp'?REAL_TERMS.lamp.slice(0,c.pe===true?3:2):REAL_TERMS[c.type];
   const [X,Y]=RP(c);return t.map(o=>({p:[X+o.p[0],Y+o.p[1]],d:o.d,n:o.n}))}
 function realDir(c,k){return REAL_TERMS[c.type][k].d}
 
@@ -143,15 +150,29 @@ function flipSwitch(c){c.closed=!c.closed;SW_FLIP=c.id}
 const shadow=(x,y,w,h,rx)=>'<rect x="'+(x+1.8)+'" y="'+(y+2.4)+'" width="'+w+'" height="'+h+'" rx="'+rx+'" style="fill:#000" opacity=".35"/>';
 function realComp(c,b,o){
   let s='';
-  if(c.type==='src'){/* tomada 2P+T (padrão brasileiro), genérica e sem marca, alimentada pela rede 220 V~.
-       Placa, módulo e o rebaixo com os 3 furos (o do terra um pouco acima, com o símbolo ⏚ como na peça real).
-       Embaixo, a régua com os 3 bornes alinhados com os pinos. */
-    s=shadow(-27,-30,54,48,6)+'<rect x="-27" y="-30" width="54" height="48" rx="6" class="rbody"/>'+
-      '<rect x="-23" y="-20" width="46" height="26" rx="3" style="fill:#f3f5f7;stroke:#b9c0c8" stroke-width="1"/>'+
-      '<path d="M-11 -14 H11 L18 -7 L11 0 H-11 L-18 -7 Z" style="fill:#dde1e6;stroke:#a7afb8" stroke-width="1"/>'+
-      '<circle cx="-9" cy="-6" r="2.2" class="furo"/><circle cx="9" cy="-6" r="2.2" class="furo"/><circle cx="0" cy="-8.4" r="2.2" class="furo"/>'+
-      '<path d="M0 -12.4 V-11 M-2 -11 H2 M-1.3 -10.2 H1.3 M-.6 -9.5 H.6" style="stroke:#6f7882" stroke-width=".6" transform="translate(0 -1)"/>'+
-      '<rect x="-26" y="17" width="52" height="16" rx="2" class="janela"/>';
+  if(c.type==='src'){/* fonte de bancada (genérica, sem marca): caixa metálica, visor com a tensão, LED de ligado,
+       etiqueta com o número de fases e a régua de bornes L1/L2/L3/N embaixo. Não tem PE: o terra vem da haste. */
+    const on=o&&o.res?!o.res.short:true;
+    s=shadow(-30,-30,60,48,5)+'<rect x="-30" y="-30" width="60" height="48" rx="5" style="fill:#5b6672;stroke:#2f363d" stroke-width="1.2"/>'+
+      '<rect x="-27" y="-27" width="54" height="42" rx="3" style="fill:#6c7884"/>'+
+      '<rect x="-22" y="-23" width="30" height="13" rx="2" style="fill:var(--lcd)"/><text x="-7" y="-13.6" text-anchor="middle" class="rtxt" style="font-size:7.5px;fill:var(--lcdink)">'+(c.V||220)+' V~</text>'+
+      '<circle cx="17" cy="-16.5" r="3" style="fill:'+(on?'#43d36b':'#7a2a24')+'"/><text x="17" y="-8" text-anchor="middle" class="rtxt" style="font-size:4px;fill:#e9edf3">ON</text>'+
+      '<text x="0" y="-1" text-anchor="middle" class="rtxt" style="font-size:6px;fill:#ffffff;letter-spacing:.5px">FONTE</text>'+
+      '<text x="0" y="8" text-anchor="middle" class="rtxt" style="font-size:5.5px;fill:#f4c430">'+fonteTxt(c)+'</text>'+
+      '<rect x="-29" y="17" width="58" height="16" rx="2" class="janela"/>';
+  }
+  if(c.type==='haste'){/* haste de aterramento cobreada cravada no solo, com o conector (grampo) no topo */
+    s='<rect x="-13" y="6" width="26" height="24" rx="2" style="fill:#5a4632"/>'+
+      '<path d="M-13 10 l6 -4 M-5 14 l8 -6 M3 20 l9 -7 M-11 24 l7 -5" style="stroke:#7a6248" stroke-width="1.2"/>'+
+      '<rect x="-2.2" y="-14" width="4.4" height="42" rx="1.5" style="fill:#c8743d;stroke:#8a4a22" stroke-width=".8"/>'+
+      '<rect x="-7" y="-24" width="14" height="11" rx="2" style="fill:#b8bec5;stroke:#6f7882" stroke-width="1"/>'+
+      '<text x="0" y="40" text-anchor="middle" class="rtxt" style="font-size:5px;fill:var(--muted)">SOLO</text>';
+  }
+  if(c.type==='bep'){/* BEP: barra de cobre sobre dois isoladores, com 4 parafusos */
+    s=shadow(-27,-12,54,26,3)+'<rect x="-27" y="-12" width="54" height="26" rx="3" style="fill:#e9edf3;stroke:#8b939c" stroke-width="1"/>'+
+      '<rect x="-24" y="2" width="8" height="10" rx="1" style="fill:#3a4048"/><rect x="16" y="2" width="8" height="10" rx="1" style="fill:#3a4048"/>'+
+      '<rect x="-25" y="-9" width="50" height="10" rx="1.5" style="fill:#c8743d;stroke:#8a4a22" stroke-width=".8"/>'+
+      '<text x="0" y="11" text-anchor="middle" class="rtxt" style="font-size:6px">BEP</text>';
   }
   if(c.type==='fuse'){/* disjuntor DIN unipolar: alavanca em cima = ligado; desarmado = alavanca embaixo */
     const trip=c.broken&&c.show;
@@ -280,8 +301,8 @@ function realBorneLab(c,k,text){
   const T=realTerms(c)[k];if(!T)return '';const [x,y]=T.p,d=T.d;
   let n=text===undefined?T.n:text;if(c.type==='btn'&&c.nf&&text===undefined)n=['1','2'][k];if(!n)return '';
   const st='';
-  if(c.type==='src')/* só aparece no Caça-Defeito (letra da medição), acima do parafuso */
-    return '<text class="lab bn" x="'+x+'" y="'+(y-10)+'" text-anchor="middle">'+n+'</text>';
+  if(c.type==='src')/* marcação impressa na régua, acima do parafuso (no Caça-Defeito, a letra da medição) */
+    return '<text class="lab bn bnd" x="'+x+'" y="'+(y-10)+'" text-anchor="middle"'+(text===undefined?' style="fill:'+(k===1?'#2f6fb0':'#b8322a')+'"':'')+'>'+n+'</text>';
   if(c.type==='sw2'||c.type==='sw3'||c.type==='foto')/* 3 bornes embaixo: nome impresso na placa, acima de cada parafuso */
     return '<text class="lab bn bnd" x="'+x+'" y="'+(y-11)+'" text-anchor="middle">'+n+'</text>';
   if(c.type==='motor')return '<text class="lab bn" x="'+x+'" y="'+(y-11)+'" text-anchor="middle">'+n+'</text>';
@@ -310,7 +331,8 @@ function realCompLab(c,lab,comps,usados){usados=usados||[];const r=REAL_BOX[c.ty
    → parafusos e nomes → áreas de toque. Mesmas opções de board(): sel, probes, letters, tags, pick*, move, toggle. */
 function realBoard(st,o,r){
   let s=realBg();
-  st.comps.forEach(c=>{s+=realComp(c,r.lamp[c.id]||0,o)});
+  const oc=Object.assign({},o,{res:r});
+  st.comps.forEach(c=>{s+=realComp(c,r.lamp[c.id]||0,oc)});
   let rings='',hits='';const taken=[],labs=[];
   st.wires.forEach((w,i)=>{const rt=realWireRoute(st.comps,w,taken),d=ptsPath(rt.pts);
     for(let j=1;j<rt.pts.length;j++)taken.push([rt.pts[j-1],rt.pts[j]]);
@@ -324,7 +346,7 @@ function realBoard(st,o,r){
     realTerms(c).forEach((T,k)=>{const t=c.id+'.'+k;let cl='term scr';
       if(o.sel===t)cl+=' sel';if(o.probes&&o.probes[0]===t)cl+=' probe-r';if(o.probes&&o.probes[1]===t)cl+=' probe-b';
       s+=realScrew(cl,T.p)+(o.letters&&o.letters[t]?realBorneLab(c,k,'<tspan class="kl">'+o.letters[t]+'</tspan>'):realBorneLab(c,k))});
-    if(c.type!=='src')s+=realCompLab(c,c.lab||c.id,st.comps,labs);
+    if(c.type!=='src'&&c.type!=='bep')s+=realCompLab(c,c.lab||c.id,st.comps,labs);
     if(o.tags&&o.tags[c.id]!==undefined){const ok=o.tags[c.id],b=realBounds(c);
       /* selo no canto da peça, para não cobrir fio nem etiqueta */
       s+='<g class="selo '+(ok?'ok':'no')+'" transform="translate('+b[2]+' '+b[1]+')"><circle r="8"/><text y="3.6" text-anchor="middle">'+(ok?'✓':'✗')+'</text><title>'+(ok?'passa':'não passa')+'</title></g>'}

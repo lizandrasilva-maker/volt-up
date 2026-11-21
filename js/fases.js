@@ -182,7 +182,7 @@ function runDiag(p,d){
       document.getElementById('t2').onclick=()=>{tool='fix';msg=null;render()};
       svg.querySelectorAll('[data-t]').forEach(h=>h.addEventListener('click',()=>{
         if(zm.busy())return;if(probes.length>=2)probes=[];probes.push(h.dataset.t);
-        if(probes.length===2){measures++;const rr=solve(st.comps,st.wires);reading=Math.abs(rr.vAt(probes[0])-rr.vAt(probes[1]))}else reading=null;msg=null;render()}));
+        if(probes.length===2){measures++;const rr=solve(st.comps,st.wires);reading=rr.vDiff(probes[0],probes[1])}else reading=null;msg=null;render()}));
       svg.querySelectorAll('[data-c]').forEach(h=>h.addEventListener('click',()=>{
         if(zm.busy())return;const c=st.comps.find(x=>x.id===h.dataset.c);
         if(tool==='test'){measures++;tags[c.id]=!c.broken;msg=null;speak(c.broken?'não passa':'passa');render();return}
@@ -205,7 +205,7 @@ function runDiag(p,d){
 /* ---------- Bibliotecas de peças (uma por capítulo da história) ----------
    [chave, ícone, nome]. A chave vira o tipo da peça (as botoeiras são o tipo 'btn' com nf). */
 const BIBLIOTECAS={
-  fundamentos:{nome:'⚡ Fundamentos',pecas:[['lamp','💡','Lâmpada'],['sw','🔘','Interruptor simples'],['fuse','🎚️','Disjuntor']]},
+  fundamentos:{nome:'⚡ Fundamentos',pecas:[['lamp','💡','Lâmpada'],['sw','🔘','Interruptor simples'],['fuse','🎚️','Disjuntor'],['haste','⏚','Haste de aterramento'],['bep','🟫','BEP (barramento de terra)']]},
   predial:{nome:'🏠 Predial',pecas:[['sw2','🔘','Interruptor duplo'],['sw3','🔀','Interruptor paralelo'],['sw4','✖️','Interruptor intermediário'],
     ['dr','🛡️','DR (diferencial)'],['dps','⚡','DPS (surto)'],['foto','🌙','Fotocélula'],['ri','🔁','Relé de impulso'],['btnNA','🟢','Pulsador (NA)']]},
   industrial:{nome:'🏭 Industrial',pecas:[['motor','⚙️','Motor monofásico'],['kc','🧲','Contatora'],['ft','🌡️','Relé térmico'],['btnNA','🟢','Botoeira liga (NA)'],['btnNF','🔴','Botoeira desliga (NF)'],['boia','💧','Boia de nível']]}
@@ -228,18 +228,21 @@ function runSandbox(){
   const benchHTML=()=>{const r=solve(sb.comps,sb.wires);return benchWrap(board(sb,{res:r,sel,selC,move:tool==='build',pickTerm:true,pickWire:tool==='build',probes:tool==='meter'?probes:null,real:vistaReal(),vb:zm.vb()}),'bench',zm)+statusChips(sb,r)};
   const redrawBench=()=>{document.getElementById('bw').innerHTML=benchHTML();bindBench()};
   const add=key=>{
-    if(sb.comps.length>=12){msg={bad:1,t:'Bancada cheia: no máximo 11 peças além da rede.'};render();return}
+    if(sb.comps.length>=14){msg={bad:1,t:'Bancada cheia: no máximo 13 peças além da fonte.'};render();return}
     const type=key.startsWith('btn')?'btn':key;
-    const pre={lamp:'L',sw:'S',sw2:'SD',sw3:'SP',sw4:'SI',fuse:'DJ',dr:'DR',dps:'DPS',foto:'FC',ri:'RI',boia:'BO',motor:'M',kc:'K',ft:'FT',btnNA:'BL',btnNF:'BD'}[key];let n=1;while(sb.comps.some(c=>c.id===pre+n))n++;
+    const pre={lamp:'L',sw:'S',sw2:'SD',sw3:'SP',sw4:'SI',fuse:'DJ',dr:'DR',dps:'DPS',foto:'FC',ri:'RI',boia:'BO',motor:'M',kc:'K',ft:'FT',btnNA:'BL',btnNF:'BD',haste:'H',bep:'BEP'}[key];let n=1;while(sb.comps.some(c=>c.id===pre+n))n++;
     const ex={sw:{closed:false},sw2:{a:false,b:false},sw3:{pos:0},sw4:{pos:0},foto:{noite:false},boia:{vazia:true},btnNA:{nf:false},btnNF:{nf:true}}[key]||{};
-    const spot=SPOTS.find(([x,y])=>!sb.comps.some(c=>Math.hypot(c.x-x,c.y-y)<60))||[185,112];
+    /* haste e BEP vão para o canto de baixo, perto da fonte (a haste fica no solo) */
+    const livre=([x,y])=>!sb.comps.some(c=>Math.hypot(c.x-x,c.y-y)<(key==='haste'||key==='bep'?40:60));
+    const spot=(key==='haste'?[[100,205],[70,215],[130,215]]:key==='bep'?[[45,192],[100,150]]:[]).concat(SPOTS).find(livre)||[185,112];
     sb.comps.push(C(pre+n,type,spot[0],spot[1],0,ex));selC=pre+n;msg=null;persist();render()};
   const addWire=(a,b)=>{sel=null;msg=null;if(a.split('.')[0]!==b.split('.')[0]||true){if(!sb.wires.some(w=>(w.a===a&&w.b===b)||(w.a===b&&w.b===a)))sb.wires.push(Object.assign(W(a,b),{cor}))}persist();render()};
   const render=()=>{
     const c=sc();
     /* botões de ação da peça selecionada */
     const acoes=c?({sw:[['x',c.closed?'Abrir':'Fechar']],sw2:[['-1','Seção 1'],['1','Seção 2']],sw3:[['x','Inverter']],sw4:[['x','Inverter']],foto:[['x',c.noite?'Virar dia':'Virar noite']],boia:[['x',c.vazia?'Encher a caixa':'Esvaziar a caixa']],dr:[['x',c.trip?'Rearmar':'Testar']],
-      ft:[['x',c.trip?'Rearmar':'Simular sobrecarga']],btn:[['x','Apertar']]}[c.type]||[]):[];
+      ft:[['x',c.trip?'Rearmar':'Simular sobrecarga']],btn:[['x','Apertar']],
+      src:[1,2,3].map(n=>['f'+n,(nFases(c)===n?'✓ ':'')+n+(n===1?' fase':' fases')+' + N'])}[c.type]||[]):[];
     const drFuga=sb.comps.find(x=>x.type==='dr'&&x.trip&&x.porFuga);
     frame({nome:'Oficina Livre'},
       /* tudo de montar fica numa caixa de ferramentas; fechada, mostra só o que está sendo feito */
@@ -265,7 +268,11 @@ function runSandbox(){
     app.querySelectorAll('[data-vista]').forEach(b=>b.onclick=()=>{setVista(b.dataset.vista==='real');render()});
     app.querySelectorAll('[data-cor]').forEach(b=>b.onclick=()=>{cor=b.dataset.cor;tool='build';box=false;render()});
     const rot=document.getElementById('rot');if(rot)rot.onclick=()=>{c.v=!c.v;persist();render()};
-    app.querySelectorAll('[data-ac]').forEach(b=>b.onclick=()=>{acionar(c,b.dataset.ac==='-1'?-1:1);persist();render()});
+    app.querySelectorAll('[data-ac]').forEach(b=>b.onclick=()=>{const k=b.dataset.ac;
+      /* fonte: troca o número de fases; fios presos em borne de fase que deixou de existir saem */
+      if(k[0]==='f'){c.fases=+k.slice(1);sb.wires=sb.wires.filter(w=>[w.a,w.b].every(t=>{const [id,j]=t.split('.'),x=sb.comps.find(y=>y.id===id);return x&&+j<terms(x).length}));
+        probes=[];reading=null;msg={t:'Fonte: '+fonteTxt(c)+'.'};persist();render();return}
+      acionar(c,k==='-1'?-1:1);persist();render()});
     const del=document.getElementById('del');if(del)del.onclick=()=>{sb.comps=sb.comps.filter(x=>x!==c);sb.wires=sb.wires.filter(w=>!w.a.startsWith(c.id+'.')&&!w.b.startsWith(c.id+'.'));selC=null;persist();render()};
     document.getElementById('clr').onclick=()=>{if(!sure){sure=true;render();return}sure=false;sb={comps:[BAT()],wires:[]};selC=null;sel=null;probes=[];reading=null;msg=null;persist();render()};
     document.getElementById('insp').onclick=()=>{
@@ -291,7 +298,7 @@ function runSandbox(){
     svg.querySelectorAll('[data-t]').forEach(h=>h.addEventListener('pointerdown',e=>{
       e.preventDefault();const a=h.dataset.t;
       if(zm.busy())return;
-      if(tool==='meter'){if(probes.length>=2)probes=[];probes.push(a);if(probes.length===2){const r=solve(sb.comps,sb.wires);reading=Math.abs(r.vAt(probes[0])-r.vAt(probes[1]))}else reading=null;render();return}
+      if(tool==='meter'){if(probes.length>=2)probes=[];probes.push(a);if(probes.length===2){const r=solve(sb.comps,sb.wires);reading=r.vDiff(probes[0],probes[1])}else reading=null;render();return}
       const p0=tpos(sb.comps,a);let line=null;
       const move=ev=>{if(zm.busy()){if(line){line.remove();line=null}return}const s2=getSvg(),q=svgPoint(s2,ev);if(!line&&Math.hypot(q.x-p0[0],q.y-p0[1])>12){line=document.createElementNS('http://www.w3.org/2000/svg','line');line.setAttribute('class','w tmp');line.setAttribute('x1',p0[0]);line.setAttribute('y1',p0[1]);s2.appendChild(line)}if(line){line.setAttribute('x2',q.x);line.setAttribute('y2',q.y)}};
       const up=ev=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',up);

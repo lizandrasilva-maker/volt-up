@@ -28,7 +28,7 @@ try{
     partida_semSelo:sem('partida','moderado',w=>w.a==='BD.1'&&w.b==='K.4'),
     partida_semPEmotor:sem('partida','moderado',w=>w.a==='M.2'),
     partida_95_96_fora:(()=>{S.mode='moderado';const s=testeSol('partida').filter(w=>!(w.a==='B.0'&&w.b==='FT.2')&&!(w.a==='FT.3'));s.push(Object.assign(W('B.0','BD.0'),{cor:'fase'}));return verifica('partida','moderado',s)})(),
-    caixa_boiaNoNeutro:(()=>{S.mode='leve';return verifica('caixa','leve',W2([['B.0','M.0','fase'],['M.1','BO.0','neutro'],['BO.1','B.1','neutro'],['M.2','B.2','terra']]))})()
+    caixa_boiaNoNeutro:(()=>{S.mode='leve';return verifica('caixa','leve',W2([['B.0','M.0','fase'],['M.1','BO.0','neutro'],['BO.1','B.1','neutro'],['M.2','BEP.1','terra'],['BEP.0','H.0','terra']]))})()
   };
   // 3) previsões: a resposta certa (opção 0) bate com o que acontece
   const pv={};for(const md of ['leve','moderado','full']){S.mode=md;phaseById('sobrecarga').dados[md].forEach((it,i)=>{const st=it.sc(),antes=solve(st.comps,st.wires).lamp.M>0.04;it.act(st);const depois=solve(st.comps,st.wires).lamp.M>0.04;pv[md+':'+i]=(antes?'girando':'parado')+' → '+(depois?'girando':'parado')})}
@@ -58,6 +58,27 @@ try{
   // 6) cenas e personagens existem
   const falta=[];CHAPTERS.filter(c=>!c.soon).forEach(c=>{[...(c.intro||[]),...(c.fim||[])].forEach(([w])=>{if(w!=='eu'&&!NPC[w])falta.push(c.id+':'+w)});c.fases.forEach(id=>{if(!phaseById(id))falta.push('fase '+id);(SCENES[id]||[]).forEach(([w])=>{if(w!=='eu'&&!NPC[w])falta.push(id+':'+w)});if(!ICONS[phaseById(id).ic])falta.push('icone '+id)})});
   R.faltando=falta;
+  // 6a) fonte e aterramento
+  {const F=n=>Object.assign(BAT(),{fases:n}),fo={};
+    fo.bornes1F=terms(F(1)).length+' bornes';fo.bornes3F=terms(F(3)).length+' bornes';
+    const lamp=(a,b,n)=>solve([F(n),C('L1','lamp',200,120,0)],[W(a,'L1.0'),W('L1.1',b)]);
+    fo.lampadaFN=lit(lamp('B.0','B.1',1),'L1');fo.lampadaEntreFases=lit(lamp('B.0','B.2',3),'L1');
+    const r3=solve([F(3)],[]);fo.medeFN=Math.round(r3.vDiff('B.0','B.1'));fo.medeFF=Math.round(r3.vDiff('B.0','B.2'));
+    fo.curtoFaseHaste=solve([F(1),C('H','haste',100,205,0)],[W('B.0','H.0')]).short;
+    S.mode='moderado';
+    const motor=extra=>{const st={comps:[F(1),C('M','motor',250,170,0),...ATERRA()],wires:W2([['B.0','M.0','fase'],['M.1','B.1','neutro']].concat(extra))};return normCheck(st)||colorCheck(st)||'OK'};
+    fo.bepSemHaste=motor([['M.2','BEP.1','terra']]);
+    fo.motorDiretoNaHaste=motor([['M.2','H.0','terra']]);
+    fo.neutroNoBEP=motor([['M.2','BEP.1','terra'],['BEP.0','H.0','terra'],['B.1','BEP.2','terra']]);
+    /* DR com uma carga da saída dele para a massa aterrada: só há fuga se a massa estiver na haste */
+    const dr=comHaste=>{const comps=[F(1),C('DR','dr',150,60,0),C('L1','lamp',250,170,0),...ATERRA()];
+      const w=[W('B.0','DR.0'),W('B.1','DR.1'),W('DR.2','L1.0'),W('L1.1','BEP.1')];if(comHaste)w.push(W('BEP.0','H.0'));solve(comps,w);return !!comps[1].trip};
+    fo.drComHaste=dr(true);fo.drSemHaste=dr(false);
+    /* Oficina: fonte 3F com fio em L3; ao voltar para 1 fase, o fio do L3 sai */
+    S.mode='leve';S.vista={leve:'simb'};S.sandbox={comps:[F(3),C('L1','lamp',200,120,0)],wires:[W('B.3','L1.0'),W('L1.1','B.1')]};runSandbox();
+    const mv=document.querySelector('[data-mv="B"]');mv.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));window.dispatchEvent(new PointerEvent('pointerup'));
+    const f1=document.querySelector('[data-ac="f1"]');if(f1)f1.click();fo.oficinaTiraFio=!!f1&&S.sandbox.wires.length===1&&nFases(S.sandbox.comps[0])===1;
+    R.fonte=fo;}
   // 6b) menu do usuário e privacidade
   S.mode='leve';S.char='aprendiz';S.chap='cap1';S.seen['leve:cap1:intro']=1;
   showHome();R.menu={cards:[...document.querySelectorAll('.menu .mcard')].map(b=>b.id),calcDesligada:document.getElementById('mCalc').disabled,
