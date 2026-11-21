@@ -60,20 +60,10 @@
     </form>
   </section>
 
-  <!-- Já entrou -->
-  <section id="ok" class="panel hidden">
-    <h2>Oi, <span id="nome" style="color:var(--amber)"></span>!</h2>
-    <div class="valid" id="validade"></div>
-    <p class="small" id="prog"></p>
-    <button class="btn main" id="continuar">Continuar de onde parei ▶</button>
-    <a class="btn ghost sm hidden" id="painel" href="admin.html" style="display:grid;place-items:center;text-decoration:none">Abrir o painel Adm</a>
-    <button class="btn ghost sm" id="sair">Sair</button>
-  </section>
-
   <p class="small hidden" id="msg" role="status" style="text-align:center"></p>
 
   <div class="or">ou</div>
-  <a class="btn ghost" href="index.html" style="display:grid;place-items:center;text-decoration:none">Jogar o Capítulo 1 grátis</a>
+  <a class="btn ghost" href="index.html?convidado=1" style="display:grid;place-items:center;text-decoration:none">Jogar o Capítulo 1 grátis</a>
   <p class="small" style="text-align:center">Sem login, o progresso fica só neste aparelho.</p>
 </div>
 
@@ -81,7 +71,7 @@
 <script src="js/nuvem.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const mostra=id=>['entrar','criar','ok'].forEach(k=>$(k).classList.toggle('hidden',k!==id));
+const mostra=id=>['entrar','criar'].forEach(k=>$(k).classList.toggle('hidden',k!==id));
 function aviso(t,erro){$('msg').textContent=t;$('msg').classList.toggle('hidden',!t);$('msg').style.color=erro?'var(--fase)':''}
 const dataBR=d=>new Date(d).toLocaleDateString('pt-BR');
 function ocupado(form,sim){form.querySelectorAll('button').forEach(b=>b.disabled=sim)}
@@ -118,34 +108,12 @@ $('esqueci').onclick=async e=>{e.preventDefault();const em=$('em').value.trim();
   await nuvem.auth.resetPasswordForEmail(em,{redirectTo:new URL('login.html',location.href).href});
   aviso('Se esse e-mail tiver conta, mandamos um link para criar uma senha nova.')};
 
+/* Com login feito, o jogo abre direto no menu do usuário (validade, perfil e saída ficam lá). */
 async function painel(){
   const u=await nuvemUsuario();if(!u){mostra('entrar');return}
-  const [{data:p},{data:ate}]=await Promise.all([
-    nuvem.from('perfis').select('apelido,papel,turma_id').eq('id',u.id).maybeSingle(),
-    nuvem.rpc('validade_acesso')]);
-  $('nome').textContent=(p&&p.apelido)||'jogador';
-  $('fala').textContent='Que bom te ver de novo, '+((p&&p.apelido)||'eletricista')+'!';
-  const v=$('validade');
-  if(p&&p.papel==='admin'){v.innerHTML='<span style="font-size:28px">🛠️</span><div><b>Conta de administradora</b><span class="small">Acesso completo</span></div>';v.className='valid'}
-  else if(ate&&new Date(ate)>new Date()){const dias=Math.ceil((new Date(ate)-new Date())/864e5);
-    v.className='valid'+(dias<=7?' warn':'');
-    v.innerHTML='<span style="font-size:28px">'+(dias<=7?'⏳':'🔓')+'</span><div><b>Acesso liberado até '+dataBR(ate)+'</b><span class="small">Faltam '+dias+' dias'+(dias<=7?'. Seu progresso fica guardado; fale com o professor para renovar.':'')+'</span></div>'}
-  else{v.className='valid warn';v.innerHTML='<span style="font-size:28px">🔒</span><div><b>Sem acesso pago ativo</b><span class="small">O Capítulo 1 é grátis. Seu progresso fica guardado na nuvem.</span></div>'}
-  $('painel').classList.toggle('hidden',!(p&&(p.papel==='admin'||p.papel==='professor')));
-  let s={};try{s=JSON.parse(localStorage.getItem('neuro-eletricista-v2')||'{}')}catch(e){}
-  const fases=s.done?Object.keys(s.done).length:0;
-  $('prog').textContent=fases?'Progresso salvo: '+fases+' fase(s) concluída(s) · '+((s.cards||[]).length)+' cards':'Ainda sem fases concluídas. Bora começar!';
-  mostra('ok');
+  try{sessionStorage.removeItem('volt-convidado')}catch(e){}
+  location.replace('index.html');
 }
-$('continuar').onclick=async()=>{
-  let s={};try{s=JSON.parse(localStorage.getItem('neuro-eletricista-v2')||'{}')}catch(e){}
-  if(!s.name){const n=$('nome').textContent;if(n){s.name=n;try{localStorage.setItem('neuro-eletricista-v2',JSON.stringify(s))}catch(e){}}}
-  location.href='index.html';
-};
-$('sair').onclick=async()=>{await nuvem.auth.signOut();
-  /* Aparelho compartilhado na escola: o próximo aluno não deve ver o jogo de quem saiu. */
-  try{localStorage.removeItem('neuro-eletricista-v2')}catch(e){}
-  mostra('entrar');aviso('Você saiu. O progresso continua salvo na nuvem.')};
 
 if(!nuvem){mostra('entrar');aviso('Sem conexão com o servidor agora. Você ainda pode jogar o Capítulo 1 grátis.',true)}
 else painel();

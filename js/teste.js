@@ -19,7 +19,7 @@ window.VOLT_TESTE_OK=false;   // o botão pode aparecer
   if(typeof nuvemUsuario==='function')nuvemUsuario().then(async u=>{
     if(!u||VOLT_TESTE_OK)return;
     try{const {data}=await nuvem.from('perfis').select('papel').eq('id',u.id).maybeSingle();
-      if(data&&(data.papel==='admin'||data.papel==='professor')){VOLT_TESTE_OK=true;if(document.querySelector('.map'))showMap()}}catch(e){}
+      if(data&&['admin','professor','validador'].includes(data.papel)){VOLT_TESTE_OK=true;if(document.querySelector('.map'))showMap();else if(document.querySelector('.menu'))showHome()}}catch(e){}
   });
 })();
 
@@ -27,17 +27,17 @@ window.VOLT_TESTE_OK=false;   // o botão pode aparecer
 (function(){const _save=save;save=function(){if(VOLT_TESTE){try{localStorage.setItem(TESTE_STORE,JSON.stringify(S))}catch(e){}return}_save()}})();
 
 function lerPerfil(key){const s=FRESH();try{const r=localStorage.getItem(key);if(r)Object.assign(s,JSON.parse(r))}catch(e){}return s}
-function entrarTeste(){
+function entrarTeste(depois){
   const real=S;let t=lerPerfil(TESTE_STORE);
-  if(!t.mode){t.mode=real.mode||'leve';t.char=real.char||'aprendiz';t.name=real.name||''}
+  if(!t.mode){t.mode=real.mode||'leve';t.char=real.char||'aprendiz';t.name=real.name||(window.CONTA&&CONTA.apelido)||''}
   VOLT_TESTE=true;S=t;ensure();save();
   try{sessionStorage.setItem('volt-teste-on','1')}catch(e){}
-  showMap();
+  (typeof depois==='function'?depois:showMap)();
 }
 function sairTeste(){
   VOLT_TESTE=false;try{sessionStorage.removeItem('volt-teste-on')}catch(e){}
   S=lerPerfil(STORE);ensure();
-  if(S.mode&&S.char)showMap();else showStart();
+  abrirInicio();
 }
 function zerarTeste(){const keep={mode:S.mode,char:S.char,name:S.name};S=Object.assign(FRESH(),keep);save();showMap()}
 /* Se a página recarregar com o modo ligado, continua no perfil de teste. */
@@ -51,7 +51,7 @@ function testeBarHTML(){
     '<div class="teste-b"><button class="btn sm" id="tRot">📜 Roteiro</button><button class="btn sm" id="tZero">↺ Zerar teste</button><button class="btn sm" id="tOut">Sair</button></div></div>';
 }
 function bindTesteBar(){
-  const a=document.getElementById('tIn');if(a)a.onclick=entrarTeste;
+  const a=document.getElementById('tIn');if(a)a.onclick=()=>entrarTeste(document.querySelector('.menu')?showHome:showMap);
   const r=document.getElementById('tRot');if(r)r.onclick=showRoteiro;
   const z=document.getElementById('tZero');if(z)z.onclick=zerarTeste;
   const o=document.getElementById('tOut');if(o)o.onclick=sairTeste;

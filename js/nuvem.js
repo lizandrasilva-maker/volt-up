@@ -8,6 +8,17 @@ const nuvem=(window.supabase&&window.supabase.createClient)?window.supabase.crea
 
 async function nuvemUsuario(){if(!nuvem)return null;try{const {data}=await nuvem.auth.getSession();return data.session?data.session.user:null}catch(e){return null}}
 
+/* Dados da conta usados no menu: apelido, papel (aluno, professor, admin, validador) e validade do acesso. */
+window.CONTA=null;
+async function nuvemConta(){
+  const u=await nuvemUsuario();if(!u)return null;
+  try{const [{data:p},{data:ate}]=await Promise.all([
+      nuvem.from('perfis').select('apelido,papel').eq('id',u.id).maybeSingle(),nuvem.rpc('validade_acesso')]);
+    window.CONTA={id:u.id,apelido:(p&&p.apelido)||'',papel:(p&&p.papel)||'aluno',validade:ate||null};
+  }catch(e){window.CONTA={id:u.id,apelido:'',papel:'aluno',validade:null}}
+  return window.CONTA;
+}
+
 /* Baixa o progresso da nuvem para o navegador (usado logo depois do login). */
 async function nuvemPuxar(){
   const u=await nuvemUsuario();if(!u)return null;

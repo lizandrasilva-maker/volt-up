@@ -58,9 +58,18 @@ try{
   // 6) cenas e personagens existem
   const falta=[];CHAPTERS.filter(c=>!c.soon).forEach(c=>{[...(c.intro||[]),...(c.fim||[])].forEach(([w])=>{if(w!=='eu'&&!NPC[w])falta.push(c.id+':'+w)});c.fases.forEach(id=>{if(!phaseById(id))falta.push('fase '+id);(SCENES[id]||[]).forEach(([w])=>{if(w!=='eu'&&!NPC[w])falta.push(id+':'+w)});if(!ICONS[phaseById(id).ic])falta.push('icone '+id)})});
   R.faltando=falta;
-  // 6b) privacidade: a tela inicial e o menu do mapa levam à política
-  showStart();R.privacidade_inicio=!!document.querySelector('a[href="politica-privacidade.html"]');
-  S.mode='leve';S.chap='cap1';S.seen['leve:cap1:intro']=1;showMap();R.privacidade_mapa=!!document.querySelector('.mais a[href="politica-privacidade.html"]');
+  // 6b) menu do usuário e privacidade
+  S.mode='leve';S.char='aprendiz';S.chap='cap1';S.seen['leve:cap1:intro']=1;
+  showHome();R.menu={cards:[...document.querySelectorAll('.menu .mcard')].map(b=>b.id),calcDesligada:document.getElementById('mCalc').disabled,
+    politica:!!document.querySelector('a[href="politica-privacidade.html"]')};
+  document.getElementById('mHist').click();R.menu.mapaTemVoltar=!!document.getElementById('toMenu')&&!document.querySelector('.mais');
+  document.getElementById('toMenu').click();document.getElementById('mPerfil').click();R.menu.perfilMelhorar=document.querySelectorAll('.melhorar .miss').length;
+  document.getElementById('bk').click();document.getElementById('mConq').click();R.menu.conquistas=document.querySelectorAll('.achs .ach').length;
+  document.getElementById('bk').click();document.getElementById('mPlano').click();R.menu.planoSemConta=document.querySelector('.valid b').textContent;
+  window.CONTA={papel:'validador'};R.menu.planoValidador=planoResumo().t;window.CONTA=null;
+  document.getElementById('bk').click();document.getElementById('mConfig').click();R.menu.configPolitica=!!document.querySelector('a[href="politica-privacidade.html"]');
+  document.getElementById('bk').click();R.menu.voltouAoMenu=!!document.querySelector('.menu');
+  S.char=null;abrirInicio();R.menu.semPersonagem=!!document.querySelector('.chars');S.char='aprendiz';
   // 7) trava de capítulos
   S.mode='leve';S.chap='cap2';S.seen={};S.done={};showMap();R.cap2_semCap1=document.querySelector('.soonbox .eyebrow').textContent;
   CHAPTERS[0].fases.forEach(id=>S.done['leve:'+id]=3);S.seen['leve:cap2:intro']=1;showMap();R.cap2_comCap1=document.querySelectorAll('.node').length+' fases';

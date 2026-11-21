@@ -49,12 +49,28 @@ function showFicha(){
   '<div><span class="eyebrow">Plano de carreira</span><div class="ladder" style="margin-top:6px">'+RANKS.map((r,k)=>'<i class="'+(k<rk.i?'on':k===rk.i?'cur':'')+'" style="--p:'+(k===rk.i?Math.round(rk.p*100):0)+'%"></i>').join('')+'</div>'+
   '<p class="help" style="margin-top:6px">'+(rk.nx?'Faltam '+(rk.nx.xp-S.xp)+' XP para '+rk.nx.n+'.':'Topo da carreira. Parabéns!')+'</p></div>'+
   '<div class="tiles"><div class="tile"><small>Dias seguidos</small><b>🔥 '+streak()+'</b></div><div class="tile"><small>Fases feitas</small><b>'+done+'</b></div><div class="tile"><small>Cards</small><b>'+S.cards.length+'</b></div><div class="tile"><small>XP total</small><b>'+S.xp+'</b></div></div>'+
-  '<span class="eyebrow">Atributos</span><div class="attrs">'+Object.entries(ATTR).map(([k,a])=>{const v=S.attr[k]||0;return '<div class="attr" style="--c:'+a.c+'"><span class="ai">'+a.i+'</span><span class="an">'+a.n+'</span><b>'+v+'</b><span class="bar"><i style="width:'+Math.round(v/max*100)+'%"></i></span></div>'}).join('')+'</div>'+
-  '<div class="world"><span class="eyebrow">Conquistas</span><span class="chip">'+S.ach.length+' / '+ACH.length+'</span></div>'+
-  '<div class="achs">'+ACH.map(a=>S.ach.includes(a.id)?'<div class="ach on"><span class="e">'+a.e+'</span><small>'+a.n+'</small></div>':'<div class="ach" aria-label="Conquista bloqueada"><span class="q">?</span></div>').join('')+'</div>'+
+  '<span class="eyebrow">Competências</span><div class="attrs">'+Object.entries(ATTR).map(([k,a])=>{const v=S.attr[k]||0;return '<div class="attr" style="--c:'+a.c+'"><span class="ai">'+a.i+'</span><span class="an">'+a.n+'</span><b>'+v+'</b><span class="bar"><i style="width:'+Math.round(v/max*100)+'%"></i></span></div>'}).join('')+'</div>'+
+  melhorarHTML()+
   (S.start?'<p class="help">Na bancada desde '+S.start.split('-').reverse().join('/')+'.</p>':'')+
-  '<button class="btn main" id="bk">Voltar ao mapa</button>';
-  bindHud();window.scrollTo(0,0);document.getElementById('bk').onclick=showMap;
+  '<button class="btn main" id="bk">Voltar ao menu</button>';
+  bindHud();window.scrollTo(0,0);document.getElementById('bk').onclick=showHome;
+}
+/* As duas competências mais baixas, com a próxima fase do capítulo que treina cada uma. */
+function melhorarHTML(){
+  const baixas=Object.keys(ATTR).sort((x,y)=>(S.attr[x]||0)-(S.attr[y]||0)).slice(0,2);
+  const sugestao=a=>{for(const ch of CHAPTERS){if(ch.soon)continue;const id=ch.fases.find(f=>PH_ATTR[f]===a&&(S.done[S.mode+':'+f]||0)<3);if(id)return phaseById(id).nome}return null};
+  return '<div class="melhorar"><span class="eyebrow">Competências a melhorar</span>'+baixas.map(a=>{const s=sugestao(a);
+    return '<div class="miss"><span class="box">'+ATTR[a].i+'</span><span><b>'+ATTR[a].n+'</b>'+(s?' · treine em <em>'+s+'</em>':' · refaça as fases buscando 3 estrelas')+'</span></div>'}).join('')+'</div>';
+}
+function showConquistas(){
+  setMode();
+  app.innerHTML=hud()+'<p class="big">Suas <em>conquistas</em></p>'+
+  '<div class="world"><span class="eyebrow">Medalhas</span><span class="chip">'+S.ach.length+' / '+ACH.length+'</span></div>'+
+  '<div class="achs">'+ACH.map(a=>S.ach.includes(a.id)?'<div class="ach on"><span class="e">'+a.e+'</span><small>'+a.n+'</small></div>':'<div class="ach" aria-label="Conquista bloqueada"><span class="q">?</span></div>').join('')+'</div>'+
+  '<button class="btn" id="album">🃏 Álbum de cards <small class="muted">· '+S.cards.length+' / '+PHASES.length*3+'</small></button>'+
+  '<div class="tiles"><div class="tile"><small>XP total</small><b>⚡ '+S.xp+'</b></div><div class="tile"><small>Dias seguidos</small><b>🔥 '+streak()+'</b></div></div>'+
+  '<button class="btn main" id="bk">Voltar ao menu</button>';
+  bindHud();window.scrollTo(0,0);document.getElementById('album').onclick=showAlbum;document.getElementById('bk').onclick=showHome;
 }
 
 function showBreath(done){
