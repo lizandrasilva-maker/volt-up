@@ -71,8 +71,20 @@ let pistas={};
     confere('Pistas nos quizzes',!p.numericas||p.certaNoMeio/p.numericas<=0.5,'numéricas: certa não é sempre o valor do meio (≤ 50 %)',p.certaNoMeio+' de '+p.numericas);
     confere('Cenas e personagens',(t.faltando||[]).length===0,'cenas, personagens e ícones existem',(t.faltando||[]).join(', '));
     /* Privacidade: a política existe, tem as seções obrigatórias e está ligada nas telas de entrada */
-    confere('Privacidade',t.privacidade_inicio===true,'tela inicial tem link para a política');
-    confere('Privacidade',t.privacidade_mapa===true,'menu "Mais opções" tem link para a política');
+    /* Menu do usuário: a tela depois do login */
+    const mn=t.menu||{};
+    confere('Menu do usuário',JSON.stringify(mn.cards)===JSON.stringify(['mHist','mPerfil','mConq','mOfi','mCalc','mPlano','mConfig']),'menu com história, perfil, conquistas, oficina, calculadora, plano e configurações',JSON.stringify(mn.cards));
+    confere('Menu do usuário',mn.calcDesligada===true,'calculadora aparece como "em breve" (desligada)');
+    confere('Menu do usuário',mn.mapaTemVoltar===true,'mapa tem botão para o menu e não tem mais o "Mais opções"');
+    confere('Menu do usuário',mn.perfilMelhorar===2,'perfil mostra 2 competências a melhorar',String(mn.perfilMelhorar));
+    confere('Menu do usuário',mn.conquistas>=12,'tela de conquistas mostra as medalhas',String(mn.conquistas));
+    confere('Menu do usuário',mn.planoSemConta==='Sem conta','plano sem login avisa que o progresso fica no aparelho',mn.planoSemConta);
+    confere('Menu do usuário',mn.planoValidador==='Validação','conta de validação aparece como tudo liberado',mn.planoValidador);
+    confere('Menu do usuário',mn.voltouAoMenu===true,'configurações voltam ao menu');
+    confere('Menu do usuário',mn.semPersonagem===true,'primeira entrada pede o personagem antes do menu');
+    confere('Menu do usuário',/location\.replace\('login\.html'\)/.test(fs.readFileSync(path.join(RAIZ,'js/main.js'),'utf8')),'sem login, o jogo abre a tela de login');
+    confere('Privacidade',mn.politica===true,'menu tem link para a política');
+    confere('Privacidade',mn.configPolitica===true,'configurações têm link para a política');
     const ler=f=>{try{return fs.readFileSync(path.join(RAIZ,f),'utf8')}catch{return ''}};
     const pol=ler('politica-privacidade.html');
     for(const s of ['Quem cuida dos seus dados','Que dados tratamos','Para que usamos','Crianças e adolescentes','Com quem compartilhamos','Por quanto tempo','Seus direitos','Como protegemos'])
