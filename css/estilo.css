@@ -502,3 +502,26 @@ body.leve[data-cap="cap1"],body.leve[data-cap="cap3"]{background-size:0 0,0 0,10
 .cerro{font-weight:800;color:#a3271c}
 .cmais summary{cursor:pointer;font-weight:900;color:#2f4a6e}
 .caviso{font-size:13px;font-weight:800;color:var(--muted);text-align:center}
+
+/* ================= CURTO-CIRCUITO REAL =================
+   Faísca no ponto do curto, fios do caminho incandescentes, bancada tremendo e a alavanca do disjuntor caindo.
+   Animação única (roda no desenho logo depois do curto). */
+svg.curto{animation:shake .32s 2}
+.wcurto{fill:none;stroke:#fff6c2;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;pointer-events:none;
+  filter:drop-shadow(0 0 3px #ff8a1f) drop-shadow(0 0 7px #ff3d00);animation:fioQuente 1.5s ease-out forwards}
+@keyframes fioQuente{0%{opacity:1;stroke:#ffffff}30%{opacity:1;stroke:#ffc24a}100%{opacity:0;stroke:#ff3d00}}
+.faisca{pointer-events:none}
+.fz-flash{fill:#fffbe0;opacity:0;animation:fzFlash .5s ease-out}
+@keyframes fzFlash{0%{opacity:1;transform:scale(.2)}35%{opacity:.95}100%{opacity:0;transform:scale(1.7)}}
+.fz-raio{stroke:#ffe066;stroke-width:2.2;stroke-linecap:round;opacity:0;animation:fzRaio .42s ease-out}
+@keyframes fzRaio{0%{opacity:1;transform:scale(.1)}100%{opacity:0;transform:scale(1.45)}}
+.fz-part{fill:#ffd23f;opacity:0;animation:fzPart .85s cubic-bezier(.2,.7,.4,1)}
+@keyframes fzPart{0%{opacity:1;transform:translate(0,0)}100%{opacity:0;transform:translate(var(--dx),var(--dy))}}
+.fz-fumaca{fill:#a6aeb7;opacity:0;animation:fzFumaca 1.9s ease-out forwards}
+@keyframes fzFumaca{0%{opacity:.75;transform:translate(0,0) scale(.6)}100%{opacity:0;transform:translate(0,-36px) scale(2.3)}}
+.fz-marca{fill:#1a1208;opacity:0;animation:fzMarca .3s ease-out .3s forwards}
+@keyframes fzMarca{to{opacity:.55}}
+.alav-cai{animation:alavCai .38s cubic-bezier(.5,1.7,.5,1) .12s both}
+@keyframes alavCai{from{transform:translateY(-10px)}}
+.led-pisca{animation:blink .55s infinite}
+@media (prefers-reduced-motion:reduce){.wcurto{opacity:.7}.fz-marca{opacity:.55}}

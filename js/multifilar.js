@@ -32,7 +32,7 @@ function multiSym(c,b,o){
   switch(c.type){
     case 'src':{const nf=nFases(c);
       s='<rect x="-18" y="-20" width="36" height="40" rx="5" class="mbody"/><path d="M-9 -7 q4.5 -8 9 0 t9 0" class="ms" style="stroke:var(--amber)"/>'+
-        '<text y="6" text-anchor="middle" class="mtx">'+(nf===1?'1F+N':nf+'F+N')+'</text><text y="15" text-anchor="middle" class="mtx">'+(c.V||220)+' V~</text>'+
+        '<text y="6" text-anchor="middle" class="mtx">'+(nf===1?'1F+N':nf+'F+N')+'</text><text y="15" text-anchor="middle" class="mtx"'+(c.trip?' style="fill:var(--fase)"':'')+'>'+(c.trip?'PROT':(c.V||220)+' V~')+'</text>'+
         ln(0,-30,0,-20)+ln(0,20,0,30)+(nf>=2?ln(18,-10,28,-10):'')+(nf>=3?ln(18,10,28,10):'');break}
     /* haste: símbolo de terra (três traços decrescentes) */
     case 'haste':s=ln(0,-26,0,-4)+'<path d="M-12 -4 H12 M-8 2 H8 M-4 8 H4" class="ms"/>';break;
@@ -45,7 +45,7 @@ function multiSym(c,b,o){
         '<path d="M-8.5 -8.5 L8.5 8.5 M8.5 -8.5 L-8.5 8.5" class="ms"/>';break}
     case 'sw':s=ln(-26,0,-12,0)+ln(12,0,26,0)+pto(-12,0)+pto(12,0)+contato(-12,0,12,0,!!c.closed&&!(c.broken&&c.show))+/* defeito escondido no Caça-Defeito: o aluno descobre medindo */
       (o.toggle?'<rect class="chit" data-sw="'+c.id+'" x="-22" y="-20" width="44" height="30"/>':'');break;
-    case 'fuse':{const tr=c.broken&&c.show;
+    case 'fuse':{const tr=(c.broken&&c.show)||!!c.trip;
       s=ln(-26,0,-12,0)+ln(12,0,26,0)+pto(-12,0)+contato(-12,0,12,0,!tr)+'<path d="M9 -3 L15 3 M15 -3 L9 3" class="ms"/>'+
         '<rect x="-4" y="-13" width="8" height="5" class="ms" style="fill:none"/>'+elo(0,-8,0,-2);break}
     case 'sw2':s=ln(-26,0,-12,0)+pto(-12,0)+ln(10,-14,26,-14)+ln(10,14,26,14)+pto(10,-14)+pto(10,14)+
@@ -81,7 +81,7 @@ function multiSym(c,b,o){
     case 'boia':s=ln(-26,0,-12,0)+ln(12,0,26,0)+pto(-12,0)+pto(12,0)+contato(-12,0,12,0,!!c.vazia)+elo(0,c.vazia?0:-6,0,-12)+
       '<circle cy="-15" r="3.5" class="ms" style="fill:none"/>';break;
   }
-  if(o.toggle&&ACION[c.type]&&c.type!=='sw'){const r=SYM_BOX[c.type];s+='<rect class="chit" data-sw="'+c.id+'" x="'+r[0]+'" y="'+r[1]+'" width="'+(r[2]-r[0])+'" height="'+(r[3]-r[1])+'"/>'}
+  if(o.toggle&&(ACION[c.type]||((c.type==='fuse'||c.type==='src')&&c.trip))&&c.type!=='sw'){const r=SYM_BOX[c.type];s+='<rect class="chit" data-sw="'+c.id+'" x="'+r[0]+'" y="'+r[1]+'" width="'+(r[2]-r[0])+'" height="'+(r[3]-r[1])+'"/>'}
   if(o.pickComp&&c.type!=='src'){const r=SYM_BOX[c.type];s+='<rect class="chit" data-c="'+c.id+'" x="'+(r[0]-6)+'" y="'+(r[1]-6)+'" width="'+(r[2]-r[0]+12)+'" height="'+(r[3]-r[1]+12)+'"/>'}
   return '<g transform="translate('+c.x+' '+c.y+')'+(GIRA[c.type]&&c.v?' rotate(90)':'')+'">'+s+'</g>';
 }
@@ -95,7 +95,8 @@ function multiBoard(st,o,r){
   let hits='';const taken=[],labs=[];
   st.wires.forEach((w,i)=>{const rt=realWireRoute(st.comps,w,taken,GEO_MULTI),d=ptsPath(rt.pts);
     for(let j=1;j<rt.pts.length;j++)taken.push([rt.pts[j-1],rt.pts[j]]);
-    s+='<path class="mw '+(w.cor||'cobre')+(w.broken&&w.show?' rompido':'')+'" d="'+d+'"/>'+(w.cor==='terra'?'<path class="mw2" d="'+d+'"/>':'');
+    s+='<path class="mw '+(w.cor||'cobre')+(w.broken&&w.show?' rompido':'')+'" d="'+d+'"/>'+(w.cor==='terra'?'<path class="mw2" d="'+d+'"/>':'')+
+      (o.curto&&o.curto.fios.includes(i)?'<path class="wcurto" d="'+d+'"/>':'');
     if(o.pickWire)hits+='<path class="hit" data-w="'+i+'" d="'+d+'"/>'});
   st.comps.forEach(c=>{s+=multiSym(c,r.lamp[c.id]||0,o)});
   s+=hits;
@@ -120,6 +121,7 @@ function multiBoard(st,o,r){
     if(o.tags&&o.tags[c.id]!==undefined){const ok=o.tags[c.id],b=symBounds(c);
       s+='<g class="selo '+(ok?'ok':'no')+'" transform="translate('+b[2]+' '+b[1]+')"><circle r="8"/><text y="3.6" text-anchor="middle">'+(ok?'✓':'✗')+'</text></g>'}
   });
+  if(o.curto){const pt=pontoCurto(st.comps,o.curto.onde);if(pt)s+=faiscaSVG(pt[0],pt[1])}
   if(o.pickTerm)st.comps.forEach(c=>terms(c).forEach((p,k)=>{s+='<circle class="thit" data-t="'+c.id+'.'+k+'" cx="'+p[0]+'" cy="'+p[1]+'" r="'+(c.type==='src'?11:10)+'"/>'}));
   if(typeof SW_FLIP!=='undefined')SW_FLIP=null;
   return s;

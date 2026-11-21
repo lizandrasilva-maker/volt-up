@@ -113,6 +113,25 @@ try{
   // 8) céu por capítulo: o mapa e a fase usam o céu do capítulo certo
   R.ceu=[];S.chap='cap2';showMap();R.ceu.push(document.body.dataset.cap);S.chap='cap1';showMap();R.ceu.push(document.body.dataset.cap);
   S.seen['leve:partida:cena']=1;playPhase(PHASES.findIndex(p=>p.id==='partida'));R.ceu.push(document.body.dataset.cap);
+  // 8b) curto real: a proteção desarma, o disjuntor certo cai, religa no toque e a bancada desenha a faísca
+  {const cu={};S.mode='leve';
+    const prim=fios=>({comps:clone(phaseById('primeiro').dados.leve.comps),wires:fios});
+    let st=prim([W('B.0','B.1')]);let ev=protegeCurto(st,'B.1');
+    cu.fonte=!!(ev&&ev.fonte&&ev.quem==='B'&&st.comps[0].trip);cu.desligada=solve(st.comps,st.wires).desligada===true;
+    acionarPeca(st.comps[0],0);cu.religa=!st.comps[0].trip;cu.desarmaDeNovo=!!protegeCurto(st);
+    cu.jumper=protegeCurto(prim([W('B.0','L1.0'),W('L1.0','L1.1')]))===null;   /* fase nos dois bornes, sem neutro: não é curto */
+    cu.normal=protegeCurto(prim([W('B.0','L1.0'),W('L1.1','B.1')]))===null;
+    S.mode='moderado';const q={comps:clone(phaseById('quadronovo').dados.moderado.comps),wires:testeSol('quadronovo').concat([W('L1.0','L1.1')])};
+    ev=protegeCurto(q,'L1.1');cu.seletivo=ev&&ev.quem;cu.l2acesa=solve(q.comps,q.wires).lamp.L2>0.04;cu.fios=ev?ev.fios.length:0;
+    const svg=board(q,{real:true,curto:ev});cu.desenho=/class="faisca"/.test(svg)&&/class="wcurto"/.test(svg)&&/^<svg[^>]*class="curto/.test(svg);
+    const svg2=board(q,{curto:ev});cu.desenhoDiagrama=/class="faisca"/.test(svg2)&&/class="wcurto"/.test(svg2);
+    cu.msg=/Curto-circuito/.test(msgCurto(ev));
+    /* na tela, como o aluno faz: toca no L1 e no N da fonte → faísca, mensagem e a fonte desarmada */
+    S.mode='moderado';runBuild(phaseById('primeiro'),phaseById('primeiro').dados.moderado);
+    const tap=t=>{document.querySelector('[data-t="'+t+'"]').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));window.dispatchEvent(new PointerEvent('pointerup'))};
+    tap('B.0');tap('B.1');cu.tela=!!document.querySelector('.bench .faisca')&&/Curto-circuito/.test((document.querySelector('.fb')||{}).textContent||'');
+    document.getElementById('chk').click();cu.verificaDesarmado=/desarmad|desligad/.test((document.querySelector('.fb')||{}).textContent||'');
+    R.curto=cu;}
   // 9) modo teste: "Montar pra mim" já aprova (vai direto para o Concluir), em toda fase de montar e nível
   {VOLT_TESTE_OK=true;entrarTeste(()=>{});const mt={};
     for(const md of ['leve','moderado','full'])for(const p of PHASES.filter(p=>p.tipo==='build')){S.mode=md;

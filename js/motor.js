@@ -35,7 +35,7 @@ function UF(){const p={};const find=x=>{if(p[x]===undefined)p[x]=x;while(p[x]!==
 function links(c){
   switch(c.type){
     case 'sw':return c.closed&&!c.broken?[[0,1]]:[];
-    case 'fuse':return c.broken?[]:[[0,1]];
+    case 'fuse':return c.broken||c.trip?[]:[[0,1]];
     case 'sw2':return [c.a?[0,1]:0,c.b?[0,2]:0].filter(Boolean);
     case 'sw3':return [[0,c.pos?2:1]];
     case 'dr':return c.trip?[]:[[0,2],[1,3]];
@@ -76,6 +76,8 @@ function solveOnce(comps,wires){
   const out={V,short,lamp:{},coil:{},P,N,PE,fases,terra,protecao,net:t=>u.find(t),ehFase:n=>fases.includes(n)};
   const cargas=comps.filter(c=>loadsOf(c).length||c.type==='lamp'||c.type==='motor'||BOBINA[c.type]);
   const setPow=(c,v)=>{if(BOBINA[c.type])out.coil[c.id]=v;else out.lamp[c.id]=v};
+  /* fonte com a proteção desarmada (depois de um curto): nada tem tensão até religar */
+  if(src.trip){cargas.forEach(c=>setPow(c,0));out.short=false;out.desligada=true;out.vAt=()=>0;out.vDiff=()=>0;return out}
   if(out.short){cargas.forEach(c=>setPow(c,0));out.vAt=()=>0;out.vDiff=()=>0;return out}
   /* tensão conhecida: cada fase com o seu ângulo; neutro e terra em 0 V */
   const known=n=>{const i=fases.indexOf(n);if(i>=0)return [V*Math.cos(FASE_ANG[i]),V*Math.sin(FASE_ANG[i])];return (n===N||terra.has(n))?[0,0]:null};
@@ -123,6 +125,22 @@ function solve(comps,wires,_fundo){
     if(fuga){d.trip=true;d.porFuga=true;return solve(comps,wires,(_fundo||0)+1)}
   }
   return out;
+}
+/* Curto real: a fase encontrou o neutro, o terra ou outra fase sem passar por carga.
+   A proteção atua: desarma o disjuntor que acaba com o curto deixando mais coisa ligada (o mais perto do curto,
+   como num quadro seletivo); sem disjuntor no caminho, desarma a proteção da fonte.
+   Devolve o que a tela precisa para animar: fios do caminho do curto, onde foi a faísca e quem desarmou. */
+function protegeCurto(st,onde){
+  const r=solve(st.comps,st.wires);if(!r.short)return null;
+  const curtas=new Set(r.fases.filter(f=>f===r.N||r.terra.has(f)||r.fases.filter(g=>g===f).length>1));
+  const fios=st.wires.map((w,i)=>i).filter(i=>!st.wires[i].broken&&curtas.has(r.net(st.wires[i].a)));
+  let quem=null,melhor=-1;
+  for(const f of st.comps.filter(c=>c.type==='fuse'&&!c.trip&&!c.broken)){f.trip=true;const t=solve(st.comps,st.wires);f.trip=false;
+    if(t.short)continue;const vivos=st.comps.filter(c=>loadsOf(c).length&&t.vAt(c.id+'.0')+t.vAt(c.id+'.1')>1).length;
+    if(vivos>melhor){melhor=vivos;quem=f}}
+  if(!quem)quem=st.comps.find(c=>c.type==='src');
+  quem.trip=true;
+  return {fios,onde:onde||(fios.length?st.wires[fios[fios.length-1]].b:null),quem:quem.id,nome:quem.lab||quem.id,fonte:quem.type==='src'};
 }
 function sim(st,sws,mods){return solve(st.comps.map(c=>Object.assign({},c,sws&&(c.id in sws)?{closed:!!sws[c.id]}:{},mods&&mods[c.id]||{})),st.wires)}
 const lit=(r,id)=>r.lamp[id]>0.04;
@@ -175,7 +193,7 @@ function board(st,o){
   o=o||{};const R=!!o.real;GEOM_REAL=R;
   const r=o.res||solve(st.comps,st.wires);
   const anyLit=Object.values(r.lamp).some(b=>b>0.04);
-  let s='<svg viewBox="'+(o.vb||'0 0 340 250')+'" class="'+(r.short?'short':anyLit?'on':'')+(R?' real-v':'')+(o.cls?' '+o.cls:'')+'" role="img" aria-label="Bancada de circuito'+(R?' em vista real':'')+'">';
+  let s='<svg viewBox="'+(o.vb||'0 0 340 250')+'" class="'+(o.curto?'curto':r.short?'short':anyLit?'on':'')+(R?' real-v':'')+(o.cls?' '+o.cls:'')+'" role="img" aria-label="Bancada de circuito'+(R?' em vista real':'')+'">';
   if(R)return s+realBoard(st,o,r)+'</svg>';
   /* a outra vista é o diagrama multifilar (js/multifilar.js); o desenho antigo abaixo fica só de reserva */
   if(typeof multiBoard==='function')return s+multiBoard(st,o,r)+'</svg>';
@@ -198,6 +216,14 @@ function board(st,o){
     if(o.pickTerm)s+='<circle class="thit" data-t="'+t+'" cx="'+p[0]+'" cy="'+p[1]+'" r="17"/>'}));
   return s+'</svg>';
 }
+/* Faísca do curto: clarão, raios, fagulhas, fumaça subindo e uma marca escura de queimado (animação única). */
+function faiscaSVG(x,y){let s='<g class="faisca" transform="translate('+x.toFixed(1)+' '+y.toFixed(1)+')" aria-hidden="true"><ellipse class="fz-marca" rx="7" ry="4"/><circle class="fz-flash" r="22"/>';
+  for(let i=0;i<10;i++){const a=(i*36+(i%2?14:0))*Math.PI/180,L=i%2?15:24;s+='<line class="fz-raio" x1="0" y1="0" x2="'+(Math.cos(a)*L).toFixed(1)+'" y2="'+(Math.sin(a)*L).toFixed(1)+'" style="animation-delay:'+(i*14)+'ms"/>'}
+  for(let i=0;i<9;i++){const a=(i*40+15)*Math.PI/180,D=16+(i%3)*9;s+='<circle class="fz-part" r="1.5" style="--dx:'+(Math.cos(a)*D).toFixed(1)+'px;--dy:'+(Math.sin(a)*D+8).toFixed(1)+'px;animation-delay:'+(30+i*10)+'ms"/>'}
+  return s+'<circle class="fz-fumaca" r="6" style="animation-delay:.25s"/><circle class="fz-fumaca" r="5" cx="5" style="animation-delay:.45s"/><circle class="fz-fumaca" r="7" cx="-4" style="animation-delay:.65s"/></g>'}
+/* Ponto da faísca: o borne que acabou de ser ligado ("X2.1") ou o centro da peça acionada ("S1"). */
+function pontoCurto(comps,onde){if(!onde)return null;if(onde.includes('.'))return tpos(comps,onde);
+  const c=comps.find(x=>x.id===onde);if(!c)return null;return GEOM_REAL&&typeof RP==='function'?RP(c):[c.x,c.y]}
 function realHTML(list){if(!list)return '';return '<div class="real" aria-label="O que cada peça é na vida real">'+list.map(([k,e,t])=>'<span class="rchip"><b>'+k+'</b><span>'+e+' '+t+'</span></span>').join('')+'</div>'}
 /* Caminho da energia até a bancada, desenhado como os equipamentos reais:
    poste com transformador → medidor de energia → quadro de distribuição → circuito (lâmpada).

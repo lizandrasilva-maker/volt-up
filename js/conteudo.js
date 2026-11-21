@@ -16,6 +16,17 @@ function scParalelo(){return withPE({comps:[BAT(),C('L1','lamp',170,125,1),C('L2
 function scAtalho(){const s=scSerie();s.comps.push(C('S1','sw',225,125,1,{closed:false}));s.wires.push(W('L2.0','S1.0'),W('L2.1','S1.1'));s.wires.forEach(w=>{if(w.cor!=='terra')delete w.cor});return autoColor(s)}
 function scCurto(){return withPE({comps:[BAT(),C('S1','sw',115,125,1,{closed:false}),C('L1','lamp',200,125,1),C('L2','lamp',290,125,1)],wires:[W('B.0','S1.0'),W('S1.0','L1.0'),W('L1.0','L2.0'),W('B.1','S1.1'),W('S1.1','L1.1'),W('L1.1','L2.1')]})}
 function scMisto(){return withPE({comps:[BAT(),C('L1','lamp',130,45,0),C('L2','lamp',220,125,1),C('L3','lamp',300,125,1)],wires:[W('B.0','L1.0','v'),W('L1.1','L2.0','h'),W('L2.0','L3.0'),W('L2.1','L3.1'),W('L2.1','B.1')]})}
+/* Curto real (protegeCurto, js/motor.js): o que aconteceu e como religar, no registro de cada nível. */
+function msgCurto(ev){
+  const nm=ev.nome||ev.quem,dj=/^DJ|^DG/.test(nm)?nm:'disjuntor '+nm;
+  const quem=ev.fonte?'a proteção da fonte':'o '+dj,tocar=ev.fonte?'na fonte':'no '+dj;
+  if(L())return '⚡ Curto-circuito! A fase encontrou o neutro sem passar pela lâmpada. A corrente subiu de uma vez e '+quem+' desligou para o fio não pegar fogo. Desfaça a ligação errada e toque '+tocar+' para religar.';
+  if(S.mode==='moderado')return '⚡ Curto-circuito: a fase chegou ao neutro (ou ao terra, ou a outra fase) sem passar por nenhuma carga. A corrente dispara e '+quem+' desarmou na hora. Corrija a ligação e toque '+tocar+' para rearmar.';
+  return '⚡ Curto-circuito: caminho de impedância desprezível entre fase e neutro, terra ou outra fase. A corrente de curto supera muito a nominal e o disparo magnético d'+(ev.fonte?'a proteção da fonte (no quadro real, o disjuntor geral)':'o '+dj)+' abriu o circuito praticamente na hora. Corrija a ligação e rearme '+(ev.fonte?'a fonte':'o '+dj)+'.';
+}
+const desarmadoMsg=c=>{const nm=c.lab||c.id,dj=/^DJ|^DG/.test(nm)?nm:'disjuntor '+nm;
+  return c.type==='src'?(L()?'A fonte está desligada pela proteção. Corrija o curto e toque na fonte para religar.':'A proteção da fonte está desarmada. Elimine o curto e toque na fonte para religar antes de verificar.')
+  :(L()?'O '+dj+' está desligado. Corrija o curto e toque nele para religar.':'O '+dj+' está desarmado. Elimine o curto e toque nele para rearmar antes de verificar.')};
 const breakL=id=>st=>{const c=st.comps.find(x=>x.id===id);c.broken=true;c.show=true};
 const closeS=id=>st=>{st.comps.find(x=>x.id===id).closed=true};
 
