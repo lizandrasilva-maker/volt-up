@@ -473,3 +473,32 @@ body.leve[data-cap="cap1"],body.leve[data-cap="cap3"]{background-size:0 0,0 0,10
 .result .stars{animation:estala .5s cubic-bezier(.2,.9,.3,1.5) both .1s}
 @keyframes estala{from{opacity:0;transform:scale(.3) rotate(-12deg)}}
 .result .toast{animation:entraBaixo .3s ease-out both .35s}
+
+/* ================= CALCULADORA: caderno de contas do Mestre Chico ================= */
+.caderno-top{display:grid;grid-template-columns:64px 1fr;gap:12px;align-items:center}
+.caderno-top svg{width:64px;height:64px;filter:drop-shadow(0 3px 0 var(--contorno))}
+.caderno-top h2{font-size:clamp(18px,5.4vw,24px);line-height:1.1}.caderno-top .bolt{color:var(--amber)}
+.calc-abas{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.calc-abas .btn{min-height:44px;padding:6px 4px;font-size:13px;line-height:1.1}
+.calc-abas .btn[aria-selected="true"]{background:var(--amber);border-color:var(--contorno);color:#1b1a10}
+/* folha de caderno: papel pautado com margem vermelha */
+.caderno{position:relative;display:flex;flex-direction:column;gap:12px;padding:16px 14px 16px 30px;border-radius:14px;color:#1f2a3a;
+  background:linear-gradient(90deg,transparent 21px,rgba(226,76,63,.55) 21px 23px,transparent 23px),repeating-linear-gradient(180deg,#fbf7ea 0 25px,#d9e2ef 25px 26px);
+  border:2.5px solid var(--contorno);box-shadow:0 6px 0 var(--contorno);animation:entraBaixo .3s ease-out both}
+.cfala{font-weight:800;font-style:italic;color:#2f4a6e}
+.cform{display:flex;flex-direction:column;gap:10px}
+.cfield{display:flex;flex-direction:column;gap:4px;font-weight:800;font-size:14px}
+.cin{display:flex;align-items:center;gap:8px}
+.cin input,.cin select{flex:1;min-width:0;font:inherit;font-weight:900;font-size:18px;min-height:46px;padding:6px 12px;border-radius:10px;border:2px solid #2f4a6e;background:#fff;color:#14213a}
+.cin b{min-width:52px;color:#2f4a6e}
+.cdica{font-size:13px;font-weight:700;color:#4a5a70}
+.conta{display:flex;flex-direction:column;gap:8px}
+.passos{margin:0;padding-left:20px;font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-size:14px;font-weight:700;line-height:1.7;color:#1b2b44}
+.passos li::marker{color:#e24c3f;font-weight:900}
+.cres{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;background:#1f3350;color:var(--ink);border:2.5px solid var(--contorno);box-shadow:0 4px 0 var(--contorno)}
+.cres b{font-family:var(--body);font-weight:900;font-size:21px;color:var(--amber);text-align:right;font-variant-numeric:tabular-nums}
+.cres.ok{background:#1d5a36}.cres.ok b{color:#d9ffe6}
+.cres.no{background:#6b231d}.cres.no b{color:#ffe1dc}
+.cerro{font-weight:800;color:#a3271c}
+.cmais summary{cursor:pointer;font-weight:900;color:#2f4a6e}
+.caviso{font-size:13px;font-weight:800;color:var(--muted);text-align:center}
