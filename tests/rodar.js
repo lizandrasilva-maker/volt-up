@@ -98,7 +98,20 @@ let pistas={};
     const r=await abrir(chrome,base+'/tests/render.html');
     confere('Telas de bancada (desenho e aviso)',r.total>=73,'72 telas de bancada + oficina',r.total+' telas');
     confere('Telas de bancada (desenho e aviso)',(r.problemas||[]).length===0,'todas desenham bornes e mostram o aviso de modelo didático',JSON.stringify(r.problemas));
-    confere('Telas de bancada (desenho e aviso)',/^\d+ bornes$/.test(r.oficina||''),'oficina com todas as peças e o aviso',r.oficina);
+    confere('Telas de bancada (desenho e aviso)',/^\d+ bornes$/.test(r.oficina||''),'oficina com todas as peças e o aviso (diagrama)',r.oficina);
+    confere('Telas de bancada (desenho e aviso)',/^\d+ bornes$/.test(r.oficinaReal||''),'oficina com todas as peças e o aviso (vista real)',r.oficinaReal);
+    /* Fonte e aterramento: a fonte não tem PE; o terra vem da haste pelo BEP */
+    const fa=t.fonte||{};
+    confere('Fonte e aterramento',fa.bornes1F==='2 bornes'&&fa.bornes3F==='4 bornes','fonte 1F+N tem 2 bornes e 3F+N tem 4 (sem PE)',fa.bornes1F+' / '+fa.bornes3F);
+    confere('Fonte e aterramento',fa.lampadaFN===true,'lâmpada entre L1 e N acende');
+    confere('Fonte e aterramento',fa.lampadaEntreFases===true,'lâmpada entre duas fases também acende (tensões defasadas)');
+    confere('Fonte e aterramento',fa.medeFN===220&&fa.medeFF===381,'multímetro: 220 V entre fase e neutro e 381 V entre fases',fa.medeFN+' V / '+fa.medeFF+' V');
+    confere('Fonte e aterramento',fa.curtoFaseHaste===true,'fase ligada direto na haste é curto-circuito');
+    confere('Fonte e aterramento',/haste/i.test(fa.bepSemHaste||''),'motor no BEP sem a haste: avisa que falta ligar a haste',fa.bepSemHaste);
+    confere('Fonte e aterramento',/BEP/.test(fa.motorDiretoNaHaste||''),'motor ligado direto na haste: avisa que o PE sai do BEP',fa.motorDiretoNaHaste);
+    confere('Fonte e aterramento',/neutro/i.test(fa.neutroNoBEP||''),'neutro unido ao BEP é recusado',fa.neutroNoBEP);
+    confere('Fonte e aterramento',fa.drComHaste===true&&fa.drSemHaste===false,'fuga para a massa: o DR atua com a haste e não atua sem ela',fa.drComHaste+' / '+fa.drSemHaste);
+    confere('Fonte e aterramento',fa.oficinaTiraFio===true,'na Oficina, reduzir de 3 para 1 fase tira os fios de L2 e L3');
   }catch(e){falhas.push('[Execução] '+e.message)}finally{srv.close()}
 
   const total=Object.values(CAT).reduce((s,c)=>s+c.total,0);

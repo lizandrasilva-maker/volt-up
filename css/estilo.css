@@ -223,7 +223,7 @@ input[type=text]{font:inherit;font-weight:800;width:100%;min-height:52px;padding
 .short .mw{stroke:var(--fase);animation:blink .35s 4}
 .term.mt{fill:var(--bg);stroke:var(--ink);stroke-width:1.6}
 .lab.mb{font-size:7.5px;fill:var(--muted)}.lab.mb.mk{fill:var(--neutro);font-size:10px}
-.lab.mb.src0{fill:var(--fase);font-size:10px}.lab.mb.src1{fill:var(--neutro);font-size:10px}.lab.mb.src2{fill:var(--terra);font-size:10px}
+.lab.mb.src0,.lab.mb.src2,.lab.mb.src3{fill:var(--fase);font-size:10px}.lab.mb.src1{fill:var(--neutro);font-size:10px}
 /* motor ligado: o acoplamento do eixo gira */
 .giro{transform-box:fill-box;transform-origin:center}.giro.gira{animation:gira .45s linear infinite}
 @keyframes gira{to{transform:rotate(360deg)}}
