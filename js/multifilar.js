@@ -36,9 +36,9 @@ function multiSym(c,b,o){
         ln(0,-30,0,-20)+ln(0,20,0,30)+(nf>=2?ln(18,-10,28,-10):'')+(nf>=3?ln(18,10,28,10):'');break}
     /* haste: símbolo de terra (três traços decrescentes) */
     case 'haste':s=ln(0,-26,0,-4)+'<path d="M-12 -4 H12 M-8 2 H8 M-4 8 H4" class="ms"/>';break;
-    /* BEP: barra com os bornes em cima */
+    /* BEP: barra com os bornes embaixo */
     case 'bep':s='<rect x="-24" y="-6" width="48" height="12" rx="2" class="mbody" style="fill:color-mix(in srgb,var(--copper) 45%,var(--panel2))"/>'+
-      [-18,-6,6,18].map(x=>ln(x,-16,x,-6)).join('')+'<text y="3.5" text-anchor="middle" class="mtx">BEP</text>';break;
+      [-18,-6,6,18].map(x=>ln(x,6,x,16)).join('')+'<text y="3.5" text-anchor="middle" class="mtx">BEP</text>';break;
     case 'lamp':{const sh=c.broken&&c.show;
       s=(on?'<circle r="20" style="fill:var(--amber)" opacity="'+(0.15+0.35*Math.sqrt(b)).toFixed(2)+'"/>':'')+ln(-26,0,-12,0)+ln(12,0,26,0)+
         '<circle r="12" class="mbody" style="'+(on?'fill:color-mix(in srgb,var(--amber) 55%,var(--panel2));':'')+(sh?'stroke:var(--fase);stroke-dasharray:3 3':'')+'"/>'+

@@ -13,8 +13,8 @@ const REAL_TERMS={
   src:[{p:[0,25],d:[0,1],n:'L1'},{p:[0,25],d:[0,1],n:'N'},{p:[0,25],d:[0,1],n:'L2'},{p:[0,25],d:[0,1],n:'L3'}],
   /* haste: conector no topo, por onde chega o condutor de aterramento */
   haste:[{p:[0,-20],d:[0,-1],n:''}],
-  /* BEP: barra de cobre com 4 parafusos em cima */
-  bep:[{p:[-18,-4],d:[0,-1],n:''},{p:[-6,-4],d:[0,-1],n:''},{p:[6,-4],d:[0,-1],n:''},{p:[18,-4],d:[0,-1],n:''}],
+  /* BEP: barra de cobre com 4 parafusos; os condutores saem por baixo, pela canaleta */
+  bep:[{p:[-18,5],d:[0,1],n:''},{p:[-6,5],d:[0,1],n:''},{p:[6,5],d:[0,1],n:''},{p:[18,5],d:[0,1],n:''}],
   fuse:[{p:[0,-26],d:[0,-1],n:'1'},{p:[0,26],d:[0,1],n:'2'}],
   sw:[{p:[-10,26],d:[0,1],n:'L'},{p:[10,26],d:[0,1],n:'R'}],
   lamp:[{p:[-10,27],d:[0,1],n:'X1'},{p:[10,27],d:[0,1],n:'X2'},{p:[22,8],d:[1,0],n:'PE'}],
@@ -67,6 +67,11 @@ function realDefs(){return '<defs>'+
   '<radialGradient id="gHalo"><stop offset="0" stop-color="#ffe680" stop-opacity=".85"/><stop offset="1" stop-color="#ffe680" stop-opacity="0"/></radialGradient>'+
   '<linearGradient id="gMetal" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8e969f"/><stop offset=".4" stop-color="#eef1f4"/><stop offset="1" stop-color="#7c848d"/></linearGradient>'+
   '<linearGradient id="gMotor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7d9cc0"/><stop offset=".5" stop-color="#4f6f94"/><stop offset="1" stop-color="#2f4a6a"/></linearGradient>'+
+  /* pintura do motor: cilindro (claro em cima, escuro embaixo) e tampas */
+  '<linearGradient id="gPaint" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9db6cf"/><stop offset=".22" stop-color="#5f7fa3"/><stop offset=".6" stop-color="#3f5f84"/><stop offset="1" stop-color="#22374f"/></linearGradient>'+
+  '<linearGradient id="gPaintE" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2c4563"/><stop offset=".45" stop-color="#58789c"/><stop offset="1" stop-color="#2c4563"/></linearGradient>'+
+  '<linearGradient id="gFan" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7f8a96"/><stop offset=".5" stop-color="#4c5560"/><stop offset="1" stop-color="#2a3038"/></linearGradient>'+
+  '<linearGradient id="gShaft" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset=".5" stop-color="#aab2bb"/><stop offset="1" stop-color="#6b737c"/></linearGradient>'+
   '<linearGradient id="gPorc" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#d9d4c8"/><stop offset=".35" stop-color="#fdfcf8"/><stop offset="1" stop-color="#cfc9bb"/></linearGradient>'+
   '</defs>'}
 const realBg=()=>realDefs()+'<rect width="340" height="250" fill="url(#rdots)" pointer-events="none"/>';
@@ -168,11 +173,12 @@ function realComp(c,b,o){
       '<rect x="-7" y="-24" width="14" height="11" rx="2" style="fill:#b8bec5;stroke:#6f7882" stroke-width="1"/>'+
       '<text x="0" y="40" text-anchor="middle" class="rtxt" style="font-size:5px;fill:var(--muted)">SOLO</text>';
   }
-  if(c.type==='bep'){/* BEP: barra de cobre sobre dois isoladores, com 4 parafusos */
+  if(c.type==='bep'){/* BEP: caixa com a barra de cobre sobre dois isoladores e 4 parafusos */
     s=shadow(-27,-12,54,26,3)+'<rect x="-27" y="-12" width="54" height="26" rx="3" style="fill:#e9edf3;stroke:#8b939c" stroke-width="1"/>'+
-      '<rect x="-24" y="2" width="8" height="10" rx="1" style="fill:#3a4048"/><rect x="16" y="2" width="8" height="10" rx="1" style="fill:#3a4048"/>'+
-      '<rect x="-25" y="-9" width="50" height="10" rx="1.5" style="fill:#c8743d;stroke:#8a4a22" stroke-width=".8"/>'+
-      '<text x="0" y="11" text-anchor="middle" class="rtxt" style="font-size:6px">BEP</text>';
+      '<text x="0" y="-4.5" text-anchor="middle" class="rtxt" style="font-size:6px">BEP</text>'+
+      '<path d="M-6 -3 H6" style="stroke:var(--terra)" stroke-width="1.6"/><path d="M-6 -3 H6" style="stroke:#f2d22e" stroke-width="1.6" stroke-dasharray="2 2"/>'+
+      '<rect x="-25" y="-1" width="7" height="3" rx=".8" style="fill:#3a4048"/><rect x="18" y="-1" width="7" height="3" rx=".8" style="fill:#3a4048"/>'+
+      '<rect x="-25" y="1" width="50" height="9" rx="1.5" style="fill:#c8743d;stroke:#8a4a22" stroke-width=".8"/>';
   }
   if(c.type==='fuse'){/* disjuntor DIN unipolar: alavanca em cima = ligado; desarmado = alavanca embaixo */
     const trip=c.broken&&c.show;
@@ -232,34 +238,76 @@ function realComp(c,b,o){
       '<text x="-11" y="'+(trip?6.2:-2.8)+'" text-anchor="middle" class="ltxt">'+(trip?'OFF':'ON')+'</text>'+
       '<rect x="0" y="-8" width="17" height="8" rx="1.5" style="fill:#f2d22e;stroke:#a88f12" stroke-width=".7"/><text x="8.5" y="-2.4" text-anchor="middle" class="rtxt" style="font-size:4.4px">TESTE</text>'+
       '<text x="8.5" y="8" text-anchor="middle" class="rtxt" style="font-size:4.4px">IDR 30mA</text>'}
-  if(c.type==='motor'){/* motor monofásico: carcaça aletada, ventoinha atrás, eixo com acoplamento que gira */
+  if(c.type==='motor'){/* motor de indução fechado (carcaça aletada), visto de lado, genérico e sem marca:
+       eixo com chaveta e acoplamento à esquerda (gira quando o motor liga), tampa dianteira, carcaça com aletas
+       ao longo do eixo, olhal de içamento, caixa de ligação em cima (o cabo desce até a régua de bornes),
+       placa de identificação, tampa defletora com grade da ventoinha atrás e pés sobre a base. */
     const on=b>0.04;
-    s=shadow(-26,-24,58,36,6)+
-      '<rect x="-34" y="-12" width="9" height="5" rx="1" style="fill:url(#gMetal)"/>'+
-      '<g class="giro'+(on?' gira':'')+'"><circle cx="-36" cy="-9.5" r="5" style="fill:#59616b;stroke:#2b3036" stroke-width=".8"/><path d="M-36 -14.5 V-4.5" style="stroke:#e9edf2" stroke-width="1.4"/></g>'+
-      '<rect x="-26" y="-24" width="44" height="30" rx="6" style="fill:url(#gMotor);stroke:#22364d" stroke-width="1"/>'+
-      '<path d="M-19 -22 V4 M-13 -22 V4 M-7 -22 V4 M-1 -22 V4 M5 -22 V4 M11 -22 V4" style="stroke:#22364d" stroke-width="1.2" opacity=".5"/>'+
-      '<rect x="18" y="-22" width="13" height="26" rx="4" style="fill:#3b4148"/>'+
-      '<path d="M20 -18 H29 M20 -14 H29 M20 -10 H29 M20 -6 H29 M20 -2 H29" style="stroke:#6b747e" stroke-width="1"/>'+
-      '<rect x="-8" y="-30" width="16" height="7" rx="1.5" style="fill:#22364d"/>'+
-      '<rect x="-22" y="6" width="34" height="5" rx="1" style="fill:#3a4048"/>'+
+    const aletas=[-17,-13.5,-10,-6.5,-3,0.5,4].map(y=>'<path d="M-22 '+y+' H11" style="stroke:#1c2e44" stroke-width="1.1" opacity=".55"/><path d="M-22 '+(y+0.9)+' H11" style="stroke:#b9cde0" stroke-width=".5" opacity=".45"/>').join('');
+    const grade=[15,17.6,20.2,22.8,25.4].map(x=>'<path d="M'+x+' -15 V3" style="stroke:#1e242b" stroke-width="1.2"/>').join('');
+    s='<ellipse cx="-4" cy="14" rx="34" ry="3" style="fill:#000" opacity=".35"/>'+
+      /* base e pés */
+      '<path d="M-24 9 H14 V12.5 H-24 Z" style="fill:#2b3138"/><path d="M-21 5 H-13 L-12 9 H-22 Z M3 5 H11 L12 9 H2 Z" style="fill:#33506f;stroke:#1c2e44" stroke-width=".6"/>'+
+      /* eixo, chaveta e acoplamento */
+      '<rect x="-39" y="-9.2" width="11" height="4.4" rx=".8" style="fill:url(#gShaft);stroke:#5d656e" stroke-width=".5"/>'+
+      '<rect x="-36.5" y="-9.6" width="5" height="1.3" rx=".4" style="fill:#4b535c"/>'+
+      '<g class="giro'+(on?' gira':'')+'"><circle cx="-38.5" cy="-7" r="4.2" style="fill:#6b737c;stroke:#2b3036" stroke-width=".7"/><circle cx="-38.5" cy="-7" r="1.4" style="fill:#2b3036"/><path d="M-38.5 -11.2 V-8.4" style="stroke:#f4f6f8" stroke-width="1.3"/></g>'+
+      /* tampa dianteira (mancal) */
+      '<path d="M-28 -16 Q-30 -7 -28 2 H-23 V-16 Z" style="fill:url(#gPaintE);stroke:#1c2e44" stroke-width=".7"/>'+
+      '<rect x="-30" y="-10.5" width="2.4" height="7" rx=".6" style="fill:#2c4563"/>'+
+      /* carcaça aletada */
+      '<rect x="-23" y="-21" width="35" height="28" rx="3.5" style="fill:url(#gPaint);stroke:#1c2e44" stroke-width=".9"/>'+aletas+
+      /* placa de identificação */
+      '<rect x="-19" y="-14.5" width="12" height="8" rx=".8" style="fill:#dfe4e9;stroke:#8b939c" stroke-width=".5"/>'+
+      '<path d="M-17.5 -12.4 H-9 M-17.5 -10.6 H-11 M-17.5 -8.8 H-10" style="stroke:#7b848e" stroke-width=".55"/>'+
+      /* olhal de içamento */
+      '<path d="M-10 -21 V-23.5" style="stroke:#59616b" stroke-width="1.6"/><circle cx="-10" cy="-26" r="2.6" style="fill:none;stroke:#8e969f" stroke-width="1.4"/>'+
+      /* caixa de ligação, prensa-cabo e cabo até a régua */
+      '<rect x="-4" y="-29" width="13" height="8.5" rx="1.4" style="fill:url(#gPaint);stroke:#1c2e44" stroke-width=".7"/>'+
+      '<path d="M-3 -26.6 H8" style="stroke:#1c2e44" stroke-width=".5" opacity=".7"/><circle cx="-2" cy="-27.6" r=".7" style="fill:#c9cfd6"/><circle cx="7" cy="-27.6" r=".7" style="fill:#c9cfd6"/>'+
+      '<rect x="9" y="-26.4" width="3" height="3.4" rx=".6" style="fill:#2b3036"/>'+
+      '<path d="M12 -24.7 C27 -25 31 -22 31 -12 V17" style="fill:none;stroke:#1f2328;stroke-width:2.4;stroke-linecap:round"/>'+
+      '<path d="M12 -24.7 C27 -25 31 -22 31 -12 V17" style="fill:none;stroke:#59616b;stroke-width:.8;stroke-linecap:round"/>'+
+      /* tampa defletora com a grade da ventoinha */
+      '<path d="M12 -19 H24 Q29 -19 29 -13 V1 Q29 7 24 7 H12 Z" style="fill:url(#gFan);stroke:#1e242b" stroke-width=".8"/>'+grade+
       '<rect x="-31" y="18" width="62" height="16" rx="2" class="janela"/>'}
-  if(c.type==='kc'){/* contatora: bobina A1-A2; o indicador (êmbolo) desce e fica laranja quando energizada */
+  if(c.type==='kc'){/* contatora (genérica, sem marca): corpo em dois níveis, réguas de bornes em cima e embaixo,
+       frente elevada com a janela do indicador (o êmbolo desce e fica laranja com a bobina energizada),
+       etiqueta da tensão da bobina, porta-etiqueta e aletas de ventilação. */
     const on=!!c.on;
-    s=din(29)+'<rect x="-14" y="-9" width="28" height="17" rx="2" style="fill:#d9dee4;stroke:#9aa3ad" stroke-width=".8"/>'+
-      '<rect x="-8" y="'+(on?-2:-7)+'" width="16" height="7" rx="1.5" class="embolo" style="fill:'+(on?'#f39c12':'#5b646e')+'"/>'+
-      '<text x="0" y="'+(on?3.2:-1.8)+'" text-anchor="middle" class="ltxt">'+(on?'I':'O')+'</text>'}
-  if(c.type==='ft'){/* relé térmico: ajuste de corrente, botão de rearme e indicador de disparo */
+    s=shadow(-29,-36,58,72,3)+'<rect x="-29" y="-36" width="58" height="72" rx="3" class="rbody" style="fill:url(#gSide)"/>'+
+      '<rect x="-27" y="-34" width="54" height="16" rx="2" class="janela"/><rect x="-27" y="18" width="54" height="16" rx="2" class="janela"/>'+
+      '<path d="M-29 -17 H29 M-29 17 H29" style="stroke:#a9b1ba" stroke-width="1"/>'+
+      /* frente elevada */
+      '<rect x="-21" y="-8" width="42" height="16" rx="2.5" style="fill:#4a525c;opacity:.25" transform="translate(1 1.4)"/>'+
+      '<rect x="-21" y="-8" width="42" height="16" rx="2.5" style="fill:url(#gKey);stroke:#9aa3ad" stroke-width=".8"/>'+
+      '<rect x="-8" y="-6.5" width="16" height="8.5" rx="1.5" style="fill:#2a3038;stroke:#14181c" stroke-width=".6"/>'+
+      '<rect x="-6.5" y="'+(on?-2.2:-5.4)+'" width="13" height="4" rx=".8" class="embolo" style="fill:'+(on?'#f39c12':'#6b747e')+'"/>'+
+      '<text x="0" y="'+(on?0.9:-2.3)+'" text-anchor="middle" class="ltxt" style="font-size:3.6px">'+(on?'I':'O')+'</text>'+
+      '<path d="M-18 -5.5 V5.5 M-15.5 -5.5 V5.5 M15.5 -5.5 V5.5 M18 -5.5 V5.5" style="stroke:#aeb6bf" stroke-width="1"/>'+
+      '<text x="0" y="6.4" text-anchor="middle" class="rtxt" style="font-size:3.2px">220V~</text>'}
+  if(c.type==='ft'){/* relé térmico (genérico): dial de ajuste de corrente com escala, botão azul de rearme (R),
+       botão vermelho de teste/desliga, janela do indicador de disparo (verde = normal, laranja = disparado) */
     const trip=!!c.trip;
-    s=din(23)+'<circle cx="-8" cy="-1" r="6" style="fill:#eef1f4;stroke:#8b939c" stroke-width=".8"/><path d="M-8 -1 L-11 -5" style="stroke:#2f3a48" stroke-width="1.3"/>'+
-      '<circle cx="9" cy="-5" r="4.5" style="fill:#2f6fb0"/><text x="9" y="-3.2" text-anchor="middle" class="ltxt" style="font-size:5px">R</text>'+
-      '<rect x="4" y="2" width="10" height="5" rx="1" style="fill:'+(trip?'#f39c12':'#43b05c')+'"/>'}
-  if(c.type==='btn'){/* botoeira: verde liga (NA), vermelha desliga (NF); afunda quando apertada */
-    const nf=!!c.nf,pr=!!c.pressed;
-    s=placa(17)+'<circle cy="-9" r="13" style="fill:#2a2f36"/><circle cy="-9" r="11" style="fill:#c9cfd6"/>'+
-      '<circle cy="-9" r="'+(pr?8:9.5)+'" style="fill:'+(nf?'#d33a2c':'#2fa84f')+';stroke:rgba(0,0,0,.35)" stroke-width="1.2"/>'+
-      '<text y="-6" text-anchor="middle" class="ltxt" style="font-size:7px">'+(nf?'O':'I')+'</text>'+
-      '<text y="12" text-anchor="middle" class="rtxt" style="font-size:5px">'+(nf?'NF':'NA')+'</text>'+
+    const escala=[-140,-105,-70,-35,0].map(a=>{const r=a*Math.PI/180;return '<path d="M'+(-9+Math.cos(r)*5.4).toFixed(2)+' '+(Math.sin(r)*5.4).toFixed(2)+' L'+(-9+Math.cos(r)*6.6).toFixed(2)+' '+(Math.sin(r)*6.6).toFixed(2)+'" style="stroke:#2f3a48" stroke-width=".55"/>'}).join('');
+    s=din(23)+'<rect x="-21" y="-8" width="42" height="16" rx="2" style="fill:url(#gKey);stroke:#9aa3ad" stroke-width=".7"/>'+
+      '<circle cx="-9" cy="0" r="7" style="fill:#f4f6f8;stroke:#8b939c" stroke-width=".7"/>'+escala+
+      '<circle cx="-9" cy="0" r="3.6" style="fill:#d6dbe1;stroke:#7e8791" stroke-width=".7"/><path d="M-9 0 L-11.6 -2.9" style="stroke:#1c2025;stroke-width:1.3;stroke-linecap:round"/>'+
+      '<circle cx="6" cy="-2.6" r="3.6" style="fill:#2f6fb0;stroke:#1d4a7a" stroke-width=".7"/><circle cx="5.2" cy="-3.6" r="1.1" style="fill:#fff;opacity:.35"/><text x="6" y="-1.2" text-anchor="middle" class="ltxt" style="font-size:4px">R</text>'+
+      '<rect x="12" y="-5.6" width="6" height="6" rx="1" style="fill:#d33a2c;stroke:#8f2219" stroke-width=".5"/>'+
+      '<rect x="3" y="2.4" width="15" height="4.4" rx=".8" style="fill:#2a3038"/><rect x="3.8" y="3.1" width="13.4" height="3" rx=".5" style="fill:'+(trip?'#f39c12':'#43b05c')+'"/>'}
+  if(c.type==='btn'){/* botoeira de 22 mm em caixa (genérica): aro cromado, botão que afunda ao apertar,
+       plaqueta LIGA/DESLIGA e o bloco de contato atrás (verde NA, vermelho NF) */
+    const nf=!!c.nf,pr=!!c.pressed,cor=nf?'#d33a2c':'#2fa84f',esc2=nf?'#8f2219':'#1d6e34';
+    s=shadow(-17,-29,34,62,4)+'<rect x="-17" y="-29" width="34" height="62" rx="4" style="fill:#c3c9d0;stroke:#7e8791" stroke-width="1"/>'+
+      '<rect x="-15" y="-27" width="30" height="40" rx="3" style="fill:#d6dbe1"/>'+
+      '<circle cy="-11" r="12.5" style="fill:#5b646e"/><circle cy="-11" r="11.2" style="fill:url(#gMetal)"/><circle cy="-11" r="9" style="fill:#2a2f36"/>'+
+      '<circle cy="'+(pr?-10.4:-11)+'" r="'+(pr?7.2:8)+'" style="fill:'+cor+';stroke:'+esc2+'" stroke-width="1"/>'+
+      '<ellipse cx="-2.4" cy="'+(pr?-13:-14)+'" rx="3.6" ry="2.2" style="fill:#fff;opacity:.3"/>'+
+      '<text y="'+(pr?-8.2:-8.8)+'" text-anchor="middle" class="ltxt" style="font-size:6.4px">'+(nf?'O':'I')+'</text>'+
+      '<rect x="-12" y="3" width="24" height="7" rx="1" style="fill:#1f2328"/><text y="8.2" text-anchor="middle" class="rtxt" style="font-size:4.4px;fill:#f4f6f8">'+(nf?'DESLIGA':'LIGA')+'</text>'+
+      '<rect x="-13" y="12.5" width="26" height="5.5" rx="1" style="fill:#eef1f4;stroke:#9aa3ad" stroke-width=".5"/><rect x="-13" y="12.5" width="4" height="5.5" rx="1" style="fill:'+cor+'"/>'+
+      '<text x="2" y="16.6" text-anchor="middle" class="rtxt" style="font-size:3.6px">'+(nf?'NF':'NA')+'</text>'+
       '<rect x="-16" y="18" width="32" height="15" rx="2" class="janela"/>'}
   if(c.type==='sw4'){/* interruptor intermediário (four-way): 2 bornes em cima, 2 embaixo; a tecla cruza ou não os pares */
     s=shadow(-17,-41,34,74,4)+'<rect x="-17" y="-41" width="34" height="74" rx="4" class="rbody"/>'+
@@ -281,13 +329,26 @@ function realComp(c,b,o){
       '<rect x="'+(on?1:-10)+'" y="-6" width="9" height="10" rx="1.5" style="fill:'+(on?'#f39c12':'#5b646e')+'"/>'+
       '<text x="'+(on?5.5:-5.5)+'" y="0.8" text-anchor="middle" class="ltxt">'+(on?'I':'O')+'</text>'}
   if(c.type==='boia'){/* boia de nível dentro da caixa d'água: com a caixa vazia a pera desce e o contato fecha */
-    const v=!!c.vazia,nv=v?4:-20;
-    s=shadow(-22,-34,44,52,4)+'<rect x="-22" y="-34" width="44" height="52" rx="4" style="fill:#d7dde3;stroke:#8b939c" stroke-width="1"/>'+
-      '<rect x="-19" y="'+nv+'" width="38" height="'+(15-nv)+'" rx="2" style="fill:#5aa9e6" opacity=".85"/>'+
-      '<path d="M-19 '+nv+' q4.75 -2 9.5 0 t9.5 0 t9.5 0 t9.5 0" style="fill:none;stroke:#cfe8fa" stroke-width="1"/>'+
-      '<path d="M12 -34 V'+(nv-6)+'" style="stroke:#2a2f36" stroke-width="1.4"/>'+
-      '<ellipse cx="12" cy="'+(nv-2)+'" rx="4.5" ry="6.5" style="fill:#eef3f7;stroke:#59616b" stroke-width="1" transform="rotate('+(v?35:-25)+' 12 '+(nv-2)+')"/>'+
-      '<text x="-7" y="-25" text-anchor="middle" class="rtxt" style="font-size:5px">'+(v?'VAZIA':'CHEIA')+'</text>'+
+    /* caixa d'água de polietileno (genérica) em corte: tampa, parede mais larga em cima, água com nível,
+       boia tipo pera pendurada pelo cabo, que sai pela tampa e desce até a régua de bornes.
+       Vazia: a pera tomba para baixo e o contato fecha; cheia: a pera flutua para cima e o contato abre. */
+    const v=!!c.vazia,nv=v?6:-14;
+    const parede='M-19 -26 L-15 14 Q-15 16 -13 16 H13 Q15 16 15 14 L19 -26 Z';
+    s='<ellipse cx="0" cy="17.5" rx="18" ry="2.2" style="fill:#000" opacity=".35"/>'+
+      '<path d="'+parede+'" style="fill:#1f4f86;stroke:#12355e" stroke-width="1"/>'+
+      '<clipPath id="cxa'+c.id+'"><path d="M-17 -24 L-13.4 13.6 H13.4 L17 -24 Z"/></clipPath>'+
+      '<g clip-path="url(#cxa'+c.id+')"><rect x="-20" y="-24" width="40" height="40" style="fill:#d9e4ee"/>'+
+        '<rect x="-20" y="'+nv+'" width="40" height="'+(20-nv)+'" style="fill:#5aa9e6" opacity=".9"/>'+
+        '<path d="M-20 '+nv+' q5 -2 10 0 t10 0 t10 0 t10 0" style="fill:none;stroke:#d6efff" stroke-width="1"/></g>'+
+      '<path d="M-17 -24 L-13.4 13.6 M17 -24 L13.4 13.6" style="stroke:#3a6fae" stroke-width="1.6"/>'+
+      /* tampa */
+      '<path d="M-22 -26 Q0 -34 22 -26 L21 -24 H-21 Z" style="fill:#2a66a8;stroke:#12355e" stroke-width=".9"/>'+
+      '<path d="M-14 -29.4 Q0 -33 14 -29.4" style="fill:none;stroke:#7fb1e3" stroke-width=".8" opacity=".7"/>'+
+      /* cabo da boia: sai pela tampa, desce por fora até a régua */
+      '<path d="M7 -30 C7 -36 24 -36 24 -24 V18" style="fill:none;stroke:#1f2328;stroke-width:2;stroke-linecap:round"/>'+
+      '<path d="M7 -24 V'+(nv-7)+'" style="stroke:#1f2328" stroke-width="1.3"/>'+
+      '<ellipse cx="7" cy="'+(nv-2)+'" rx="3.6" ry="6" style="fill:#eef3f7;stroke:#59616b" stroke-width=".9" transform="rotate('+(v?30:-35)+' 7 '+(nv-7)+')"/>'+
+      '<text x="-5" y="-17" text-anchor="middle" class="rtxt" style="font-size:4.6px;fill:#12355e">'+(v?'VAZIA':'CHEIA')+'</text>'+
       '<rect x="-21" y="18" width="42" height="15" rx="2" class="janela"/>'}
   /* toque no corpo aciona a peça (o interruptor simples já tem a sua área) */
   if(o.toggle&&typeof ACION!=='undefined'&&ACION[c.type]&&c.type!=='sw'){const r=REAL_BOX[c.type];s+='<rect class="chit" data-sw="'+c.id+'" x="'+r[0]+'" y="'+r[1]+'" width="'+(r[2]-r[0])+'" height="'+(r[3]-r[1]-15)+'"/>'}
