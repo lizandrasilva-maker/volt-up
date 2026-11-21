@@ -465,6 +465,11 @@ function benchBar(zm,toggle){
   return '<div class="benchbar">'+(toggle?'<div class="vista" role="group" aria-label="Vista da bancada"><button class="btn" data-vista="real" aria-pressed="'+R+'">🔌 Real</button><button class="btn" data-vista="simb" aria-pressed="'+!R+'">📐 Diagrama</button></div>':'<span></span>')+zm.ui()+'</div>';
 }
 
+/* Página ampliada com dois dedos (zoom do navegador): a pinça em cima da bancada passa a ser do navegador,
+   senão a bancada "segura" o gesto e a página não consegue voltar ao tamanho normal. */
+function toquePagina(){const vv=window.visualViewport,amp=!!(vv&&vv.scale>1.05);
+  document.querySelectorAll('.bench svg').forEach(s=>{s.style.touchAction=amp?'pinch-zoom':''})}
+if(window.visualViewport)window.visualViewport.addEventListener('resize',toquePagina);
 /* Zoom com pinça, arrastar com um dedo no fundo (quando ampliado), Ctrl+roda no computador e botões.
    O estado vive fora do SVG, então sobrevive aos re-desenhos da bancada. */
 function benchZoom(){
@@ -475,7 +480,10 @@ function benchZoom(){
   const svg=()=>z.el&&z.el.isConnected?z.el.querySelector('svg'):null;
   const apply=()=>{z.w=Math.max(MIN,Math.min(W0,z.w));z.x=Math.max(0,Math.min(W0-z.w,z.x));z.y=Math.max(0,Math.min(H0-hgt(),z.y));
     const s=svg();if(s)s.setAttribute('viewBox',vb());
-    if(z.el&&z.el.isConnected)z.el.classList.toggle('zoomed',z.w<W0-0.5)};
+    if(z.el&&z.el.isConnected){z.el.classList.toggle('zoomed',z.w<W0-0.5);
+      /* "−" apagado quando já se vê a bancada inteira; "+" apagado no zoom máximo */
+      z.el.querySelectorAll('[data-z]').forEach(b=>{b.disabled=b.dataset.z==='-'||b.dataset.z==='0'?z.w>=W0-0.5:b.dataset.z==='+'?z.w<=MIN+0.5:false})}
+    toquePagina()};
   const toSvg=(cx,cy,r,v)=>[v.x+(cx-r.left)/r.width*v.w,v.y+(cy-r.top)/r.height*v.w*H0/W0];
   const zoomAt=(k,cx,cy)=>{const nw=Math.max(MIN,Math.min(W0,z.w/k)),f=nw/z.w;z.x=cx-(cx-z.x)*f;z.y=cy-(cy-z.y)*f;z.w=nw;apply()};
   const mid=()=>{const a=[...z.pts.values()];return [(a[0].x+a[1].x)/2,(a[0].y+a[1].y)/2,Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)||1]};

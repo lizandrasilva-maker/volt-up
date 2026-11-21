@@ -137,6 +137,13 @@ try{
     const acesa1=lit(solve(dj.comps,dj.wires),'L1');acionarPeca(F,0);const apagada=!lit(solve(dj.comps,dj.wires),'L1')&&F.trip===true;
     acionarPeca(F,0);cu.djLigaDesliga=acesa1&&apagada&&lit(solve(dj.comps,dj.wires),'L1');
     runBuild(phaseById('primeiro'),phaseById('primeiro').dados.moderado);cu.djTocavel=!!document.querySelector('.bench [data-sw="F"]');
+    /* Quadro Novo: tocar na alavanca do DG desliga; zoom: "−" apagado na bancada inteira, "+" amplia e "−" volta */
+    S.mode='moderado';const qn=phaseById('quadronovo');runBuild(qn,qn.dados.moderado);
+    document.querySelector('.bench [data-sw="DG"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));
+    cu.dgDesliga=/>O<\/text>/.test(document.querySelector('.bench svg').innerHTML);
+    const zb=k=>document.querySelector('[data-z="'+k+'"]'),vbx=()=>document.querySelector('.bench svg').getAttribute('viewBox');
+    const z0=zb('-').disabled;zb('+').click();const z1=!zb('-').disabled&&vbx()!=='0 0 340 250';zb('-').click();
+    cu.zoom=z0&&z1&&vbx()==='0 0 340 250'&&zb('-').disabled;
     R.curto=cu;}
   // 9) modo teste: "Montar pra mim" já aprova (vai direto para o Concluir), em toda fase de montar e nível
   {VOLT_TESTE_OK=true;entrarTeste(()=>{});const mt={};
