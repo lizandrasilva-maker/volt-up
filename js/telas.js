@@ -158,6 +158,8 @@ function playPhase(i){
 }
 function frame(p,inner,bubble){
   const tf=typeof testePhaseHTML==='function'?testePhaseHTML(p):'';
+  /* o céu acompanha o capítulo da fase (no roteiro do modo teste dá para abrir fase de outro capítulo) */
+  if(p.id)ceu(p.id);
   app.innerHTML=hud()+'<div class="world"><h2>'+p.nome+'</h2><button class="btn ghost sm" id="quit">Sair</button></div>'+tf+(bubble?talk(bubble):'')+inner;
   /* a Oficina (sem id) volta ao menu; as fases voltam ao mapa */
   bindHud();document.getElementById('quit').onclick=p.id?showMap:showHome;if(tf)bindTestePhase(p);window.scrollTo(0,0);

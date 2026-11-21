@@ -95,6 +95,9 @@ try{
   S.mode='leve';S.chap='cap2';S.seen={};S.done={};showMap();R.cap2_semCap1=document.querySelector('.soonbox .eyebrow').textContent;
   CHAPTERS[0].fases.forEach(id=>S.done['leve:'+id]=3);S.seen['leve:cap2:intro']=1;showMap();R.cap2_comCap1=document.querySelectorAll('.node').length+' fases';
   S.chap='cap3';showMap();R.cap3_semCap2=document.querySelector('.soonbox .eyebrow').textContent;
+  // 8) céu por capítulo: o mapa e a fase usam o céu do capítulo certo
+  R.ceu=[];S.chap='cap2';showMap();R.ceu.push(document.body.dataset.cap);S.chap='cap1';showMap();R.ceu.push(document.body.dataset.cap);
+  S.seen['leve:partida:cena']=1;playPhase(PHASES.findIndex(p=>p.id==='partida'));R.ceu.push(document.body.dataset.cap);
 }catch(e){R.ERRO=e.message+' '+e.stack}
 document.getElementById('out').textContent=JSON.stringify(R,null,1);
 </script></body></html>

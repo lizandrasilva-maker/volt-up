@@ -83,6 +83,9 @@ let pistas={};
     confere('Menu do usuário',mn.voltouAoMenu===true,'configurações voltam ao menu');
     confere('Menu do usuário',mn.semPersonagem===true,'primeira entrada pede o personagem antes do menu');
     confere('Menu do usuário',/location\.replace\('login\.html'\)/.test(fs.readFileSync(path.join(RAIZ,'js/main.js'),'utf8')),'sem login, o jogo abre a tela de login');
+    confere('Menu do usuário',JSON.stringify(t.ceu)==='["cap2","cap1","cap3"]','céu acompanha o capítulo (mapa e fase)',JSON.stringify(t.ceu));
+    {const css=fs.readFileSync(path.join(RAIZ,'css/estilo.css'),'utf8');
+     confere('Menu do usuário',/@media \(prefers-reduced-motion:reduce\)\{\*\{animation:none!important;transition:none!important\}\}/.test(css),'"movimento reduzido" desliga animações e transições');}
     confere('Privacidade',mn.politica===true,'menu tem link para a política');
     confere('Privacidade',mn.configPolitica===true,'configurações têm link para a política');
     const ler=f=>{try{return fs.readFileSync(path.join(RAIZ,f),'utf8')}catch{return ''}};

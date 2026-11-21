@@ -49,9 +49,10 @@ const CHAPTERS=[
     Um capítulo só abre quando o anterior estiver completo (no modo teste, tudo abre). */
  {id:'cap2',nome:'Do Quadro ao Condomínio',tema:'Instalação predial',fases:['quadro','quadronovo','escada','corredor','garagem','impulso','surto'],
   intro:[['fatima','Que alívio ver vocês! Desde ontem a casa toda está apagada.'],
+    ['chico','Hoje eu trouxe reforço, Dona Fátima. {nome}, este serviço você faz com a Engenheira Lia.'],
     ['lia','Bom dia, Dona Fátima. Sou a Engenheira Lia, responsável técnica da obra do condomínio aqui da rua.'],
-    ['lia','O Mestre Chico me falou de você, {nome}. O quadro dela é antigo: não tem DR nem DPS. Vamos montar um quadro novo, do jeito da norma.'],
-    ['eu','Quadro novo, com DR e DPS. Bora!'],
+    ['lia','O Mestre Chico me falou de você, {nome}. O quadro dela é antigo: não tem DR nem DPS. Hoje montamos o quadro novo com o DR; o DPS a gente estuda com calma depois.'],
+    ['eu','Quadro novo, com DR. Bora!'],
     ['lia','Depois, a síndica do Condomínio Mandacaru precisa da gente: escada, corredor, garagem e hall.']],
   fim:[['socorro','Escada, corredor, garagem e hall funcionando. O Mandacaru inteiro agradece, {nome}!'],
     ['lia','Você está pronto para coisa maior. Um amigo meu tem uma fábrica de castanha de caju, e a esteira vive parando.'],
@@ -59,7 +60,8 @@ const CHAPTERS=[
     ['lia','Próximo capítulo: Chão de Fábrica.']]},
  {id:'cap3',nome:'Chão de Fábrica',tema:'Instalação industrial e comandos',fases:['turno','partida','sobrecarga','caixa','fimturno'],
   breve:['Partida com reversão (motor trifásico)','Partida estrela-triângulo'],
-  intro:[['damiao','Seja bem-vindo à Caju Dourado! Sou o Damião. Aqui a castanha vira emprego para o sertão inteiro.'],
+  intro:[['damiao','Seja bem-vindo à Caju Dourado! Sou o Damião. A Engenheira Lia falou muito bem de você.'],
+    ['damiao','Aqui a castanha vira emprego para o sertão inteiro.'],
     ['rayane','E eu sou a Rayane, da manutenção. Aqui é motor, contatora e botoeira o dia todo.'],
     ['rayane','Regra número um da fábrica: máquina em manutenção fica desligada, travada e sinalizada. Ninguém liga sem querer.'],
     ['eu','Entendido, Rayane. Segurança primeiro.']],
@@ -81,7 +83,7 @@ const SCENES={
   paralelo:[['fatima','Bom dia! Sou a Dona Fátima, moro aqui na rua. Quero colocar duas lâmpadas na minha sala.'],['fatima','E quero as duas bem fortes, viu?'],['chico','Primeira cliente, {nome}! Cuidado: tem um jeito de ligar que deixa as duas fraquinhas.']],
   defeito:[['fatima','Mestre, a lâmpada da minha cozinha não acende mais! As outras luzes da casa estão funcionando.'],['chico','Se só a cozinha apagou, o problema está no circuito da cozinha. Vamos testar peça por peça: aqui não se troca nada no chute.']],
   renovavel:[['fatima','Mestre, minha vizinha instalou placa solar. Isso é energia que não acaba?'],['chico','Boa pergunta. {nome}, explica pra ela de onde vem cada energia.']],
-  seguranca:[['chico','Antes de qualquer serviço na casa da Dona Fátima, a parte mais importante do ofício.'],['eu','Segurança primeiro!']],
+  seguranca:[['chico','Antes do próximo serviço na casa da Dona Fátima, vamos revisar a parte mais importante do ofício.'],['eu','Segurança primeiro!']],
   ohm:[['fatima','E por que a minha conta de luz vem tão alta?'],['chico','Hora de fazer conta: potência, tempo e consumo.']],
   /* Cap. 2 */
   quadro:[['lia','Antes de abrir o quadro, me diga: para que serve cada peça dele?']],
@@ -90,7 +92,7 @@ const SCENES={
   corredor:[['socorro','E o corredor comprido? Tem porta nas duas pontas e uma no meio.'],['lia','Três pontos de comando: um paralelo em cada ponta e um intermediário, o four-way, no meio.']],
   garagem:[['raimundo','Boa tarde! Sou o Raimundo, porteiro. Todo dia eu esqueço a luz da garagem acesa.'],['lia','Uma fotocélula resolve: ela acende sozinha quando escurece e apaga de manhã.']],
   impulso:[['socorro','No hall tem dois pulsadores. Cada toque deve acender ou apagar a luz.'],['lia','Isso é o relé de impulso: cada pulso na bobina inverte o contato.']],
-  surto:[['raimundo','Ontem caiu um raio perto e queimou o interfone!'],['lia','Faltava DPS. Vamos ver se você sabe como ele protege a instalação.']],
+  surto:[['raimundo','Ontem caiu um raio perto e queimou o interfone!'],['lia','Faltava o DPS, aquele que eu falei no quadro da Dona Fátima. Vamos ver se você sabe como ele protege a instalação.']],
   /* Cap. 3 */
   turno:[['rayane','Antes do primeiro turno, uma conversa rápida sobre segurança e comandos.']],
   partida:[['damiao','A esteira da castanha parou! Sem ela, a fábrica toda para.'],['rayane','O painel queimou. Vamos montar de novo a partida direta: botoeira liga, botoeira desliga e contatora com selo.']],
@@ -101,7 +103,7 @@ const SCENES={
 const chapterOf=pid=>CHAPTERS.find(c=>c.fases&&c.fases.includes(pid));
 const phaseById=id=>PHASES.find(p=>p.id===id);
 function showScene(lines,done){
-  let i=0,typing=null;
+  let i=0,typing=null;if(!document.body.dataset.cap)ceu();
   const r=()=>{
     const [who,t]=lines[i],txt=t.replace(/\{nome\}/g,esc(S.name||charOf().nome));
     const me=who==='eu';
@@ -391,6 +393,9 @@ function hud(){
   const rk=rankOf(),st=streak();
   return '<header class="hud"><button class="av" id="toFicha" aria-label="Abrir minha ficha">'+charSVG(S.char)+'</button><div class="who"><div class="nm">'+esc(S.name||charOf().nome)+' · '+rk.r.n+'</div><div class="xpbar"><i style="width:'+Math.round(rk.p*100)+'%"></i></div></div>'+(window.VOLT_TESTE?'<span class="chip teste-chip" title="Modo teste: progresso separado">🧪</span>':'')+(st?'<span class="chip fire" title="dias seguidos">🔥 '+st+'</span>':'')+'<span class="chip">⚡ '+S.xp+'</span><button class="iconbtn" id="toAlbum" aria-label="Álbum de cards">'+S.cards.length+' 🃏</button></header>';
 }
-function setMode(){document.body.classList.toggle('leve',L())}
+/* nível (letra maior no Leve) e céu do capítulo atual (css: body[data-cap]) */
+function setMode(){document.body.classList.toggle('leve',L());ceu()}
+/* céu do capítulo: o da fase indicada, ou o capítulo aberto no mapa */
+function ceu(pid){const ch=pid?chapterOf(pid):null;document.body.dataset.cap=(ch&&ch.id)||S.chap||'cap1'}
 function bindHud(){const a=document.getElementById('toAlbum');if(a)a.onclick=showAlbum;const f=document.getElementById('toFicha');if(f)f.onclick=showFicha}
 

@@ -100,7 +100,7 @@ function finish(p,ok,total){
   const before=rankOf().i;
   S.done[key]=Math.max(S.done[key]||0,st);if(novo){S.cards.push(key);S.xp+=20}
   const g=gainAttr(p,ok,st);playedToday();markDaily('fase');if(st===3)markDaily('tres');
-  const newAch=checkAch();save();
+  const newAch=checkAch();save();ceu(p.id);
   const up=rankOf().i>before;
   app.innerHTML=hud()+'<section class="result"><span class="eyebrow">Fase concluída</span><h2>'+p.nome+'</h2>'+stars(st)+
   '<p class="muted">'+ok+' de '+total+' pontos'+(novo?' · +20 XP de bônus':'')+'</p>'+
