@@ -39,7 +39,7 @@ Object.assign(NPC,{
 
 
 /* personagens com arte própria (img/<id>.webp e img/<id>_body.webp); os outros seguem com o desenho simples */
-['chico','fatima','lia','socorro','damiao'].forEach(k=>{if(IMG[k]&&IMG[k+'_body']){NPC[k].body=IMG[k+'_body'];NPC[k].svg=picSVG(IMG[k])}});
+['chico','fatima','lia','socorro','damiao','rayane'].forEach(k=>{if(IMG[k]&&IMG[k+'_body']){NPC[k].body=IMG[k+'_body'];NPC[k].svg=picSVG(IMG[k])}});
 const CHAPTERS=[
  {id:'cap1',nome:'A Casa Acesa',tema:'Fundamentos e circuitos',fases:['faisca','entrada','primeiro','previsao','paralelo','defeito','renovavel','seguranca','ohm'],
   intro:[['chico','Gente nova na oficina! Boas-vindas, {nome}.'],['eu','Bom dia, Mestre! Pronto pra começar o serviço!'],['chico','Calma. Primeiro a gente treina aqui na bancada da oficina. Depois vamos atender clientes de verdade.'],['chico','Começamos pelo básico: de onde vem a energia e como ela chega até uma lâmpada.']],
