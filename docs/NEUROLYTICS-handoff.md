@@ -5,11 +5,15 @@ Atualizado em 02/11/2026. Para continuar o desenvolvimento em outra conta ou con
 ## Como retomar
 1. O código mora no GitHub: `github.com/lizandrasilva-maker/volt-up`. As duas contas do Claude trabalham no mesmo repositório (em projetos do Claude Code com esse repositório configurado).
 2. Peça: *"Leia docs/NEUROLYTICS-handoff.md e vamos continuar o game."*
-3. Cada mudança entra por um pull request. Depois do merge na `main`, o GitHub Pages atualiza o jogo no link fixo (o progresso dos jogadores fica salvo no navegador por causa do link fixo).
-4. Para testar localmente: `python3 -m http.server` na pasta do repositório e abrir `http://localhost:8000`. Abrir o `index.html` direto do disco também funciona.
+3. Cada mudança entra por um pull request. Depois do merge na `main`, a `main` é publicada manualmente na Vercel, sempre no mesmo link (o progresso de quem joga sem login fica salvo no navegador por causa do link fixo).
+4. **Modo teste** (para revisar sem jogar tudo): abra o jogo com `?teste=1` no fim do endereço (ex.: `.../volt-up/?teste=1`) ou entre com conta admin/professor, e toque em "🧪 Entrar no modo teste" no mapa.
+   - Libera todas as fases, mostra a cena da história toda vez, tem a tela **📜 Roteiro** (capítulo inteiro em texto, com "Ver cena" e "Jogar") e os atalhos "⏭ Concluir fase" e "🔧 Montar pra mim" (bancadas de montar).
+   - Usa um perfil separado (`neuro-eletricista-teste` no navegador) e não envia nada para a nuvem. "Sair" volta ao progresso real intacto; "Zerar teste" recomeça o perfil de teste. `?teste=0` esconde o botão.
+   - Ao criar uma fase de montar nova, acrescente o gabarito em `TESTE_SOL` (`js/teste.js`).
+5. Para testar localmente: `python3 -m http.server` na pasta do repositório e abrir `http://localhost:8000`. Abrir o `index.html` direto do disco também funciona.
 
 ## O que é o projeto
-Game educativo de elétrica, energia e renováveis no modo história do eletricista, para o SENAI. Tem 3 níveis de público:
+Game educativo de elétrica, energia e renováveis no modo história do eletricista, para cursos técnicos. Tem 3 níveis de público:
 - **Leve:** crianças ou adultos atípicos. Frases curtas, letra maior, pode tentar de novo, áudio 🔊.
 - **Técnico:** jargão moderado e cálculos simples.
 - **Profissional:** normas, cálculos e diagnóstico de campo.
@@ -27,7 +31,7 @@ Instruções do projeto:
 - **A cadeia de energia aparece em toda bancada:** transformador do poste (13,8 kV → 380/220 V), medidor em kWh, quadro com disjuntor e o circuito.
 - **Checagens automáticas da bancada** (`normCheck` + `colorCheck`):
   - O interruptor secciona a fase. Se cortar o neutro, a lâmpada desligada continua com 220 V.
-  - Toda luminária tem PE ligado. O PE nunca conduz corrente de serviço. PE e neutro não se unem no circuito.
+  - A lâmpada é um **bocal simples com 2 bornes (X1/X2), sem PE**, como no equipamento real (decisão da Liz em 20/11/2026, substituindo "toda luminária tem PE"). O PE continua na tomada de bancada e volta a ser cobrado quando entrar luminária metálica ou tomada (`pe:true` no componente). O PE nunca conduz corrente de serviço. PE e neutro não se unem no circuito.
   - O disjuntor fica em série na fase, antes de tudo.
   - Cores: neutro azul-claro, PE verde-amarelo, fase e retorno em qualquer outra cor. No jogo a fase é vermelha e o retorno é branco (convenção, não exigência da NBR).
   - Curto fase-neutro e curto fase-terra são detectados.
@@ -76,7 +80,12 @@ Capítulos previstos, ainda "em construção":
 - **Progressão:** XP, plano de carreira (Aprendiz → Ajudante → Eletricista → Eletricista Sênior → Responsável Técnico) e cards por fase e nível (álbum).
 - **Ficha do eletricista:** atributos (Conceito, Montagem, Diagnóstico, Segurança, Cálculo) e perfil.
 - **Rotina:** Plantão de hoje (3 missões, +30 XP), 🔥 dias seguidos e 12 conquistas.
-- **Pausa:** "Respira e religa", 3 respirações guiadas.
+- **Pausa:** "Pausa para respirar" (antes "Respira e religa"), 3 respirações guiadas, dentro de "☰ Mais opções" no mapa.
+- **Telas (menos informação, para o aluno ficar tranquilo):**
+  - Mapa: só as fases, "Rever a abertura" e a Oficina; Plantão, Ficha, Pausa, trocar nível/personagem e Recomeçar ficam em "☰ Mais opções". Sem balão do personagem (só aparece com o capítulo completo). Fase bloqueada mostra só o nome e 🔒.
+  - Bancadas: Missão em uma frase → cores → bancada (faixa poste→medidor→quadro colada em cima; botões "Diagrama/Real" e zoom − + ⤢ no rodapé da própria bancada) → resultado → botões. Sem balão do personagem.
+  - As etiquetas "peça = objeto real" e os chips de brilho das lâmpadas só aparecem no Diagrama (na vista real a peça já é o objeto e a lâmpada mostra se acendeu); a Previsão mantém o brilho, que é a resposta. O curto sempre aparece.
+  - A ajuda é uma linha só e some depois do primeiro fio. O aviso "só eletricista mexe na rede" aparece na vitória do nível Leve.
 - **Oficina livre:** sandbox com rede, luminárias, interruptores e disjuntores, multímetro V~ e botão Inspecionar.
 - **Cenas em estilo visual novel:** personagem de meio corpo de um lado e a fala do outro. O texto aparece letra por letra (instantâneo com movimento reduzido).
 - **Decisões de design** (estudo de referência de apps de hábito gamificados):
@@ -91,12 +100,14 @@ Capítulos previstos, ainda "em construção":
 | `css/estilo.css` | Todo o visual (paleta de cores de fio, bancada, cenas, ficha). |
 | `js/estado.js` | Estado do jogador `S`, `save()` (localStorage), utilitários, `CHARS`. |
 | `js/motor.js` | Motor elétrico e desenho da bancada. |
+| `js/bancada-real.js` | Vista real da bancada (peças como o equipamento, bornes com nome, fios em ângulo reto com anilha), chave Símbolo/Real e zoom. |
 | `js/conteudo.js` | Cenários de previsão e checagens NBR 5410 (`normCheck`, `colorCheck`). |
 | `js/imagens.js` | Mapa `IMG` → arquivos em `img/`. |
 | `js/historia.js` | `NPC`, `CHAPTERS`, `PHASES`, `SCENES`, `showScene()`. |
 | `js/telas.js` | HUD, início, escolha de personagem, mapa, cards. |
 | `js/fases.js` | Quiz, classificar, bancadas (montar, prever, caça-defeito), oficina livre. |
 | `js/carreira.js` | Carreira, atributos, plantão, conquistas, fim de fase. |
+| `js/teste.js` | Modo teste: perfil separado, tudo liberado, Roteiro, gabaritos das bancadas (`TESTE_SOL`). |
 | `js/main.js` | Liga o jogo (sempre o último script). |
 | `img/*.webp` | Artes dos personagens e da oficina. Para trocar, substitua o arquivo mantendo o nome; para uma arte nova, coloque em `img/` e acrescente o nome em `js/imagens.js`. |
 
@@ -108,6 +119,11 @@ Os scripts são clássicos (sem `import`), então tudo é global e a ordem no `i
   - `solve()`: análise nodal (lâmpadas resistivas, valores eficazes).
   - `sim()`: simula posições de interruptor ou defeitos.
 - Desenho da bancada: `board()`, `compSVG()`, `entrada()` (faixa poste → medidor → quadro) e `realHTML()` (etiquetas da vida real).
+  - `board(st,{real:true})` desenha a vista real (`realBoard()` em `js/bancada-real.js`). Na vista real os bornes ficam onde o equipamento tem (`REAL_TERMS`, ligado por `GEOM_REAL` em `terms()`), mas o motor só usa o número do borne: o cálculo e as checagens são os mesmos nas duas vistas.
+  - Peças: rede como **tomada 2P+T** genérica (placa, rebaixo do padrão brasileiro, 3 furos com ⏚ no do meio) e 3 bornes lado a lado embaixo, **sem letra impressa e sem fio pré-ligado** (para não dar o gabarito). Ordem vista de frente: neutro à esquerda, terra no meio, fase à direita (recomendação usual da NBR 14136, ensinada pelo Mestre Chico na cena do Primeiro Circuito; vale confirmar com a professora). Se o aluno trocar fase e neutro, o `normCheck` acusa "interruptor no neutro". disjuntor DIN (1 em cima, 2 embaixo, alavanca ON/OFF), interruptor em módulo (L e R na régua de baixo; a tecla anima quando o aluno toca, via `flipSwitch()`), lâmpada no bocal de porcelana (X1 e X2 embaixo). Parafusos com fenda em cruz, anilhas laranja numeradas. No Caça-Defeito o teste de peça aparece como selo ✓/✗ no canto da peça.
+  - Na vista real a altura das peças fica entre 46 e 184 (`REAL_Y`), para os fios terem canaleta. Os fios desviam de peças, de parafusos e dos fios já desenhados.
+  - A vista escolhida fica em `S.vista[nível]`. Padrão: vista real em todos os níveis e em todas as bancadas; o botão "Diagrama" mostra o esquema.
+  - `benchZoom()`: pinça, arrastar com um dedo no fundo quando ampliado, Ctrl+roda e botões − + ⤢. Durante a pinça (`zm.busy()`) os toques não ligam fio nem mexem peça.
 - `/* CONTEÚDO */`:
   - Cenários de previsão `sc*()`, com `withPE()` e `autoColor()`.
   - Checagens: `tableCheck()`, `normCheck()`, `colorCheck()`.
@@ -130,6 +146,48 @@ Os scripts são clássicos (sem `import`), então tudo é global e a ordem no `i
 - Telas: `login.html` (aluno e e-mail) e `admin.html` (painel). Os arquivos em `prototipos/` são só os desenhos iniciais.
 - Para virar admin: a conta é criada em `login.html` e o papel `admin` é definido no banco (`update perfis set papel='admin' where id=...`).
 - Ainda não implementado: painel do professor, pagamento (Mercado Pago), bloqueio dos capítulos pagos (só o Cap. 1 existe).
+
+## Capítulos e bibliotecas de peças (decisão da Liz, 20/11/2026)
+Cada capítulo é uma história própria e tem a sua biblioteca de peças (`BIBLIOTECAS` em `js/fases.js`; na Oficina Livre ficam na "🧰 Caixa de ferramentas").
+| Cap. | História e personagens | Fases | Biblioteca | Situação |
+|---|---|---|---|---|
+| 1 | **A Casa Acesa** · Mestre Chico (mentor), Dona Fátima | 9 | ⚡ Fundamentos: lâmpada, interruptor, disjuntor | jogável |
+| 2 | **Do Quadro ao Condomínio** · Eng.ª Lia (RT, mentora), Dona Socorro (síndica do Condomínio Mandacaru), Seu Raimundo (porteiro); abre no quadro da Dona Fátima | 7: O Quadro (quiz), Quadro Novo (DG+DR+DJs), Luz da Escada (three-way), Corredor Comprido (four-way), Luz da Garagem (fotocélula), Hall com Pulsadores (relé de impulso), Raio na Serra (quiz DPS) | 🏠 Predial | jogável |
+| 3 | **Chão de Fábrica** · Seu Damião (dono da beneficiadora de castanha Caju Dourado), Rayane (técnica de manutenção, mentora) | 5: Primeiro Turno (quiz NR-10/NR-12), Partida Direta, Sobrecarga! (prever), Caixa d'Água (boia), Fim de Turno (quiz reversão e Y-Δ) | 🏭 Industrial (+ boia de nível) | jogável; reversão e Y-Δ "em breve" (trifásico) |
+| 4 | **Sol no Telhado** · Professora Iara, escola rural do Assentamento Boa Esperança | previstas | (CC fotovoltaica) | enredo definido |
+| 5 | **Ventos do Litoral** · Seu Zé Maré, colônia de pescadores de Icapuí | previstas | (eólica) | enredo definido |
+
+- Um capítulo só abre quando o anterior estiver completo no nível atual (no modo teste, tudo abre).
+- Retratos dos personagens novos são SVG no código (`NPC` em `js/historia.js`); dá para trocar por arte do Canva depois, como no Chico e na Fátima. As cenas dos capítulos 2 e 3 ainda usam o fundo da oficina: falta arte do condomínio e da fábrica.
+- Checagens das fases novas em `js/conteudo.js`: `quadroCheck`, `comandoCheck` (three/four-way: qualquer interruptor inverte a luz e a luz apagada fica sem tensão), `fotoCheck`, `impulsoCheck`, `partidaCheck` (liga, selo, desliga, relé térmico), `boiaCheck`. Gabaritos do modo teste em `TESTE_SOL` (`js/teste.js`). Todos conferidos em teste automático.
+- Peças acionáveis com um toque também dentro das fases (`acionarPeca()` em `js/fases.js`): interruptores, botoeiras (apertam e soltam), DR/relé térmico (testar/rearmar), fotocélula (dia/noite), boia (vazia/cheia).
+
+### Diagramas: multifilar (feito) e planta de fiação (próximo)
+- **Multifilar** (`js/multifilar.js`): é a outra vista da bancada (botão "📐 Multifilar"). Gerado da montagem do aluno, com símbolos normalizados, cada condutor separado, fios em ângulo reto e na cor do condutor, e cada contato desenhado na posição atual (contato fechado em verde; ligação mecânica tracejada). Bornes com a mesma marcação da peça real (1/2, A1/A2, 13/14, 95/96…); a rede mostra F, N e PE. Defeito do Caça-Defeito não aparece no desenho (só medindo).
+- Limite: em comandos industriais o desenho segue a posição das peças da bancada e fica carregado. Melhoria futura: layout próprio de comando (entre as barras L e N) separado do circuito de força.
+- **Planta de fiação (feita)** em js/planta.js: botão "📄 Ver a planta do projeto" nas fases Luz da Escada, Corredor Comprido, Luz da Garagem e Hall com Pulsadores (PLANTAS). Folha clara, cômodos, quadro, ponto de luz, interruptores/pulsadores/fotocélula, eletrodutos com os tracinhos de cada condutor. O retorno, branco na bancada, fica cinza no papel. Símbolos simplificados: a professora deve conferir com a NBR 5444 / padrão da escola. Próximo: no Profissional, montar e marcar os condutores na planta; quadro de cargas.
+- Convenção da planta, lida no projeto real de referência (20/11/2026): ponto de luz = círculo duplo com nº do circuito, letra do comando e potência ("42 / u1 / 24W"); tomadas = triângulos com nº do circuito (e potência nas de uso específico, "600W"); interruptores junto às portas com as letras que comandam; eletroduto em curva no teto e reto na parede, "2xø3/4"" quando há mais de um; cada condutor é um tracinho sobre o eletroduto com o circuito em cima e a seção embaixo ("2.5"), terra em forma de "T"; cores: neutro azul-claro, fases branco/preto/vermelho, retorno amarelo, terra verde-amarelo. Plano: plantas pequenas dos cenários da história (casa da Dona Fátima, escada do Mandacaru); no Profissional, ler a planta e montar, ou montar e marcar os condutores; quadro de cargas como desafio (ex.: disjuntor 40 A com cabo de 10 mm² e FCA 0,70 → 57 × 0,70 ≈ 39,9 A, não protege).
+
+### Laboratório de componentes para o Cap. 1 (próximo passo)
+Base: relatório "Bancada de teste de componentes" (20/11/2026), feito na extensão do Claude no simulador de referência. Ideia: transformar o "Mestre Ohm" (hoje só quiz) numa bancada de medição por contato.
+- Multímetro com seletor por passos (Ω 200 Ω–20 MΩ, V⎓, V~, A⎓, diodo/continuidade, capacitância) e ponteiras arrastáveis com "ímã" no terminal mais próximo.
+- Bornes funcionais (VΩ, mA, 20A): ponta no borne de corrente medindo tensão dá aviso e, no desafio, queima o fusível interno do multímetro.
+- Tabela de respostas por peça, por par de terminais e por função: resistor (valor ± tolerância, OL em faixa menor), potenciômetro (A-cursor + cursor-B = total), capacitor (capacitância), LED (≈1,8 V e acende; invertido OL), diodo (0,5–0,7 V), fusível (≈0 Ω e bip; queimado OL). Valores "típicos" do relatório (transistores, MOSFET, TRIAC) devem ser conferidos com peça real.
+- Resistor com código de cores configurável; trocar de faixa mostra OL / 5,02 kΩ / 0,005 MΩ (ensina escala).
+- Desafios com nota: achar o ânodo, conferir o 470 Ω pelas cores, descobrir a peça com defeito.
+- Lei de Ohm com pilha/fonte CC (CC real permitida pela regra de conteúdo): medir V, R e conferir I = V/R.
+
+Lógica das peças (em `solve()`, `js/motor.js`): `links()` diz quais bornes cada contato liga por dentro; `loadsOf()` diz quais são cargas. A contatora energiza quando a bobina tem tensão e o selo (13-14) a mantém; o relé de impulso inverte a cada pulso; o DR desarma com fuga para o PE ou neutro unido ao PE depois dele; a fotocélula liga L em C à noite. Testado: partida direta com selo e relé térmico, DR com fuga, three-way + four-way, relé de impulso, fotocélula.
+
+Próximo passo do industrial: **motor de cálculo trifásico** (contatora 3 polos + blocos auxiliares, relé térmico 3 polos 95-96/97-98, disjuntor-motor, motor de 6 pontas U1…W2) para partida direta trifásica, reversão e estrela-triângulo; e boia de nível para a caixa d'água.
+
+## Plano "Realismo da bancada: SimuCir x Volt Up" (20/11/2026)
+- [x] Etapa 1 · Bancada real básica: vista real da tomada de bancada, disjuntor, interruptor e luminária; bornes com nome; fios em ângulo reto com anilha numerada; chave Símbolo/Real; zoom com pinça. Ativa no Primeiro Circuito e na Oficina Livre. O zoom vale em todas as bancadas de montar.
+- [ ] Etapa 2 · Simulação viva: Montar/Simular, potência real nas cargas, corrente em A, disjuntor desarma com faísca, borne errado pisca, multímetro e alicate na vista real.
+- [ ] Etapa 3 · Quadro residencial: trilho DIN, caixa, IDR, DPS, tomada, three-way, medidor kWh contando.
+- [ ] Etapa 4 · Todas as bancadas do Capítulo 1 na vista real.
+- [ ] Etapa 5 · Comandos elétricos (contator, botoeira, relé térmico, motor), com lógica simplificada.
+- Limite conhecido da Etapa 1: a rota do fio desvia de peças e bornes por algumas opções de L e Z, mas com muitas peças juntas o fio ainda pode cruzar uma etiqueta ou outro fio.
 
 ## Pendências e próximos passos sugeridos
 - [ ] Falas por nível: Leve com frases de até 8 palavras e imagem do cômodo.

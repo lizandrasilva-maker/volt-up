@@ -4,7 +4,8 @@ function showStart(){
   app.innerHTML='<section class="hero"><span class="eyebrow">Neurolytics · modo história</span><h1>Modo <span class="bolt">Eletricista</span></h1><p class="muted">Escolha como quer jogar. Dá pra trocar depois.</p></section>'+
   '<div class="modes">'+Object.entries(MODES).map(([k,m])=>'<button class="btn mode" data-m="'+k+'" style="--c:'+m.c+'"><span class="wire"></span><span><b>'+m.nome+'</b><small>'+m.sub+'</small></span><span class="tag">'+m.fio+'</span></button>').join('')+'</div>'+
   '<div class="soon">🤟 Modo Libras: em breve</div>'+
-  '<a class="btn ghost" href="login.html" style="display:grid;place-items:center;text-decoration:none">🔑 Entrar com login (progresso salvo na nuvem)</a>';
+  '<a class="btn ghost" href="login.html" style="display:grid;place-items:center;text-decoration:none">🔑 Entrar com login (progresso salvo na nuvem)</a>'+
+  '<p class="small" style="text-align:center;margin:0"><a class="link" id="privacidade" href="politica-privacidade.html">Política de privacidade</a></p>';
   app.querySelectorAll('.mode').forEach(b=>b.onclick=()=>{S.mode=b.dataset.m;save();S.char?showMap():showChar()});
 }
 function showChar(){
@@ -20,31 +21,48 @@ function showChar(){
 function showMap(){
   setMode();const m=MODES[S.mode];
   const ch=CHAPTERS.find(c=>c.id===S.chap)||CHAPTERS[0];
+  /* um capítulo só abre quando o anterior (jogável) estiver completo no nível atual; no modo teste tudo abre */
+  const completo=c=>!c.soon&&c.fases.every(id=>S.done[S.mode+':'+id]);
+  const fechado=c=>{const k=CHAPTERS.indexOf(c);return !window.VOLT_TESTE&&!c.soon&&k>0&&!completo(CHAPTERS[k-1])};
   const seenKey=S.mode+':'+ch.id+':intro';
-  if(!ch.soon&&ch.intro&&!S.seen[seenKey]){S.seen[seenKey]=1;save();showScene(ch.intro,showMap);return}
-  const tabs='<div class="chapters">'+CHAPTERS.map((c,k)=>'<button class="btn" data-ch="'+c.id+'" aria-pressed="'+(c.id===ch.id)+'">Cap. '+(k+1)+(c.soon?' 🔒':'')+'</button>').join('')+'</div>';
+  if(!ch.soon&&!fechado(ch)&&ch.intro&&!S.seen[seenKey]){S.seen[seenKey]=1;save();showScene(ch.intro,showMap);return}
+  const tabs='<div class="chapters">'+CHAPTERS.map((c,k)=>'<button class="btn" data-ch="'+c.id+'" aria-pressed="'+(c.id===ch.id)+'">Cap. '+(k+1)+(c.soon||fechado(c)?' 🔒':'')+'</button>').join('')+'</div>';
   let body;
   if(ch.soon){
-    body='<div class="soonbox"><span class="eyebrow">Em construção</span><h2>'+ch.nome+'</h2><span>Tema: '+ch.tema+'</span><span>O roteiro deste capítulo ainda vai ser escrito.</span></div>';
+    body='<div class="soonbox"><span class="eyebrow">Em construção</span><h2>'+ch.nome+'</h2><span>Tema: '+ch.tema+'</span>'+(ch.enredo?'<span>'+ch.enredo+'</span>':'')+
+      (ch.previstas?'<ul class="prev">'+ch.previstas.map(f=>'<li>'+f+'</li>').join('')+'</ul>':'<span>O roteiro deste capítulo ainda vai ser escrito.</span>')+'</div>';
+  }else if(fechado(ch)){
+    const k=CHAPTERS.indexOf(ch);
+    body='<div class="soonbox"><span class="eyebrow">🔒 Bloqueado</span><h2>'+ch.nome+'</h2><span>Tema: '+ch.tema+'</span><span>Complete o Capítulo '+k+' ('+CHAPTERS[k-1].nome+') para abrir esta história.</span></div>';
   }else{
     let nextFound=false;
     const ids=ch.fases;
     const nodes=ids.map((id,i)=>{const p=phaseById(id);
-      const done=S.done[S.mode+':'+p.id]||0,open=i===0||S.done[S.mode+':'+ids[i-1]];
+      const done=S.done[S.mode+':'+p.id]||0,open=window.VOLT_TESTE||i===0||S.done[S.mode+':'+ids[i-1]];
       let cls=done?'done':open?'':'lock';if(open&&!done&&!nextFound){cls+=' next';nextFound=true}
-      return '<button class="node '+cls+'" data-i="'+PHASES.indexOf(p)+'"><span class="dot">'+icon(p.ic)+'</span><span class="tt"><b>'+p.nome+'</b><small>'+(open?p.sub:'Bloqueada')+'</small><span class="kind">'+p.kind+'</span></span>'+(done?stars(done):'')+'</button>';
+      /* fase bloqueada: só o nome e o cadeado, sem subtítulo nem tipo */
+      return '<button class="node '+cls+'" data-i="'+PHASES.indexOf(p)+'"><span class="dot">'+icon(p.ic)+'</span><span class="tt"><b>'+p.nome+'</b>'+(open?'<small>'+p.sub+'</small><span class="kind">'+p.kind+'</span>':'')+'</span>'+(done?stars(done):open?'':'<span class="cad" aria-label="bloqueada">🔒</span>')+'</button>';
     }).join('');
-    body='<div class="map">'+nodes+'</div><button class="btn ghost sm" id="replay">▶ Rever a abertura do capítulo</button>';
+    body='<div class="map">'+nodes+'</div>'+
+      (ch.breve?'<div class="soonbox"><span class="eyebrow">Em breve neste capítulo</span><ul class="prev">'+ch.breve.map(f=>'<li>'+f+'</li>').join('')+'</ul></div>':'')+
+      '<button class="btn ghost sm" id="replay">▶ Rever a abertura do capítulo</button>';
   }
-  const all=!ch.soon&&ch.fases.every(id=>S.done[S.mode+':'+id]);
-  app.innerHTML=hud()+talk(all?'Capítulo completo! Bora pro próximo quando sair.':pick(CHEER[S.mode]))+tabs+
+  const all=!ch.soon&&!fechado(ch)&&ch.fases.every(id=>S.done[S.mode+':'+id]);
+  const tb=typeof testeBarHTML==='function'?testeBarHTML():'';
+  /* o balão do personagem só aparece quando tem algo a dizer (capítulo completo) */
+  app.innerHTML=hud()+tb+(all?talk(CHAPTERS[CHAPTERS.indexOf(ch)+1]&&!CHAPTERS[CHAPTERS.indexOf(ch)+1].soon?'Capítulo completo! O próximo já está aberto lá em cima.':'Capítulo completo! O próximo está em construção.'):'')+tabs+
   '<div class="chcard'+(ch.id==='cap1'?' art':'')+'"><span class="eyebrow">Capítulo '+(CHAPTERS.indexOf(ch)+1)+' · '+ch.tema+'</span><div class="world"><h2>'+ch.nome+'</h2><span class="tag" style="--c:'+m.c+'">'+m.nome+'</span></div></div>'+body+
-  plantaoHTML()+
-  '<div class="quick"><button class="btn" id="sandbox">🛠 Oficina livre</button><button class="btn" id="resp">🌬 Respira e religa</button></div>'+
-  '<button class="btn" id="ficha">🪪 Minha ficha de eletricista</button>'+
-  '<div class="row"><button class="btn ghost" id="cMode">Trocar nível</button><button class="btn ghost" id="cChar">Trocar personagem</button></div>'+
-  '<button class="btn ghost danger" id="reset">Recomeçar do zero</button>';
-  bindHud();
+  '<button class="btn" id="sandbox">🛠 Oficina livre <small class="muted">· monte o que quiser</small></button>'+
+  /* o resto fica recolhido para o mapa mostrar só o caminho das fases */
+  '<details class="mais"><summary class="btn ghost">☰ Mais opções</summary><div class="mais-in">'+
+    plantaoHTML()+
+    '<button class="btn" id="ficha">🪪 Minha ficha de eletricista</button>'+
+    '<button class="btn pausa" id="resp"><span>🌬 Pausa para respirar</span><small>1 minuto para acalmar antes de voltar à bancada</small></button>'+
+    '<div class="row"><button class="btn ghost" id="cMode">Trocar nível</button><button class="btn ghost" id="cChar">Trocar personagem</button></div>'+
+    '<a class="btn ghost" href="politica-privacidade.html" style="display:grid;place-items:center;text-decoration:none">🔒 Política de privacidade</a>'+
+    '<button class="btn ghost danger" id="reset">Recomeçar do zero</button>'+
+  '</div></details>';
+  bindHud();if(tb)bindTesteBar();
   app.querySelectorAll('[data-ch]').forEach(b=>b.onclick=()=>{S.chap=b.dataset.ch;save();showMap()});
   app.querySelectorAll('.node').forEach(n=>n.onclick=()=>{if(!n.classList.contains('lock'))playPhase(+n.dataset.i)});
   const rp=document.getElementById('replay');if(rp)rp.onclick=()=>showScene(ch.intro,showMap);
@@ -71,11 +89,13 @@ function playPhase(i){
   const p=PHASES[i],d=p.dados[S.mode];
   const go=()=>({quiz:runQuiz,sort:runSort,build:runBuild,predict:runPredict,diag:runDiag})[p.tipo](p,d);
   const k=S.mode+':'+p.id+':cena';
-  if(SCENES[p.id]&&!S.seen[k]){S.seen[k]=1;save();showScene(SCENES[p.id],go)}else go();
+  /* no modo teste a cena aparece sempre, para revisar a história */
+  if(SCENES[p.id]&&(window.VOLT_TESTE||!S.seen[k])){S.seen[k]=1;save();showScene(SCENES[p.id],go)}else go();
 }
 function frame(p,inner,bubble){
-  app.innerHTML=hud()+'<div class="world"><h2>'+p.nome+'</h2><button class="btn ghost sm" id="quit">Sair</button></div>'+talk(bubble)+inner;
-  bindHud();document.getElementById('quit').onclick=showMap;window.scrollTo(0,0);
+  const tf=typeof testePhaseHTML==='function'?testePhaseHTML(p):'';
+  app.innerHTML=hud()+'<div class="world"><h2>'+p.nome+'</h2><button class="btn ghost sm" id="quit">Sair</button></div>'+tf+(bubble?talk(bubble):'')+inner;
+  bindHud();document.getElementById('quit').onclick=showMap;if(tf)bindTestePhase(p);window.scrollTo(0,0);
 }
 const progBar=(n,i,res)=>'<div class="prog">'+Array.from({length:n},(_,k)=>'<i class="'+(k<i?(res[k]?'ok':'no'):k===i?'cur':'')+'"></i>').join('')+'</div>';
 const nextBtn=(last)=>'<button class="btn main" id="nx" style="width:100%">'+(last?'Concluir':'Próxima →')+'</button>';

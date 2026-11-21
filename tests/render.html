@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Teste de desenho do Volt Up</title></head>
+<body><div id="app"></div><pre id="out">rodando</pre>
+<script>try{localStorage.clear();sessionStorage.clear()}catch(e){}</script>
+<script src="../js/estado.js"></script><script src="../js/motor.js"></script><script src="../js/bancada-real.js"></script><script src="../js/multifilar.js"></script><script src="../js/planta.js"></script><script src="../js/conteudo.js"></script><script src="../js/imagens.js"></script><script src="../js/historia.js"></script><script src="../js/telas.js"></script><script src="../js/fases.js"></script><script src="../js/carreira.js"></script><script src="../js/teste.js"></script>
+<script>
+/* Todas as fases de bancada desenham bornes, nas vistas real e simbólica e nos três níveis.
+   Rode com: node tests/rodar.js */
+const R={};S.char='aprendiz';
+for(const v of ['real','simb'])for(const md of ['leve','moderado','full']){S.mode=md;S.vista={[md]:v};
+ for(const p of PHASES.filter(p=>p.tipo==='build'||p.tipo==='predict'||p.tipo==='diag')){try{S.seen[md+':'+p.id+':cena']=1;playPhase(PHASES.indexOf(p));const n=document.querySelectorAll('.bench svg .term').length;
+   /* toda bancada precisa do aviso de modelo didático qualitativo */
+   const av=document.querySelector('.benchwrap .modelo summary');
+   R[v+':'+md+':'+p.id]=n===0?'vazio':!av||!/qualitativo/i.test(av.textContent)?'sem aviso de modelo didático':'ok'}catch(e){R[v+':'+md+':'+p.id]='ERRO '+e.message}}}
+S.vista={leve:'simb'};S.mode='leve';S.sandbox={comps:[BAT(),C('A','sw2',110,60,0),C('B','sw4',180,60,0),C('Cc','dr',250,60,0),C('D','dps',300,60,0),C('E','foto',110,165,0),C('F','ri',180,165,0),C('G','kc',250,165,0),C('H','ft',300,165,0),C('I','btn',150,112,0,{nf:true}),C('J','motor',230,112,0),C('K','boia',300,112,0)],wires:[]};
+try{runSandbox();R.oficinaTodas=document.querySelectorAll('.bench svg .term').length+' bornes'+(document.querySelector('.benchwrap .modelo')?'':' (sem aviso de modelo didático)')}catch(e){R.oficinaTodas='ERRO '+e.message}
+const ruins=Object.entries(R).filter(([k,v])=>v!=='ok'&&!k.startsWith('oficina'));
+document.getElementById('out').textContent=JSON.stringify({total:Object.keys(R).length,problemas:ruins,oficina:R.oficinaTodas});
+</script></body></html>

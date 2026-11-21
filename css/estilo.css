@@ -109,6 +109,46 @@ input[type=text]{font:inherit;font-weight:800;width:100%;min-height:52px;padding
 /* Bancada (simulador) */
 .goal{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:14px;background:var(--panel2);font-weight:800}
 .goal .gi{color:var(--amber);font-family:var(--display);font-size:13px;flex:none;padding-top:2px}
+.goal .gtx{display:flex;flex-direction:column;gap:6px;min-width:0}
+.goal .gtx small{color:var(--muted);font-weight:700}
+.goal .real .rchip{background:var(--panel);font-size:12px}
+.benchwrap{display:flex;flex-direction:column}
+.benchwrap .entrada{border-radius:14px 14px 0 0;border-bottom:0}
+/* faixa poste → medidor → quadro → circuito */
+.ecabo-o{fill:none;stroke:#05080d;stroke-width:5}
+.ecabo{fill:none;stroke:#3a4048;stroke-width:3}
+.eflow{fill:none;stroke:#ffe680;stroke-width:2;stroke-dasharray:3 9;stroke-linecap:round;animation:eflow .7s linear infinite}
+@keyframes eflow{to{stroke-dashoffset:-12}}
+.esc{fill:none;stroke:var(--fase);stroke-width:3;animation:blink .35s 4}
+.elcd{fill:var(--lcdink);font:900 6.4px ui-monospace,Consolas,monospace;letter-spacing:.06em}
+.etxt{fill:#46505b;font:900 5.5px var(--body)}
+.eled{fill:#7a2a24}.eled.pisca{fill:#ff5a4a;animation:eled .6s steps(2) infinite}
+@keyframes eled{50%{fill:#7a2a24}}
+.benchwrap .bench{border-radius:0 0 18px 18px}
+/* aviso fixo: bancada é modelo qualitativo, sem valores reais */
+.modelo{margin:6px 2px 0;font-size:12.5px;color:var(--muted)}
+.modelo summary{cursor:pointer;font-weight:800;list-style-position:inside;padding:4px 2px}
+.modelo summary:focus-visible{outline:2px solid var(--amber);outline-offset:2px;border-radius:6px}
+.modelo p{margin:4px 2px 2px;line-height:1.45;color:var(--ink)}
+.node .cad{font-size:15px;opacity:.6}
+.soonbox .prev{text-align:left;margin:4px 0;padding-left:18px;color:var(--ink);font-size:14px;line-height:1.5}
+/* Oficina: caixa de ferramentas */
+.caixa-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.caixa-bar #cx{flex:1;min-height:46px}
+.caixa-bar #cx[aria-expanded="true"]{border-color:var(--amber);background:var(--panel2)}
+.chip.modo{gap:6px;font-size:12.5px;min-height:34px}
+.caixa{display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:16px;background:var(--panel);border:2px solid var(--amber)}
+.caixa .seg{margin-bottom:2px}.caixa .seg3 .btn{font-size:12.5px;padding:4px}
+.pecas{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:6px}
+.peca{min-height:62px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px 4px;font-size:12px;line-height:1.15;text-align:center}
+.peca .pe{font-size:20px}
+.mais{display:flex;flex-direction:column}
+.mais>summary{list-style:none;display:grid;place-items:center;cursor:pointer}
+.mais>summary::-webkit-details-marker{display:none}
+.mais[open]>summary{border-color:var(--amber)}
+.mais-in{display:flex;flex-direction:column;gap:10px;padding-top:10px}
+.pausa{display:flex;flex-direction:column;align-items:center;gap:2px}.pausa small{font-size:12px;color:var(--muted);font-weight:700}
+#sandbox small{font-weight:700}
 .bench{background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:4px;position:relative}
 .bench svg{width:100%;height:auto;display:block;touch-action:none;-webkit-user-select:none;user-select:none}
 .w{stroke:var(--copper);stroke-width:5;fill:none;stroke-linecap:round;stroke-linejoin:round}
@@ -117,11 +157,87 @@ input[type=text]{font:inherit;font-weight:800;width:100%;min-height:52px;padding
 .on .w{stroke-dasharray:12 7;animation:flow .9s linear infinite}
 .on .w.cobre{stroke:var(--amber)}
 .pal{display:flex;gap:6px;flex-wrap:wrap}
-.pal .btn{flex:1 1 70px;min-height:44px;padding:6px 8px;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px}
+.pal .btn{flex:1 1 60px;min-height:38px;padding:4px 6px;font-size:12.5px;border-radius:12px;display:flex;align-items:center;justify-content:center;gap:5px}
 .pal .btn[aria-pressed="true"]{border-color:var(--amber);background:var(--panel2)}
 .sw8{width:22px;height:8px;border-radius:4px;flex:none}
 .mvhit{fill:transparent;cursor:grab}
 .selc{fill:none;stroke:var(--amber);stroke-width:2;stroke-dasharray:5 4}
+/* Bancada: chave Símbolo/Real e zoom (js/bancada-real.js) */
+/* botões que flutuam dentro da bancada: vista à esquerda, zoom à direita, embaixo */
+.bench:has(.bctl){padding-bottom:48px}
+.bctl{position:absolute;left:8px;right:8px;bottom:6px;display:flex;justify-content:space-between;align-items:flex-end;gap:6px;pointer-events:none}
+.bctl>*{pointer-events:auto}
+.bctl .btn{min-height:36px;padding:2px 10px;font-size:13px;border-radius:10px;background:color-mix(in srgb,var(--panel2) 85%,transparent);backdrop-filter:blur(2px)}
+.zoom{display:flex;gap:4px}
+.zoom .btn{min-width:36px;padding:2px 0;font-size:17px}
+.bench.zoomed{border-color:var(--neutro)}
+/* Vista real: peças como o equipamento, fio grosso com contorno, anilha numerada, borne com parafuso */
+.real-v .w,.real-v .w2{stroke-width:5.5}
+.real-v.on .w{stroke-dasharray:none;animation:none}
+.real-v.on .w2{stroke-dasharray:7 7}
+.wo{stroke:#05080d;stroke-width:9;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.rbody{fill:url(#gBody);stroke:#8b939c;stroke-width:1.2}
+.janela{fill:#3a4048;stroke:#262b31;stroke-width:1}
+.rtxt{fill:#46505b;font:900 6.5px var(--body);letter-spacing:.02em}
+.ltxt{fill:#f2f4f6;font:900 4.6px var(--body)}
+.furo{fill:#2a2f36}
+.anel{pointer-events:none}.anel rect{fill:#f39c12;stroke:#7a4a06;stroke-width:.8}.anel text{fill:#1b1206;font:900 7px var(--body)}
+.term.scr{fill:url(#gScrew);stroke:#5a636d;stroke-width:1}
+.term.scr.sel{fill:var(--amber);stroke:#fff;stroke-width:2}
+.term.scr.probe-r{fill:var(--fase);stroke:#fff;stroke-width:2}.term.scr.probe-b{fill:#05080d;stroke:var(--amber);stroke-width:3}
+.slot{stroke:#4a535d;stroke-width:1.5;stroke-linecap:round;fill:none;pointer-events:none}
+.lab.bn{fill:var(--ink);font-size:8.5px;font-weight:900}
+.lab .kl{fill:var(--neutro);font-size:11px}
+.lab.bn.bnd{fill:#2f3a48;font-size:6.6px}
+/* Planta de fiação (js/planta.js): folha clara, como projeto impresso */
+.planta-btn{align-self:flex-start;min-height:42px;border-style:dashed;border-color:var(--neutro)}
+.planta-btn[aria-expanded="true"]{border-style:solid}
+.planta{display:flex;flex-direction:column;gap:6px;padding:10px;border-radius:14px;background:#f4f1e8;color:#26303b;border:2px solid #c9c2ad}
+.planta-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}.planta-h b{font-size:14px}.planta-h span{font-size:11px;color:#6b7280;font-weight:700}
+.plantasvg{width:100%;height:auto;display:block;background:#fbfaf5;border:1px solid #d8d2bf;border-radius:6px}
+.psala{fill:none;stroke:#7b8494;stroke-width:3}
+.pporta{stroke:#fbfaf5;stroke-width:4}.parco{fill:none;stroke:#9aa3ad;stroke-width:.8;stroke-dasharray:2 2}
+.pduto{fill:none;stroke:#e67e22;stroke-width:1.6}.pduto.parede{stroke-dasharray:5 3}
+.ptick{stroke-width:1.8;stroke-linecap:round}
+.ptx{font:800 7px var(--body);fill:#26303b}.pcirc{fill:#1f4e86}.psec{fill:#6b7280;font-size:6.2px}.pdiam{fill:#b35a12;font-size:6.2px}
+.pnome{font-size:8px;fill:#4b5563;letter-spacing:.06em}.parea{font-size:6px;fill:#c0392b}
+.pluz{fill:none;stroke:#2346c8;stroke-width:1.6}.pcmd{fill:#2346c8;font-size:7.5px}.ppot{fill:#26303b;font-size:6.5px}
+.pqd{fill:#fff;stroke:#1f2a44;stroke-width:1.4}.pqdh{stroke:#1f2a44;stroke-width:.8}.pid{fill:#4b5563;font-size:6.2px}
+.pcmdsym{fill:#fff;stroke:#1f5e2c;stroke-width:1.2}.pcmdsym.cheio,.pcmdmeio{fill:#1f5e2c}.pfc{fill:#1f5e2c;font-size:4.6px}
+.pleg{width:18px;height:14px;vertical-align:-3px;margin-right:4px;overflow:visible}.ptipo{fill:#1f5e2c;font-size:7.5px}
+.planta-leg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11.5px;font-weight:700;color:#3b4552}
+.planta-leg i{display:inline-block;width:3px;height:12px;margin-right:4px;vertical-align:-2px;border-radius:1px}
+.planta .help{color:#4b5563;margin:0}
+/* Diagrama multifilar (js/multifilar.js) */
+.ms{stroke:var(--ink);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.ms.mc{stroke-width:2.4}.ms.mc.on{stroke:var(--terra)}
+.ms.elo{stroke-dasharray:3 3;stroke-width:1.2;opacity:.8}
+.mpt{fill:var(--ink)}
+.mbody{fill:var(--panel2);stroke:var(--ink);stroke-width:2}
+.mtx{fill:var(--ink);font:900 7.5px var(--body)}
+.mw{fill:none;stroke-width:3;stroke-linejoin:round;stroke-linecap:round;stroke:var(--copper)}
+.mw.fase{stroke:var(--fase)}.mw.neutro{stroke:var(--neutro)}.mw.retorno{stroke:#d9dde3}.mw.terra{stroke:var(--terra)}
+.mw.rompido{stroke-dasharray:4 4}
+.mw2{fill:none;stroke:#f2d22e;stroke-width:3;stroke-dasharray:6 6}
+.on .mw{stroke-dasharray:none}
+.short .mw{stroke:var(--fase);animation:blink .35s 4}
+.term.mt{fill:var(--bg);stroke:var(--ink);stroke-width:1.6}
+.lab.mb{font-size:7.5px;fill:var(--muted)}.lab.mb.mk{fill:var(--neutro);font-size:10px}
+.lab.mb.src0{fill:var(--fase);font-size:10px}.lab.mb.src1{fill:var(--neutro);font-size:10px}.lab.mb.src2{fill:var(--terra);font-size:10px}
+/* motor ligado: o acoplamento do eixo gira */
+.giro{transform-box:fill-box;transform-origin:center}.giro.gira{animation:gira .45s linear infinite}
+@keyframes gira{to{transform:rotate(360deg)}}
+/* selo ✓/✗ do teste de peça no Caça-Defeito */
+.selo circle{stroke:#fff;stroke-width:1.5}.selo.ok circle{fill:var(--terra)}.selo.no circle{fill:var(--fase)}
+.selo text{fill:#fff;font:900 10px var(--body)}
+/* tecla do interruptor: gira e a metade apertada desliza quando o aluno toca */
+.tecla{transform-box:fill-box;transform-origin:center}
+.tecla.liga{animation:teclaLiga .28s ease-out}.tecla.desliga{animation:teclaDesliga .28s ease-out}
+.tecla.liga .aperto{animation:apertoDesce .28s ease-out}.tecla.desliga .aperto{animation:apertoSobe .28s ease-out}
+@keyframes teclaLiga{0%{transform:none}45%{transform:translateY(1.5px) scale(.93,.86)}100%{transform:none}}
+@keyframes teclaDesliga{0%{transform:none}45%{transform:translateY(-1.5px) scale(.93,.86)}100%{transform:none}}
+@keyframes apertoDesce{from{transform:translateY(-14px)}to{transform:none}}
+@keyframes apertoSobe{from{transform:translateY(14px)}to{transform:none}}
 /* Cena de história */
 .scene{display:flex;flex-direction:column;gap:14px;padding-top:6px}
 .stage{display:flex;flex-direction:column;align-items:center;gap:8px;padding:18px 14px;border-radius:20px;background:radial-gradient(120% 90% at 50% 0%,var(--panel2),var(--panel));border:2px solid var(--line)}
@@ -241,4 +357,19 @@ body.leve .vn-box{font-size:17px}
 .ring{width:220px;height:220px;max-width:100%;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle,color-mix(in srgb,var(--terra) 45%,transparent) 0 40%,color-mix(in srgb,var(--terra) 15%,transparent) 41% 100%);transform:scale(.6);transition:transform 4s ease-in-out}
 .ring.in{transform:scale(1)}
 .ring b{font-family:var(--display);font-weight:400;font-size:26px}
+/* Modo teste (js/teste.js): faixa tracejada roxa, para nunca ser confundida com o jogo */
+.teste{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border-radius:14px;border:2px dashed #b48cff;background:color-mix(in srgb,#b48cff 12%,var(--panel))}
+.teste-h{display:flex;flex-direction:column;gap:2px}.teste-h b{color:#cdb4ff;letter-spacing:.06em}.teste-h span{font-size:12px;color:var(--muted);font-weight:700}
+.teste-b,.teste-f{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.teste-f{flex-direction:row}
+.teste .btn{min-height:40px;font-size:14px;padding:4px 12px}
+.teste-chip{background:color-mix(in srgb,#b48cff 35%,var(--panel2))}
+.teste-in{align-self:flex-start;border-style:dashed;border-color:#b48cff;min-height:40px}
+.seg3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.seg3 .btn{min-height:42px}.seg3 .btn[aria-pressed="true"]{border-color:var(--amber);background:var(--panel2)}
+.rot-cap{display:flex;flex-direction:column;gap:10px;padding-top:6px}
+.rot-item{display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:14px;background:var(--panel);border:2px solid var(--line)}
+.rot-h{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.falas{display:flex;flex-direction:column;gap:4px;font-size:14px;line-height:1.4;padding-left:10px;border-left:3px solid var(--line)}
+.falas b{color:var(--amber)}
+.rot-card{font-size:13px;font-weight:800;color:var(--muted)}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
