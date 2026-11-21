@@ -2,7 +2,7 @@
 
 Game educativo de elétrica, energia e renováveis para cursos técnicos, no modo história do eletricista.
 
-- **Jogar:** abra `index.html` (ou o link do GitHub Pages, quando ativado).
+- **Jogar:** abra `index.html` (ou o link publicado na Vercel).
 - **Desenvolver:** leia [docs/NEUROLYTICS-handoff.md](docs/NEUROLYTICS-handoff.md): regras de conteúdo (NBR 5410, público jovem), estrutura de pastas e pendências.
 - **Rodar local:** `python3 -m http.server` e abra `http://localhost:8000`.
 - **Testes automáticos:** `node tests/rodar.js`. Precisa só do Node e do Google Chrome.
