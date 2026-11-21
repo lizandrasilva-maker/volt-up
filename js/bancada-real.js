@@ -197,14 +197,15 @@ function realComp(c,b,o){
   const alavanca=(x,ligado,w,compacto,caiu)=>{w=w||12;const k=compacto?{s0:-8.5,sh:12,lh:7,y1:-9.5,y0:-2.6,iw:4.4}:{s0:-13,sh:16,lh:9.5,y1:-15.5,y0:-5,iw:4.2};
     const y=ligado?k.y1:k.y0;
     return '<rect x="'+(x-w/2)+'" y="'+k.s0+'" width="'+w+'" height="'+k.sh+'" rx="1.6" style="fill:#14171b"/>'+
-      '<g'+(caiu?' class="alav-cai"':'')+'><rect x="'+(x-w/2+1)+'" y="'+y+'" width="'+(w-2)+'" height="'+k.lh+'" rx="1.6" style="fill:url(#gLever);stroke:#0b0d0f" stroke-width=".5"/>'+
+      '<g'+(caiu===true||caiu==='cai'?' class="alav-cai"':caiu==='sobe'?' class="alav-sobe"':'')+'><rect x="'+(x-w/2+1)+'" y="'+y+'" width="'+(w-2)+'" height="'+k.lh+'" rx="1.6" style="fill:url(#gLever);stroke:#0b0d0f" stroke-width=".5"/>'+
       '<path d="M'+(x-w/2+2.5)+' '+(y+1.8)+' H'+(x+w/2-2.5)+' M'+(x-w/2+2.5)+' '+(y+3.2)+' H'+(x+w/2-2.5)+'" style="stroke:#4b535c" stroke-width=".5"/>'+
       '<text x="'+x+'" y="'+(y+k.lh-1.3)+'" text-anchor="middle" class="ltxt" style="font-size:3.4px">'+(ligado?'I':'O')+'</text></g>'+
       '<rect x="'+(x-w/2+.5)+'" y="'+k.iw+'" width="'+(w-1)+'" height="3.4" rx=".6" style="fill:#1f2328"/><rect x="'+(x-w/2+1.2)+'" y="'+(k.iw+.6)+'" width="'+(w-2.4)+'" height="2.2" rx=".4" style="fill:'+(ligado?'#d33a2c':'#43b05c')+'"/>'};
   if(c.type==='fuse'){/* disjuntor DIN unipolar (curva C, 10 A): alavanca em cima = ligado; desarmado = alavanca embaixo
        e janela verde (contatos abertos). Marcação impressa: C10 e a capacidade de interrupção em caixa (6000). */
-    const trip=(c.broken&&c.show)||!!c.trip,caiu=!!(o.curto&&o.curto.quem===c.id);
-    s=din(14)+alavanca(0,!trip,12,false,caiu)+
+    /* alavanca anima quando desarma por curto ou quando o aluno liga/desliga com um toque (SW_FLIP) */
+    const trip=(c.broken&&c.show)||!!c.trip,toque=SW_FLIP===c.id,caiu=!!(o.curto&&o.curto.quem===c.id)||(toque&&trip);
+    s=din(14)+alavanca(0,!trip,12,false,caiu?'cai':toque?'sobe':'')+
       '<text class="rtxt" y="12.4" text-anchor="middle" style="font-size:5.4px">C10</text>'+
       '<rect x="-4.6" y="13.2" width="9.2" height="2.8" rx=".3" style="fill:none;stroke:#46505b" stroke-width=".35"/><text class="rtxt" y="15.4" text-anchor="middle" style="font-size:2.4px">6000</text>';
   }

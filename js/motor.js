@@ -156,7 +156,7 @@ function wirePath(comps,w){const [x1,y1]=tpos(comps,w.a),[x2,y2]=tpos(comps,w.b)
   return 'M'+x1+' '+y1+' L'+x2+' '+y2}
 /* Símbolo das peças da Oficina (Diagrama): caixa com a letra de identificação e os condutores até os bornes. */
 /* peças que o aluno aciona com um toque (interruptores, botoeiras, DR/relé em teste, fotocélula, boia) */
-const ACION={sw:1,sw2:1,sw3:1,sw4:1,btn:1,dr:1,ft:1,foto:1,boia:1};
+const ACION={sw:1,sw2:1,sw3:1,sw4:1,btn:1,dr:1,ft:1,foto:1,boia:1,fuse:1};
 const SYM_TXT={haste:'⏚',bep:'BEP',boia:'BÓIA',sw2:'S 2×',sw3:'S ⇅',sw4:'S ⤨',dr:'DR',dps:'DPS',foto:'FC',ri:'RI',motor:'M',kc:'K',ft:'FT',btn:'B'};
 function symGeneric(c,b,o){
   const hw=c.type==='kc'?22:c.type==='motor'?14:16,hh=c.type==='kc'||c.type==='dr'||c.type==='ft'||c.type==='ri'?18:12;

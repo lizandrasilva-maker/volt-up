@@ -525,3 +525,5 @@ svg.curto{animation:shake .32s 2}
 @keyframes alavCai{from{transform:translateY(-10px)}}
 .led-pisca{animation:blink .55s infinite}
 @media (prefers-reduced-motion:reduce){.wcurto{opacity:.7}.fz-marca{opacity:.55}}
+.alav-sobe{animation:alavSobe .3s cubic-bezier(.5,1.6,.5,1) both}
+@keyframes alavSobe{from{transform:translateY(10px)}}

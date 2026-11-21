@@ -102,6 +102,7 @@ let pistas={};
      confere('Curto-circuito',c.fios>=2&&c.desenho===true&&c.desenhoDiagrama===true,'a bancada desenha a faísca e os fios incandescentes (real e diagrama)',c.fios+' fios');
      confere('Curto-circuito',c.msg===true,'mensagem explica o curto');
      confere('Curto-circuito',c.tela===true,'na bancada: ligar L1 direto no N mostra a faísca e a mensagem');
+     confere('Curto-circuito',c.djLigaDesliga===true&&c.djTocavel===true,'o disjuntor liga e desliga com um toque (a lâmpada apaga e acende)');
      confere('Curto-circuito',c.verificaDesarmado===true,'"Verificar" com a proteção desarmada pede para corrigir e religar');}
     {const M=Object.entries(t.montar||{});
      confere('Modo teste',M.length>=27&&M.every(([,v])=>v==='aprovou'),'"Montar pra mim" monta e já aprova em todas as fases de montar (3 níveis)',M.filter(([,v])=>v!=='aprovou').map(([k,v])=>k+': '+v).join('; ')||M.length+' fases');}
