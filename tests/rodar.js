@@ -94,6 +94,8 @@ let pistas={};
     confere('Menu do usuário',mn.voltouAoMenu===true,'configurações voltam ao menu');
     confere('Menu do usuário',mn.semPersonagem===true,'primeira entrada pede o personagem antes do menu');
     confere('Menu do usuário',/location\.replace\('login\.html'\)/.test(fs.readFileSync(path.join(RAIZ,'js/main.js'),'utf8')),'sem login, o jogo abre a tela de login');
+    {const M=Object.entries(t.montar||{});
+     confere('Modo teste',M.length>=27&&M.every(([,v])=>v==='aprovou'),'"Montar pra mim" monta e já aprova em todas as fases de montar (3 níveis)',M.filter(([,v])=>v!=='aprovou').map(([k,v])=>k+': '+v).join('; ')||M.length+' fases');}
     confere('Menu do usuário',JSON.stringify(t.ceu)==='["cap2","cap1","cap3"]','céu acompanha o capítulo (mapa e fase)',JSON.stringify(t.ceu));
     {const css=fs.readFileSync(path.join(RAIZ,'css/estilo.css'),'utf8');
      confere('Menu do usuário',/@media \(prefers-reduced-motion:reduce\)\{\*\{animation:none!important;transition:none!important\}\}/.test(css),'"movimento reduzido" desliga animações e transições');}
