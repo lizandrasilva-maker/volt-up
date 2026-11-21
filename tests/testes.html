@@ -4,7 +4,7 @@
 <script>try{localStorage.clear();sessionStorage.clear()}catch(e){}</script>
 <script src="../js/estado.js"></script><script src="../js/motor.js"></script><script src="../js/bancada-real.js"></script><script src="../js/multifilar.js"></script><script src="../js/planta.js"></script>
 <script src="../js/conteudo.js"></script><script src="../js/imagens.js"></script><script src="../js/historia.js"></script>
-<script src="../js/telas.js"></script><script src="../js/fases.js"></script><script src="../js/carreira.js"></script><script src="../js/teste.js"></script>
+<script src="../js/telas.js"></script><script src="../js/fases.js"></script><script src="../js/carreira.js"></script><script src="../js/calculo.js"></script><script src="../js/calculadora.js"></script><script src="../js/teste.js"></script>
 <script>
 /* Testes das fases: gabaritos, erros comuns, previsões, quizzes, cenas e trava de capítulos.
    Rode com: node tests/rodar.js */
@@ -81,7 +81,7 @@ try{
     R.fonte=fo;}
   // 6b) menu do usuário e privacidade
   S.mode='leve';S.char='aprendiz';S.chap='cap1';S.seen['leve:cap1:intro']=1;
-  showHome();R.menu={cards:[...document.querySelectorAll('.menu .mcard')].map(b=>b.id),calcDesligada:document.getElementById('mCalc').disabled,
+  showHome();R.menu={cards:[...document.querySelectorAll('.menu .mcard')].map(b=>b.id),calcAbre:(()=>{document.getElementById('mCalc').click();const ok=!!document.querySelector('.caderno');showHome();return ok})(),
     politica:!!document.querySelector('a[href="politica-privacidade.html"]')};
   document.getElementById('mHist').click();R.menu.mapaTemVoltar=!!document.getElementById('toMenu')&&!document.querySelector('.mais');
   document.getElementById('toMenu').click();document.getElementById('mPerfil').click();R.menu.perfilMelhorar=document.querySelectorAll('.melhorar .miss').length;
@@ -95,6 +95,21 @@ try{
   S.mode='leve';S.chap='cap2';S.seen={};S.done={};showMap();R.cap2_semCap1=document.querySelector('.soonbox .eyebrow').textContent;
   CHAPTERS[0].fases.forEach(id=>S.done['leve:'+id]=3);S.seen['leve:cap2:intro']=1;showMap();R.cap2_comCap1=document.querySelectorAll('.node').length+' fases';
   S.chap='cap3';showMap();R.cap3_semCap2=document.querySelector('.soonbox .eyebrow').textContent;
+  // 7b) cálculo com valores reais: resultados conferidos com contas feitas à mão
+  {const c={};const q=(v,e,tol)=>v!==null&&v!==undefined&&Math.abs(v-e)<=(tol||1e-9);
+    c.chuveiro=q(CALC.corrente(5500,220).I,25);
+    c.potencia=q(CALC.potencia(220,10).P,2200);
+    c.resistencia=q(CALC.resistencia(220,25).R,8.8,1e-9);
+    const qd=CALC.queda(10,30,4,220);c.quedaV=Math.round(qd.dv*100)/100;c.quedaOk=qd.ok;
+    const ql=CALC.queda(20,40,1.5,127);c.quedaLonga=Math.round(ql.pct*10)/10;c.quedaLongaOk=ql.ok;
+    const cs=CALC.consumo(5500,0.5,30,0.85);c.kwh=cs.kwh;c.custo=Math.round(cs.custo*100)/100;
+    const d1=CALC.disjuntor(18,24),d2=CALC.disjuntor(25,24),d3=CALC.disjuntor(70);c.dj=[d1.In,d1.ok,d2.In,d2.ok,d3.In];
+    c.invalidos=[CALC.corrente(5500,0),CALC.queda(10,30,0,220),CALC.consumo(100,30,1)].every(x=>x===null);
+    /* tela: a queda aparece na folha e muda quando o aluno digita */
+    S.mode='leve';showCalc('queda');c.telaQueda=(document.querySelector('.cres b')||{}).textContent;
+    const inp=document.querySelector('input[data-k="I"]');inp.value='20';inp.dispatchEvent(new Event('input'));c.telaQueda20=(document.querySelector('.cres b')||{}).textContent;
+    c.aviso=/não substitui projeto nem ART/.test(document.querySelector('.caviso').textContent);
+    CALC_VAL.I=10;R.calc=c;}
   // 8) céu por capítulo: o mapa e a fase usam o céu do capítulo certo
   R.ceu=[];S.chap='cap2';showMap();R.ceu.push(document.body.dataset.cap);S.chap='cap1';showMap();R.ceu.push(document.body.dataset.cap);
   S.seen['leve:partida:cena']=1;playPhase(PHASES.findIndex(p=>p.id==='partida'));R.ceu.push(document.body.dataset.cap);

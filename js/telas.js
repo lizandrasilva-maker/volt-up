@@ -37,7 +37,7 @@ function showHome(){
     card('mPerfil','🪪','Meu perfil','XP, competências e carreira','" style="--i:1')+
     card('mConq','🏆','Conquistas',S.ach.length+'/'+ACH.length+' · '+S.cards.length+' cards','" style="--i:2')+
     card('mOfi','🛠','Oficina','Monte o que quiser','" style="--i:3')+
-    card('mCalc','🧮','Calculadora','Em breve',' breve" disabled aria-disabled="true" style="--i:4')+
+    card('mCalc','🧮','Calculadora','Caderno de contas do Mestre Chico','" style="--i:4')+
     card('mPlano',pl.ic,'Meu plano',pl.t+' · '+pl.s,(pl.warn?' warn':'')+'" style="--i:5')+
     card('mConfig','⚙️','Configurações','Nível, personagem, conta','" style="--i:6')+
   '</div>'+
@@ -46,7 +46,7 @@ function showHome(){
   '<p class="small" style="text-align:center;margin:0"><a class="link" href="politica-privacidade.html">Política de privacidade</a></p>';
   bindHud();if(tb)bindTesteBar();
   const on=(id,f)=>{const b=document.getElementById(id);if(b)b.onclick=f};
-  on('mHist',showMap);on('mPerfil',showFicha);on('mConq',showConquistas);on('mOfi',runSandbox);on('mPlano',showPlano);on('mConfig',showConfig);
+  on('mHist',showMap);on('mPerfil',showFicha);on('mConq',showConquistas);on('mOfi',runSandbox);on('mCalc',()=>showCalc());on('mPlano',showPlano);on('mConfig',showConfig);
 }
 function showPlano(){
   setMode();const pl=planoResumo(),c=conta();

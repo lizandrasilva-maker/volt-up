@@ -74,7 +74,18 @@ let pistas={};
     /* Menu do usuário: a tela depois do login */
     const mn=t.menu||{};
     confere('Menu do usuário',JSON.stringify(mn.cards)===JSON.stringify(['mHist','mPerfil','mConq','mOfi','mCalc','mPlano','mConfig']),'menu com história, perfil, conquistas, oficina, calculadora, plano e configurações',JSON.stringify(mn.cards));
-    confere('Menu do usuário',mn.calcDesligada===true,'calculadora aparece como "em breve" (desligada)');
+    confere('Menu do usuário',mn.calcAbre===true,'card da calculadora abre o caderno de contas');
+    /* Cálculo com valores reais (Etapa 3): resultados batem com contas feitas à mão */
+    const k=t.calc||{};
+    confere('Cálculo com valores reais',k.chuveiro===true,'chuveiro de 5500 W em 220 V → 25 A');
+    confere('Cálculo com valores reais',k.potencia===true&&k.resistencia===true,'P = U × I (220 V × 10 A = 2200 W) e R = U ÷ I (220 V ÷ 25 A = 8,8 Ω)');
+    confere('Cálculo com valores reais',k.quedaV===2.58&&k.quedaOk===true,'cabo de 4 mm², 10 A, 30 m → 2,58 V (dentro de 4 %)',k.quedaV+' V');
+    confere('Cálculo com valores reais',k.quedaLonga===14.4&&k.quedaLongaOk===false,'1,5 mm², 20 A, 40 m em 127 V → 14,4 %: acima do limite',k.quedaLonga+' %');
+    confere('Cálculo com valores reais',k.kwh===82.5&&k.custo===70.13,'5500 W, 30 min por dia, 30 dias → 82,5 kWh; a R$ 0,85 → R$ 70,13',k.kwh+' kWh / R$ '+k.custo);
+    confere('Cálculo com valores reais',JSON.stringify(k.dj)==='[20,true,25,false,null]','disjuntor: Ib 18 A e Iz 24 A → 20 A; Ib 25 A passa do Iz; acima de 63 A não há padrão',JSON.stringify(k.dj));
+    confere('Cálculo com valores reais',k.invalidos===true,'entradas impossíveis (tensão 0, seção 0, 30 h por dia) não geram resultado');
+    confere('Cálculo com valores reais',k.telaQueda==='2,58 V · 1,17 %'&&k.telaQueda20==='5,16 V · 2,35 %','a folha mostra o resultado e atualiza ao digitar',k.telaQueda+' → '+k.telaQueda20);
+    confere('Cálculo com valores reais',k.aviso===true,'aviso "não substitui projeto nem ART"');
     confere('Menu do usuário',mn.mapaTemVoltar===true,'mapa tem botão para o menu e não tem mais o "Mais opções"');
     confere('Menu do usuário',mn.perfilMelhorar===2,'perfil mostra 2 competências a melhorar',String(mn.perfilMelhorar));
     confere('Menu do usuário',mn.conquistas>=12,'tela de conquistas mostra as medalhas',String(mn.conquistas));
