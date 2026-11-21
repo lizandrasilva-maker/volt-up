@@ -18,7 +18,7 @@ const NAME={src:'fonte',haste:'haste de aterramento',bep:'BEP',lamp:'luminária'
    Fonte (src): L1, N, L2, L3 (c.fases = 1, 2 ou 3; sempre com neutro). Não tem PE: o neutro chega aterrado
    pela própria fonte (esquema TT) e o terra da instalação é criado pela haste.
      haste de aterramento: 1 borne (conector no topo)       bep (barramento de equipotencialização principal): 4 bornes unidos */
-const SYM_TERMS={haste:[[0,-26]],bep:[[-18,-16],[-6,-16],[6,-16],[18,-16]],sw2:[[-26,0],[26,-14],[26,14]],sw3:[[-26,0],[26,-14],[26,14]],dr:[[-12,-30],[12,-30],[-12,30],[12,30]],
+const SYM_TERMS={haste:[[0,-26]],bep:[[-18,16],[-6,16],[6,16],[18,16]],sw2:[[-26,0],[26,-14],[26,14]],sw3:[[-26,0],[26,-14],[26,14]],dr:[[-12,-30],[12,-30],[-12,30],[12,30]],
   boia:[[-26,0],[26,0]],sw4:[[-26,-12],[-26,12],[26,-12],[26,12]],dps:[[0,-26],[0,26]],foto:[[-26,0],[0,26],[26,0]],ri:[[-12,-30],[-12,30],[12,-30],[12,30]],
   motor:[[-26,0],[26,0],[0,26]],kc:[[-30,-30],[-30,30],[0,-30],[0,30],[30,-30],[30,30]],ft:[[-12,-30],[-12,30],[14,-30],[14,30]],btn:[[-26,0],[26,0]]};
 let GEOM_REAL=false;
