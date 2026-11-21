@@ -38,8 +38,8 @@ Object.assign(NPC,{
 /* Para escrever um capítulo novo: crie um item em CHAPTERS (fases + falas). Falas = [quem, texto]; quem = chave de NPC ou 'eu'. {nome} vira o nome do jogador. */
 
 
-NPC.chico.body=IMG.chico_body;NPC.fatima.body=IMG.fatima_body;
-NPC.chico.svg=picSVG(IMG.chico);NPC.fatima.svg=picSVG(IMG.fatima);
+/* personagens com arte própria (img/<id>.webp e img/<id>_body.webp); os outros seguem com o desenho simples */
+['chico','fatima','lia'].forEach(k=>{if(IMG[k]&&IMG[k+'_body']){NPC[k].body=IMG[k+'_body'];NPC[k].svg=picSVG(IMG[k])}});
 const CHAPTERS=[
  {id:'cap1',nome:'A Casa Acesa',tema:'Fundamentos e circuitos',fases:['faisca','entrada','primeiro','previsao','paralelo','defeito','renovavel','seguranca','ohm'],
   intro:[['chico','Gente nova na oficina! Boas-vindas, {nome}.'],['eu','Bom dia, Mestre! Pronto pra começar o serviço!'],['chico','Calma. Primeiro a gente treina aqui na bancada da oficina. Depois vamos atender clientes de verdade.'],['chico','Começamos pelo básico: de onde vem a energia e como ela chega até uma lâmpada.']],
