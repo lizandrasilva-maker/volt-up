@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Política de privacidade · Volt Up</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito:wght@400;600;800;900&display=swap">
+<link rel="stylesheet" href="css/estilo.css">
+<link rel="stylesheet" href="css/contas.css">
+<style>
+/* Página de leitura: texto longo com largura confortável, tabelas roláveis no celular */
+.pol{max-width:720px}
+.pol h2{font-size:20px;margin-top:6px}
+.pol h3{font-size:16px;font-weight:900;margin:6px 0 0}
+.pol p,.pol li{line-height:1.6}
+.pol ul{margin:4px 0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
+.pol .resumo li b{color:var(--amber)}
+.pol .tw{overflow-x:auto;border:2px solid var(--line);border-radius:14px}
+.pol table{border-collapse:collapse;width:100%;min-width:520px;font-size:14.5px}
+.pol th,.pol td{text-align:left;vertical-align:top;padding:9px 11px;border-bottom:1px solid var(--line)}
+.pol th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--panel)}
+.pol tr:last-child td{border-bottom:0}
+.pend{background:color-mix(in srgb,var(--amber) 22%,transparent);color:var(--ink);border-radius:5px;padding:0 4px;font-weight:800}
+.rascunho{border:2px dashed var(--amber);border-radius:14px;padding:12px 14px;font-weight:700}
+.pol section{display:flex;flex-direction:column;gap:8px}
+</style>
+</head>
+<body>
+<!--
+  RASCUNHO PARA REVISÃO JURÍDICA (versão 0.1, 20/11/2026).
+  Antes de publicar na versão oficial: preencher os campos marcados com class="pend",
+  confirmar as bases legais e os prazos com a assessoria jurídica, e retirar o aviso de rascunho.
+  A política descreve o que o jogo faz HOJE. Quando entrar recurso novo (pagamento, competências,
+  painel do professor), ela precisa ser atualizada antes do recurso ir ao ar.
+-->
+<main class="wrap pol">
+  <section class="hero">
+    <span class="eyebrow">Volt Up · Neurolytics</span>
+    <h1>Política de <span class="bolt">privacidade</span></h1>
+    <p class="small">Versão 0.1 · atualizada em 20/11/2026</p>
+  </section>
+
+  <p class="rascunho" role="note">Rascunho em revisão: os dados da empresa responsável e alguns prazos ainda serão preenchidos (trechos destacados).</p>
+
+  <section class="panel resumo">
+    <h2>Resumo rápido</h2>
+    <ul>
+      <li><b>Sem conta,</b> o seu progresso fica só no seu aparelho. Nada é enviado.</li>
+      <li><b>Com o código da turma,</b> guardamos só o apelido que o professor cadastrou, a turma e o progresso no jogo. Sem CPF, foto, data de nascimento ou endereço.</li>
+      <li><b>Não vendemos dados</b>, não mostramos anúncios e não rastreamos você em outros sites.</li>
+      <li><b>O professor da turma</b> vê o apelido, o código e o progresso dos alunos dele, e de mais ninguém.</li>
+      <li><b>Você pode pedir</b> para ver, corrigir ou apagar os seus dados (veja o item 7).</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>1. Quem cuida dos seus dados</h2>
+    <p>O Volt Up é oferecido por <span class="pend">[RAZÃO SOCIAL]</span>, CNPJ <span class="pend">[CNPJ]</span>, com endereço em <span class="pend">[ENDEREÇO]</span>.</p>
+    <p>Encarregado pelo tratamento de dados (LGPD): <span class="pend">[NOME DO ENCARREGADO]</span>, pelo e-mail <span class="pend">[E-MAIL DE PRIVACIDADE]</span>.</p>
+    <p>Quando o acesso é dado por uma <b>escola</b>, ela decide sobre os dados dos seus alunos, e o Volt Up trata esses dados em nome dela, conforme o contrato entre os dois. Quando a conta é <b>individual</b>, quem decide é o Volt Up.</p>
+  </section>
+
+  <section>
+    <h2>2. Que dados tratamos</h2>
+    <div class="tw"><table>
+      <thead><tr><th>Situação</th><th>Dados</th><th>Onde ficam</th></tr></thead>
+      <tbody>
+        <tr><td>Jogar sem conta</td><td>Progresso do jogo: nível, personagem, nome que você digitar no jogo, fases feitas, pontos, cards, conquistas e os dias em que jogou</td><td>Só no seu navegador. Não é enviado.</td></tr>
+        <tr><td>Aluno com código da turma</td><td>Apelido (cadastrado pelo professor: só o primeiro nome ou um apelido), código de acesso, turma e escola, e o progresso do jogo (como acima)</td><td>Servidor do Supabase, no Brasil (São Paulo)</td></tr>
+        <tr><td>Conta com e-mail (responsáveis, professores e profissionais)</td><td>E-mail, senha (guardada cifrada pelo serviço de login, nunca em texto), apelido e tipo de conta</td><td>Servidor do Supabase, no Brasil (São Paulo)</td></tr>
+        <tr><td>Professor e administração</td><td>Nome da escola e da turma, número de vagas e validade da licença</td><td>Servidor do Supabase, no Brasil (São Paulo)</td></tr>
+        <tr><td>Registros técnicos</td><td>Endereço IP, data e hora do acesso e tipo de navegador, gerados pelos serviços que hospedam o site, fazem o login e entregam as fontes de texto</td><td>Nos serviços listados no item 5</td></tr>
+      </tbody>
+    </table></div>
+    <p><b>Não coletamos:</b> CPF, RG, foto, data de nascimento, endereço, telefone, localização, contatos, microfone ou câmera.</p>
+    <p><b>Leitura em voz:</b> quando ativada, usa o recurso de voz do seu próprio aparelho ou navegador. O Volt Up não grava nem envia o que é lido. Alguns navegadores usam um serviço online do fabricante para gerar a voz; nesse caso vale a política do fabricante do navegador.</p>
+  </section>
+
+  <section>
+    <h2>3. Para que usamos</h2>
+    <ul>
+      <li><b>Fazer o jogo funcionar e guardar o seu progresso</b>, inclusive para continuar em outro aparelho quando há login. Base legal: execução de contrato ou de procedimentos preliminares a ele (LGPD, art. 7º, V).</li>
+      <li><b>Permitir que o professor acompanhe a turma</b>, em nome da escola que contratou. Base legal: a definida pela escola, conforme o contrato.</li>
+      <li><b>Manter o serviço seguro</b> e evitar abusos, com os registros técnicos. Base legal: cumprimento de obrigação legal (Marco Civil da Internet, art. 15) e legítimo interesse (LGPD, art. 7º, IX).</li>
+    </ul>
+    <p>Não usamos os seus dados para publicidade, para traçar perfil de consumo ou para decisões automáticas que afetem você fora do jogo. <span class="pend">[Bases legais a confirmar pela assessoria jurídica.]</span></p>
+  </section>
+
+  <section>
+    <h2>4. Crianças e adolescentes</h2>
+    <p>O Volt Up é usado por estudantes, muitos com menos de 18 anos. Tratamos os dados deles no seu melhor interesse e só o mínimo necessário para o jogo funcionar (LGPD, art. 14).</p>
+    <ul>
+      <li><b>Turmas de escola:</b> os alunos entram com um código, sem e-mail. A escola é responsável por informar as famílias e, para menores de 12 anos, obter o consentimento específico de pelo menos um dos pais ou responsável.</li>
+      <li><b>Contas com e-mail:</b> só podem ser criadas por quem tem 18 anos ou mais, ou pelo responsável por quem vai jogar.</li>
+      <li><b>No jogo não há</b> chat entre jogadores, ranking público, anúncios nem compras para alunos de escola.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>5. Com quem compartilhamos</h2>
+    <p>Não vendemos nem alugamos dados. Usamos estes fornecedores para o serviço funcionar:</p>
+    <div class="tw"><table>
+      <thead><tr><th>Fornecedor</th><th>Para quê</th><th>Onde</th></tr></thead>
+      <tbody>
+        <tr><td>Supabase</td><td>Banco de dados e login</td><td>Brasil (região São Paulo)</td></tr>
+        <tr><td>Vercel</td><td>Hospedagem do site do jogo</td><td>Estados Unidos</td></tr>
+        <tr><td>Google Fonts</td><td>Entrega das fontes de texto</td><td>Estados Unidos</td></tr>
+      </tbody>
+    </table></div>
+    <p>A hospedagem e as fontes recebem apenas os registros técnicos do item 2, o que configura transferência internacional de dados (LGPD, art. 33). <span class="pend">[Mecanismo de transferência a confirmar pela assessoria jurídica.]</span></p>
+    <p>Dentro do jogo, o <b>professor da turma</b> vê o apelido, o código e o progresso dos seus alunos. A <b>equipe de administração do Volt Up</b> acessa os dados só para dar suporte e manter o serviço.</p>
+  </section>
+
+  <section>
+    <h2>6. Por quanto tempo guardamos</h2>
+    <ul>
+      <li><b>Progresso no navegador:</b> até você usar "Recomeçar do zero" ou limpar os dados do navegador.</li>
+      <li><b>Conta e progresso no servidor:</b> enquanto a conta estiver ativa. Quando a licença da turma termina, os dados ficam guardados por <span class="pend">[PRAZO]</span> para uma eventual renovação e depois são apagados ou anonimizados.</li>
+      <li><b>Registros técnicos:</b> pelo prazo exigido em lei <span class="pend">[confirmar: Marco Civil, 6 meses]</span>.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>7. Seus direitos</h2>
+    <p>Pela LGPD (art. 18), você pode pedir:</p>
+    <ul>
+      <li>confirmação de que tratamos os seus dados e acesso a eles;</li>
+      <li>correção de dados incompletos ou errados;</li>
+      <li>anonimização, bloqueio ou eliminação de dados desnecessários;</li>
+      <li>portabilidade para outro serviço;</li>
+      <li>informação sobre com quem compartilhamos;</li>
+      <li>eliminação dos dados e revogação do consentimento, quando ele for a base do tratamento.</li>
+    </ul>
+    <p>Para pedir, escreva para <span class="pend">[E-MAIL DE PRIVACIDADE]</span>. Alunos de turma também podem pedir pela escola. Respondemos em até <span class="pend">[PRAZO]</span>. Você também pode reclamar à Autoridade Nacional de Proteção de Dados (ANPD).</p>
+  </section>
+
+  <section>
+    <h2>8. Como protegemos</h2>
+    <ul>
+      <li>Conexão cifrada (HTTPS) em todo o site.</li>
+      <li>Regras de acesso no banco: cada aluno só vê os próprios dados, e cada professor só a própria turma.</li>
+      <li>A chave secreta do servidor nunca fica no navegador.</li>
+      <li>Login de aluno por código, sem e-mail e sem dados pessoais.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>9. Armazenamento no navegador</h2>
+    <p>Usamos o armazenamento local do navegador para guardar o progresso e, quando há login, para manter você conectado. Não usamos cookies de publicidade nem de rastreamento.</p>
+  </section>
+
+  <section>
+    <h2>10. Mudanças nesta política</h2>
+    <p>Quando o Volt Up ganhar um recurso que trate dados de outro jeito (por exemplo, pagamento ou relatórios de habilidades para o professor), esta política será atualizada antes de o recurso entrar no ar, com aviso dentro do jogo.</p>
+  </section>
+
+  <a class="btn main" href="index.html" style="display:grid;place-items:center;text-decoration:none">Voltar ao jogo</a>
+</main>
+</body>
+</html>

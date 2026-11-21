@@ -58,6 +58,9 @@ try{
   // 6) cenas e personagens existem
   const falta=[];CHAPTERS.filter(c=>!c.soon).forEach(c=>{[...(c.intro||[]),...(c.fim||[])].forEach(([w])=>{if(w!=='eu'&&!NPC[w])falta.push(c.id+':'+w)});c.fases.forEach(id=>{if(!phaseById(id))falta.push('fase '+id);(SCENES[id]||[]).forEach(([w])=>{if(w!=='eu'&&!NPC[w])falta.push(id+':'+w)});if(!ICONS[phaseById(id).ic])falta.push('icone '+id)})});
   R.faltando=falta;
+  // 6b) privacidade: a tela inicial e o menu do mapa levam à política
+  showStart();R.privacidade_inicio=!!document.querySelector('a[href="politica-privacidade.html"]');
+  S.mode='leve';S.chap='cap1';S.seen['leve:cap1:intro']=1;showMap();R.privacidade_mapa=!!document.querySelector('.mais a[href="politica-privacidade.html"]');
   // 7) trava de capítulos
   S.mode='leve';S.chap='cap2';S.seen={};S.done={};showMap();R.cap2_semCap1=document.querySelector('.soonbox .eyebrow').textContent;
   CHAPTERS[0].fases.forEach(id=>S.done['leve:'+id]=3);S.seen['leve:cap2:intro']=1;showMap();R.cap2_comCap1=document.querySelectorAll('.node').length+' fases';

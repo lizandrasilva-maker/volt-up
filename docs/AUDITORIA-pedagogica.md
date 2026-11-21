@@ -9,7 +9,6 @@ Data: 20/11/2026.
 
 **Documentos ligados:**
 - [REGISTRO-perguntas.md](REGISTRO-perguntas.md): as 72 perguntas, antes e depois, com justificativa e o erro de cada alternativa errada.
-- [MATRIZ-curricular.md](MATRIZ-curricular.md): missões × plano de curso SENAI.
 
 ## O problema
 
@@ -73,5 +72,4 @@ Durante a conferência apareceram mais duas frases sem base. As duas foram corri
 
 - As contas do nível full: rendimento, perda no cabo, constante do medidor, custo do banho e L·di/dt. Na conta de L·di/dt, o valor de 1 µH por metro é dado no enunciado como referência; não é valor de norma.
 - O nível leve: as situações fazem sentido para o público do curso?
-- A matriz curricular, em especial o grau atribuído a cada missão.
-- A decisão sobre as **regressões**: conteúdos do plano que deixaram de ser cobrados na Etapa 2 (ver a seção 3 da matriz).
+- A decisão sobre as **regressões**: conteúdos do plano de curso de referência que deixaram de ser cobrados na Etapa 2 (valor de pico, faixas das curvas B/C/D, terminais para estrela-triângulo, contas de energia solar).
