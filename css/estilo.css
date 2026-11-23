@@ -545,3 +545,24 @@ svg.curto{animation:shake .32s 2}
 @media (prefers-reduced-motion:reduce){.wcurto{opacity:.7}.fz-marca{opacity:.55}}
 .alav-sobe{animation:alavSobe .3s cubic-bezier(.5,1.6,.5,1) both}
 @keyframes alavSobe{from{transform:translateY(10px)}}
+
+/* ================= MULTÍMETRO COM PONTEIRAS =================
+   Aparelho acima da bancada (corpo amarelo, visor, chave em V~, bornes VΩ e COM) e as pontas arrastáveis na bancada. */
+.mm{display:flex;flex-direction:column;gap:6px}
+.mm-corpo{align-self:center;width:min(100%,250px);display:flex;flex-direction:column;gap:8px;padding:10px 12px 12px;border-radius:16px;
+  background:linear-gradient(180deg,#ffd23f,#f2b72e 70%,#d99a17);border:2.5px solid var(--contorno);box-shadow:0 5px 0 var(--contorno)}
+.mm-lcd{display:flex;align-items:baseline;justify-content:flex-end;gap:6px;padding:8px 12px;border-radius:8px;background:var(--lcd);border:2px solid #4a5530;color:var(--lcdink);box-shadow:inset 0 2px 0 rgba(0,0,0,.18)}
+.mm-lcd b{font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-size:30px;font-weight:700;letter-spacing:.04em;line-height:1;font-variant-numeric:tabular-nums}
+.mm-lcd small{font-weight:900;font-size:13px}
+.mm-baixo{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.mm-dial{position:relative;width:46px;height:46px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#5b646e,#2a2f36);border:2px solid #1c2025;display:grid;place-items:center}
+.mm-dial i{position:absolute;top:4px;left:50%;width:4px;height:18px;margin-left:-2px;border-radius:2px;background:#f4f6f8;transform-origin:50% 19px;transform:rotate(-35deg)}
+.mm-dial span{position:absolute;right:-30px;top:2px;font-weight:900;font-size:12px;color:#2a2108}
+.mm-bornes{display:flex;gap:12px}
+.mm-bornes span{display:flex;flex-direction:column;align-items:center;gap:2px;font-weight:900;font-size:11px;color:#2a2108}
+.mm-bornes i{width:18px;height:18px;border-radius:50%;border:3px solid #1c2025;display:block}
+.mm-bornes i.vr{background:#d33a2c}.mm-bornes i.pr{background:#2a2f36}
+.cabo-ponta{fill:none;stroke-width:3;stroke-linecap:round;pointer-events:none;filter:drop-shadow(0 1px 0 rgba(0,0,0,.45))}
+.ponta{cursor:grab}.ponta:active{cursor:grabbing}
+.ponta-hit{fill:transparent}
+.ponta-ok{fill:none;stroke:#7dff9e;stroke-width:1.6;opacity:.9}

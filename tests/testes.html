@@ -145,6 +145,19 @@ try{
     const z0=zb('-').disabled;zb('+').click();const z1=!zb('-').disabled&&vbx()!=='0 0 340 250';zb('-').click();
     cu.zoom=z0&&z1&&vbx()==='0 0 340 250'&&zb('-').disabled;
     R.curto=cu;}
+  // 8c) Caça-Defeito com multímetro e ponteiras: sem letras nos parafusos; arrastar a vermelha, tocar para a preta, o visor mede
+  {const mm={};S.mode='moderado';const pd=phaseById('defeito');runDiag(pd,pd.dados.moderado);
+    const svg=()=>document.querySelector('.bench svg'),lcd=()=>(document.querySelector('.mm-lcd b')||{}).textContent;
+    mm.temAparelho=!!document.querySelector('.mm .mm-corpo')&&!!document.querySelector('[data-ponta="r"]')&&!!document.querySelector('[data-ponta="k"]');
+    mm.semLetras=!document.querySelector('.bench .lab.k,.bench .kl');mm.antes=lcd();
+    const tela=p=>{const q=svg().createSVGPoint();q.x=p[0];q.y=p[1];const s=q.matrixTransform(svg().getScreenCTM());return [s.x,s.y]};
+    const comps=diagCircuit(220).comps,de=tela(PARQUE.r),para=tela(tpos(comps,'S1.0'));
+    document.querySelector('[data-ponta="r"]').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:de[0],clientY:de[1]}));
+    window.dispatchEvent(new PointerEvent('pointermove',{clientX:para[0],clientY:para[1]}));window.dispatchEvent(new PointerEvent('pointerup',{clientX:para[0],clientY:para[1]}));
+    mm.umaPonta=lcd();
+    document.querySelector('[data-t="B.1"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));
+    mm.duas=lcd();mm.encaixadas=document.querySelectorAll('.ponta.no-borne').length;
+    R.multimetro=mm;}
   // 9) modo teste: "Montar pra mim" já aprova (vai direto para o Concluir), em toda fase de montar e nível
   {VOLT_TESTE_OK=true;entrarTeste(()=>{});const mt={};
     for(const md of ['leve','moderado','full'])for(const p of PHASES.filter(p=>p.tipo==='build')){S.mode=md;
