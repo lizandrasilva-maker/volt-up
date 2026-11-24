@@ -743,6 +743,8 @@ svg.curto{animation:shake .32s 2}
 .cena3d canvas{display:block;width:100%;height:auto;touch-action:none;-webkit-user-select:none;user-select:none;border-radius:0 0 16px 16px}
 .bench3d .bctl{top:calc(var(--faixa3d,0px) + 8px);bottom:auto;left:auto;right:8px;justify-content:flex-end}
 .bench3d:has(.bctl){padding-bottom:0}
+.bench3d .bctl{gap:6px}
+.bench3d .bctl [data-girar][aria-pressed="true"]{background:var(--faixa);color:#1b1a10;border-color:var(--contorno)}
 /* badge do borne na bancada 3D: acima do dedo, durante o toque e o arraste (o polegar cobre a plaqueta) */
 .badge-borne{position:absolute;z-index:3;pointer-events:none;transform:translate(-50%,calc(-100% - 46px));white-space:nowrap;
   background:#f8fafc;color:#070c16;font:900 15px/1.2 var(--body);padding:5px 11px;border:3px solid var(--contorno);border-radius:10px;box-shadow:3px 4px 0 var(--contorno)}

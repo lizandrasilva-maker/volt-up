@@ -219,6 +219,13 @@ let pistas={};
      {const z=b.zoom||{};
       confere(C,z.roda===true&&z.rodaFixa===true,'roda do mouse sobre um parafuso perto da borda: aproxima e o parafuso fica no mesmo lugar da tela',z.desvioRoda+' px');
       confere(C,z.pinca===true&&z.pincaSemFio===true,'pinça começando em cima de um parafuso: aproxima na direção dos dedos e não cria fio',z.desvioPinca+' px');}
+     confere(C,b.padrao3d===true&&b.lembra2d===true,'a montagem abre em 3D por padrão; quem escolhe 2D fica no 2D neste aparelho');
+     {const g=b.girar||{};
+      confere(C,g.arrastoGira===true&&g.toqueAciona===true,'arrastar começando em cima de uma peça gira a vista (não aciona); o toque parado continua acionando');
+      confere(C,g.botao===true&&g.ligou===true&&g.semMontar===true&&g.voltaMontar===true,'botão 🔄 Girar: com ele ligado nenhum toque monta nem aciona; desligado, a montagem volta');}
+     {const pc=b.pontos||{};
+      confere(C,pc.inicio===true&&pc.completo===true&&pc.sobra===true,'pontos de conexão: cada borne do circuito tem anel e contador ligados/esperados (0/1 → verde ao completar, laranja com fio a mais)');
+      confere(C,pc.fullSoAnel===true,'no nível full os pontos aparecem só com o anel, sem o número de condutores');}
      {const l=b.loteC||{};
       for(const [nome,o] of [['Escada',l.escada||{}],['Corredor',l.corredor||{}]]){
         confere(C,o.em3d===true&&o.term3d===true&&o.plaquetas===true&&o.niveis===true,nome+' abre em 3D nos 3 níveis, com os bornes e nomes do motor.js e do 2D');

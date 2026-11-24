@@ -139,10 +139,12 @@ function fonte(c){const g=new THREE.Group(),bornes=bornesDe(c);
 function disjuntor(c){const g=new THREE.Group(),bornes=bornesDe(c),{W,H,D,z0}=DIN;
   const corpo=new THREE.Mesh(new THREE.BoxGeometry(W,H,D),mat(PAL.corpoDIN));corpo.position.z=z0+D/2;g.add(corpo);
   const frente=new THREE.Mesh(new THREE.BoxGeometry(W*.9,H*.46,.7),mat(PAL.frenteDIN));frente.position.set(0,0,z0+D+.35);g.add(frente);
-  /* alavanca articulada: gira em torno do eixo X no pino, para cima ligado e para baixo desligado (c.trip) */
+  /* alavanca articulada: sai da frente (eixo +Z) por uma fenda e gira em torno do eixo X no pino:
+     inclinada para cima = ligado, para baixo = desligado (c.trip) */
+  const fenda=new THREE.Mesh(new THREE.BoxGeometry(1.25,1.3,.06),mat(PAL.cavidade));fenda.position.set(0,.2,z0+D+.72);g.add(fenda);
   const pino=new THREE.Group();pino.position.set(0,.2,z0+D+.7);g.add(pino);
-  const alav=new THREE.Mesh(new THREE.BoxGeometry(1,2,.8),mat(PAL.alavanca));alav.position.y=1;pino.add(alav);
-  const ponta=new THREE.Mesh(new THREE.BoxGeometry(1.02,.5,.82),mat(PAL.pontaAlavanca));ponta.position.y=1.8;pino.add(ponta);
+  const alav=new THREE.Mesh(new THREE.BoxGeometry(.95,.75,1.5),mat(PAL.alavanca));alav.position.z=.75;pino.add(alav);
+  const ponta=new THREE.Mesh(new THREE.BoxGeometry(.97,.77,.45),mat(PAL.pontaAlavanca));ponta.position.z=1.4;pino.add(ponta);
   const lab=rotulo(c.lab||c.id,2.2,.8,{cor:'#2f4a6e'});lab.position.set(0,-1.35,z0+D+.71);g.add(lab);
   const curva=rotulo('C10',1.4,.6,{cor:'#2f4a6e'});curva.position.set(0,-3.55,z0+D+.01);g.add(curva);
   poeParafusos(g,bornes);
@@ -154,9 +156,10 @@ function dr(c){const g=new THREE.Group(),bornes=bornesDe(c),{H,D,z0}=DIN,W=LARG_
   const corpo=new THREE.Mesh(new THREE.BoxGeometry(W,H,D),mat(PAL.corpoDIN));corpo.position.z=z0+D/2;g.add(corpo);
   /* recorte frontal em degrau */
   const frente=new THREE.Mesh(new THREE.BoxGeometry(W*.92,H*.5,.7),mat(PAL.frenteDIN));frente.position.set(0,.1,FRENTE+.35);g.add(frente);
+  const fenda=new THREE.Mesh(new THREE.BoxGeometry(2.9,1.3,.06),mat(PAL.cavidade));fenda.position.set(0,.5,FRENTE+.72);g.add(fenda);
   const pino=new THREE.Group();pino.position.set(0,.5,FRENTE+.7);g.add(pino);
-  const alavancas=[-.85,.85].map(x=>{const a=new THREE.Mesh(new THREE.BoxGeometry(.9,2,.8),mat(PAL.alavanca));a.position.set(x,1,0);pino.add(a);return a});
-  const barra=new THREE.Mesh(new THREE.BoxGeometry(2.6,.45,.86),mat(PAL.pontaAlavanca));barra.position.y=1.75;pino.add(barra);
+  const alavancas=[-.85,.85].map(x=>{const a=new THREE.Mesh(new THREE.BoxGeometry(.85,.75,1.5),mat(PAL.alavanca));a.position.set(x,0,.75);pino.add(a);return a});
+  const barra=new THREE.Mesh(new THREE.BoxGeometry(2.6,.77,.45),mat(PAL.pontaAlavanca));barra.position.z=1.4;pino.add(barra);
   const teste=new THREE.Mesh(new THREE.BoxGeometry(1.1,.7,.36),mat(PAL.teste));teste.position.set(1.35,-1.25,FRENTE+.88);teste.userData.lado='test';g.add(teste);
   const lt=rotulo('T',.6,.6,{cor:'#1b1a10'});lt.position.set(1.35,-1.25,FRENTE+1.07);g.add(lt);
   const visor=new THREE.Mesh(new THREE.BoxGeometry(1.1,.6,.12),matUnico(PAL.armado,{emissive:0x0f4a24}));visor.position.set(-1.2,-1.25,FRENTE+.75);g.add(visor);
@@ -336,9 +339,10 @@ function fotocelula(c){const g=new THREE.Group(),bornes=bornesDe(c),V=THREE.Vect
 function releImpulso(c){const g=new THREE.Group(),bornes=bornesDe(c),{H,D,z0}=DIN,W=LARG_DIN.ri;
   const corpo=new THREE.Mesh(new THREE.BoxGeometry(W,H,D),mat(PAL.corpoDIN));corpo.position.z=z0+D/2;g.add(corpo);
   const frente=new THREE.Mesh(new THREE.BoxGeometry(W*.9,H*.46,.5),mat(PAL.frenteDIN));frente.position.set(0,.2,FRENTE+.25);g.add(frente);
+  const fenda=new THREE.Mesh(new THREE.BoxGeometry(1.2,1.3,.06),mat(PAL.cavidade));fenda.position.set(-1.1,.1,FRENTE+.52);g.add(fenda);
   const pino=new THREE.Group();pino.position.set(-1.1,.1,FRENTE+.5);g.add(pino);
-  const alav=new THREE.Mesh(new THREE.BoxGeometry(.9,1.8,.7),mat(PAL.alavanca));alav.position.y=.9;pino.add(alav);
-  const ponta=new THREE.Mesh(new THREE.BoxGeometry(.92,.45,.72),mat(PAL.teste));ponta.position.y=1.6;pino.add(ponta);
+  const alav=new THREE.Mesh(new THREE.BoxGeometry(.9,.75,1.4),mat(PAL.alavanca));alav.position.z=.7;pino.add(alav);
+  const ponta=new THREE.Mesh(new THREE.BoxGeometry(.92,.77,.45),mat(PAL.teste));ponta.position.z=1.3;pino.add(ponta);
   const nome=rotulo('RI',1.2,.7,{cor:'#2f4a6e'});nome.position.set(1.1,1.45,FRENTE+.51);g.add(nome);
   const bob=rotulo((typeof rede==='function'?rede().V:220)+' V~',1.9,.55,{fundo:'#2f4a6e',cor:'#f8fafc',esc:.62});bob.position.set(1.1,.6,FRENTE+.51);g.add(bob);
   const visor=new THREE.Mesh(new THREE.BoxGeometry(1.4,.55,.12),matUnico(PAL.riOff,{emissive:0x000000}));visor.position.set(1.1,-.3,FRENTE+.52);g.add(visor);
@@ -500,6 +504,23 @@ const anima=(dur,passo)=>{if(reduz()){passo(1,performance.now());return}E.anim.p
    borne), mergulha até perto da chapa e segue numa pista própria (altura e profundidade diferentes para cada fio),
    para fios paralelos não se sobreporem. Um tubo invisível mais grosso em volta mantém o toque fácil. */
 const FIO={raio:.13,toque:.5,canto:.45,frente:.45,margem:.35,pista:.3,prof:.09,z0:.85,pistas:7};
+/* ---------- pontos de conexão (dica da montagem) ----------
+   Anel em volta de cada parafuso que o circuito usa: azul-claro enquanto faltam condutores, verde quando tem o número
+   certo, laranja quando tem fio a mais. Nos níveis leve e moderado, um contador "ligados/esperados" ao lado. */
+const DICA={falta:0x5CE1E6,ok:0x43B05C,sobra:0xFF6B3D};
+function matDica(est){const C=cache(),k='dica:'+est;if(!C.mat.has(k))C.mat.set(k,semContorno(new THREE.MeshBasicMaterial({color:DICA[est]})));return C.mat.get(k)}
+function poeDicas(ctx){(E.dicas||[]).forEach(m=>{E.scene.remove(m);if(m.userData.propria)m.geometry.dispose()});E.dicas=[];E.estadoDicas={};
+  const esp=ctx.pontos;if(!esp||ctx.editavel===false)return;
+  if(!E.geoDica)E.geoDica=new THREE.TorusGeometry(.8,.11,8,28);
+  const n={};ctx.st.wires.forEach(w=>[w.a,w.b].forEach(t=>{n[t]=(n[t]||0)+1}));
+  Object.entries(esp).forEach(([t,q])=>{const B=E.bornes[t];if(!B)return;const k=n[t]||0,est=k<q?'falta':k===q?'ok':'sobra';
+    const anel=new THREE.Mesh(E.geoDica,matDica(est));anel.position.copy(B).add(new THREE.Vector3(0,0,.12));E.scene.add(anel);E.dicas.push(anel);
+    let txt='';
+    if(ctx.dica==='conta'){txt=k+'/'+q;
+      /* contador para dentro da peça (as plaquetas com o nome ficam por fora) */
+      const dir=saida(t).dir,r=rotulo(txt,1.35,.72,{fundo:'#'+new THREE.Color(DICA[est]).getHexString(),cor:'#0b1220',esc:.72});
+      r.position.copy(B).add(new THREE.Vector3(1.05,-dir*1.0,.8));r.userData.propria=true;r.renderOrder=2;E.scene.add(r);E.dicas.push(r)}
+    E.estadoDicas[t]=est+(txt?' '+txt:'')})}
 function saida(id){const T=E.bornes[id],p=E.pecas[id.split('.')[0]],cx=p.caixa,c=cx.getCenter(new THREE.Vector3()),dir=T.y>=c.y?1:-1;
   return {T,dir,borda:dir>0?cx.max.y+FIO.margem:cx.min.y-FIO.margem}}
 /* polilinha com cantos arredondados (curva quadrática em cada canto) */
@@ -576,7 +597,7 @@ function animaCurto(curto){
 }
 
 function atualizar(ctx){
-  if(!E)return;E.ctx=ctx;const st=ctx.st,res=ctx.res||{lamp:{}};
+  if(!E)return;E.ctx=ctx;const st=ctx.st,res=ctx.res||{lamp:{}};E.cv.style.cursor=ctx.girar?'grab':'';E.no.classList.toggle('girando',!!ctx.girar);
   /* fonte que mudou de número de fases: refaz a peça antes de atualizar o estado */
   st.comps.forEach(c=>{const p=E.pecas[c.id];if(p&&c.type==='src'&&p.fases!==nFases(c))refazPeca(c)});
   st.comps.forEach(c=>{const p=E.pecas[c.id];if(!p)return;
@@ -607,7 +628,7 @@ function atualizar(ctx){
     if(c.type==='lamp'){const b=Math.max(0,Math.min(1,res.lamp[c.id]||0));p.brilho=b;
       p.extra.bulbo.material.color.setHex(b>.04?0xfff2a8:0x5a6b7d);p.extra.bulbo.material.emissive.setRGB(1*b,.85*b,.3*b);
       p.extra.brilho.visible=b>.04;p.extra.brilho.material.opacity=b;p.extra.brilho.scale.setScalar(5+5*b)}});
-  desenhaFios(st);
+  desenhaFios(st);poeDicas(ctx);
   /* realce do ponto elétrico: com um borne selecionado, só os fios do mesmo potencial ficam cheios */
   const ponto=ctx.sel&&res.net?res.net(ctx.sel):null;E.realce=ponto;
   if(!(ctx.curto&&ctx.curto.fios))E.fios.forEach(f=>{f.material=!ponto||res.net(f.userData.a)===ponto?matFio(f.userData.cor):matFioApagado(f.userData.cor)});
@@ -661,7 +682,7 @@ function zoomNoPonto(x,y,fator){const P=pontoDaTela(x,y);if(!P)return;const c=E.
   cam.sub(P).multiplyScalar(f).add(P);alvo.sub(P).multiplyScalar(f).add(P);c.update();pede()}
 function rodaMouse(e){if(!E)return;e.preventDefault();zoomNoPonto(e.clientX,e.clientY,Math.exp(e.deltaY*.0015))}
 function rastreia(e){if(!E)return;E.ponteiros.set(e.pointerId,{x:e.clientX,y:e.clientY});
-  if(E.ponteiros.size===2){const [a,b]=[...E.ponteiros.values()];E.pinca={d:Math.hypot(a.x-b.x,a.y-b.y)};escondeBadge();fechaFases()}}
+  if(E.ponteiros.size===2){const [a,b]=[...E.ponteiros.values()];E.pinca={d:Math.hypot(a.x-b.x,a.y-b.y)};E.gestos=(E.gestos||0)+1;escondeBadge();fechaFases()}}
 function moveDedos(e){if(!E||!E.ponteiros.has(e.pointerId))return;E.ponteiros.set(e.pointerId,{x:e.clientX,y:e.clientY});
   if(E.pinca&&E.ponteiros.size===2){const [a,b]=[...E.ponteiros.values()],d=Math.hypot(a.x-b.x,a.y-b.y);
     if(d>10&&E.pinca.d>10)zoomNoPonto((a.x+b.x)/2,(a.y+b.y)/2,E.pinca.d/d);E.pinca.d=d}}
@@ -671,7 +692,18 @@ function aoTocar(e){
   if(!E||!E.ctx||e.target!==E.cv||(e.button!==undefined&&e.button>0))return;
   if(E.ponteiros.size>1)return;/* segundo dedo: é gesto (pinça ou arraste), não toque em peça */
   fechaFases();
+  if(E.ctx.girar){toqueVazio(e);return}/* botão 🔄 Girar ligado: todo arraste gira a vista e nenhum toque mexe na montagem */
   const alvo=alvoEm(e.clientX,e.clientY);if(!alvo){toqueVazio(e);return}/* espaço vazio: girar, aproximar e arrastar a câmera */
+  /* peça ou fio: o toque NÃO é capturado; o OrbitControls também recebe, então arrastar gira a vista.
+     Só o toque parado (sem arrastar e sem segundo dedo) aciona a peça ou tira o fio. */
+  if(!alvo.t){const x0=e.clientX,y0=e.clientY,g0=E.gestos||0;let longe=false;
+    const mv=ev=>{if(Math.hypot(ev.clientX-x0,ev.clientY-y0)>10)longe=true};
+    const up=ev=>{window.removeEventListener('pointermove',mv);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',up);
+      if(!E||longe||ev.type==='pointercancel'||(E.gestos||0)!==g0||Math.hypot(ev.clientX-x0,ev.clientY-y0)>10)return;
+      const ctl=E.ctx.ctl,ed=E.ctx.editavel!==false;
+      if(alvo.peca){const pc=E.pecas[alvo.peca];if(pc&&pc.c.type==='src'&&!pc.c.trip&&ed)abreFases(pc.c,ev.clientX,ev.clientY);else ctl.acionou(alvo.peca,alvo.lado||0)}
+      else if(alvo.w!==undefined&&ed)ctl.tirouFio(alvo.w)};
+    window.addEventListener('pointermove',mv);window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up);return}
   e.stopPropagation();e.preventDefault();
   const ctl=E.ctx.ctl,ed=E.ctx.editavel!==false,x0=e.clientX,y0=e.clientY;let arrastando=false,cancelado=false;
   /* se um segundo dedo chegar (pinça), o toque em andamento é cancelado: nada de fio nem acionamento */
@@ -731,6 +763,7 @@ const debug={
   telaTeste:id=>naTela(E.pecas[id].extra.teste.getWorldPosition(new THREE.Vector3())),
   visorDR:id=>E.pecas[id].extra.visor.material.color.getHex()===PAL.desarmado?'desarmado':'armado',
   emboloAlvo:id=>E.pecas[id].emb||0,
+  dicas:()=>E.estadoDicas||{},
   wagos:()=>(E.wagos||[]).map(w=>w.userData.wago+':'+w.userData.vias).sort(),
   seletorFases:()=>E.seletor,
   camera:()=>E.camera.position.toArray().map(v=>+v.toFixed(2)),
