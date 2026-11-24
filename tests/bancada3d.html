@@ -210,6 +210,24 @@ const coresDoFioCSS=k=>(CORES[k].c.match(/var\(--[\w-]+\)|#[0-9a-f]{3,8}\b/gi)).
    ca='';GAB.forEach(w=>{if(w.cor!==ca){cor(w.cor);ca=w.cor}tap(w.a);tap(w.b)});aciona('BO');aciona('BO');
    x.aprovouSvg=/aprovado/i.test(verificar());x.equivalente=s3===sig(BANCADA.st);x.s3=s3;x.ss=sig(BANCADA.st);
    VISTA3D.ligada=true;x.niveis=['leve','full'].map(md=>{S.mode=md;S.seen[md+':caixa:cena']=1;runBuild(pc,comARede(pc.dados[md]));return !!document.querySelector('.bench3d canvas')}).every(Boolean);S.mode='moderado';}
+  /* ---- Wago nas emendas, fonte 1F/2F/3F+N e dois toques para reenquadrar ---- */
+  {const e=R.extras={};S.mode='moderado';VISTA3D.ligada=true;const pq=phaseById('quadronovo');runBuild(pq,comARede(pq.dados.moderado));
+   let ca='';testeSol('quadronovo').forEach(w=>{if(w.cor!==ca){cor(w.cor);ca=w.cor}toque(w.a);toque(w.b)});
+   const conta={};BANCADA.st.wires.forEach(w=>[w.a,w.b].forEach(t=>conta[t]=(conta[t]||0)+1));
+   e.wagosEsperados=Object.entries(conta).filter(([,n])=>n>=2).map(([t,n])=>t+':'+(n+1)).sort();e.wagos=D.wagos();
+   /* fonte: tocar abre o seletor; 3F+N cria L2 e L3; voltar a 1F+N tira os fios de L2/L3 */
+   runBuild(LAB3D,comARede(LAB3D.dados.moderado));const fonte=()=>BANCADA.st.comps.find(c=>c.type==='src');
+   toque('B');e.seletor=!!D.seletorFases()&&D.seletorFases().querySelectorAll('[data-f]').length===3;
+   D.seletorFases().querySelector('[data-f="3"]').click();
+   e.tres=nFases(fonte())===3&&D.bornesTERM3D(fonte())===4&&J(D.plaquetas('B').map(p=>p.t))===J(['L1','N','L2','L3'])&&!D.seletorFases();
+   cor('fase');toque('B.2');toque('DJ.0');e.ligouL2=BANCADA.st.wires.some(w=>w.a==='B.2'||w.b==='B.2');
+   toque('B');D.seletorFases().querySelector('[data-f="1"]').click();
+   e.volta1=nFases(fonte())===1&&D.bornesTERM3D(fonte())===2&&!BANCADA.st.wires.some(w=>/^B\.[23]$/.test(w.a)||/^B\.[23]$/.test(w.b));
+   /* dois toques no vazio: volta ao enquadramento */
+   const c0=J(D.camera());D.giraCamera();const girou=J(D.camera())!==c0;
+   const r=document.querySelector('.bench3d canvas').getBoundingClientRect(),p={x:r.left+8,y:r.bottom-8};
+   for(let k=0;k<2;k++){pe('pointerdown',p,cv());pe('pointerup',p)}
+   e.reenquadra=girou&&J(D.camera())===c0;}
   /* sair da bancada libera o WebGL */
   showMap();await new Promise(r=>setTimeout(r,0));R.liberou=VISTA3D.no===null;
 }catch(e){R.ERRO=e.message+' '+(e.stack||'')}

@@ -27,6 +27,9 @@ Padroniza o visual e a construção das peças 3D da bancada (`js/bancada3d.js`)
 
 7. **Botão 🧊 3D sem flag.** Aparece em toda bancada cujas peças estão em `VISTA3D.suporta`; o Three.js só é baixado no primeiro toque. `?3d=1` apenas abre direto em 3D e mostra os laboratórios.
 9. **Caminho da energia em 3D (`montaFaixa()`).** Na vista 3D, a faixa poste → transformador → ramal → medidor → quadro → circuito é desenhada no alto do MESMO canvas (viewport de cima, cena e câmera próprias; nunca um segundo contexto WebGL). Estado: `on` (alguma carga em `res.lamp` > 0,04: pontos de luz correm pelos cabos, LED do medidor pisca, lâmpada acende), `short` (`ctx.curto`: cabos com `matCurto`) ou parado. Legendas iguais às de `entrada()` no SVG, com a rede escolhida. Toque, raycast e projeção usam só a área da bancada (`areaBancada()`). No 2D a faixa continua em SVG.
+10. **Emendas com Wago (`poeWagos()`).** Quando 2 ou mais fios chegam ao mesmo borne, um conector de alavancas (corpo `#DDE3EA`, uma alavanca laranja `#F28C28` por fio e mais uma para o borne) aparece no ponto em que os caminhos se separam, na borda da peça.
+11. **Fonte 1F/2F/3F+N.** Tocar na fonte (com a proteção armada) abre o seletor HTML `1F+N · 2F+N · 3F+N`; a escolha vai por `acionou(id, 'fases:n')` e a regra `aplicaFases()` (`js/fases.js`, a mesma da Oficina) troca as fases e tira os fios de bornes que deixaram de existir. A peça é refeita (`refazPeca`) com a régua L1 L2 L3 N, como no 2D, e o visor mostra `V/FF V~`.
+12. **Dois toques rápidos no espaço vazio** devolvem a câmera ao enquadramento (sem botão).
 8. **360° sempre ligado (sem botão).** A câmera gira livre o tempo todo (`limites()`: azimute sem limite, polar quase completo). Arrastar no espaço vazio gira; tocar em borne, peça ou fio continua montando (toque sem movimento vai para o `ctl`). Na bancada fica só o botão "🔌 2D".
 
 ---
@@ -86,7 +89,7 @@ Padroniza o visual e a construção das peças 3D da bancada (`js/bancada3d.js`)
 ### Bornes do solver (não invente bornes que o `motor.js` não tem)
 | Peça (`type`) | Bornes |
 |---|---|
-| Fonte `src` (1F+N no MVP) | `.0` = L1, `.1` = N (com 2 e 3 fases: `.2` = L2, `.3` = L3) |
+| Fonte `src` (1, 2 ou 3 fases + N) | `.0` = L1, `.1` = N, `.2` = L2, `.3` = L3; na régua, da esquerda para a direita: L1 L2 L3 N |
 | Disjuntor `fuse` | `.0` = entrada, `.1` = saída |
 | Lâmpada `lamp` | `.0` = X1, `.1` = X2 (`.2` = PE só se `c.pe === true`) |
 | DR `dr` (bipolar) | `.0` = entrada fase, `.1` = entrada neutro, `.2` = saída fase, `.3` = saída neutro |

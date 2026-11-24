@@ -212,6 +212,10 @@ let pistas={};
       confere(C,x.em3d===true&&x.term3d===true&&x.plaquetas===true&&x.niveis===true,"Caixa d'Água (Cap. 3) abre em 3D nos 3 níveis: boia de nível com os bornes 1 e 2 do motor.js e do 2D");
       confere(C,x.vaziaLiga===true&&x.encheu===true&&x.esvaziou===true,'boia: caixa vazia liga a bomba; tocar enche (água sobe, pera flutua, bomba para); tocar de novo esvazia e a bomba volta');
       confere(C,x.aprovou3d===true&&x.aprovouSvg===true&&x.equivalente===true,"Caixa d'Água: mesmos gestos na 3D e no SVG, mesmo estado e aprovação",x.s3+' / '+x.ss);}
+     {const e=b.extras||{};
+      confere(C,Array.isArray(e.wagos)&&e.wagos.length>0&&JSON.stringify(e.wagos)===JSON.stringify(e.wagosEsperados),'conector Wago em toda emenda (2 ou mais fios no mesmo borne), com uma alavanca por fio e mais uma para o borne',JSON.stringify(e.wagos));
+      confere(C,e.seletor===true&&e.tres===true&&e.ligouL2===true&&e.volta1===true,'fonte: tocar abre o seletor 1F/2F/3F+N; 3F+N cria L2 e L3 (plaquetas L1 N L2 L3); voltar a 1F+N tira os fios de L2/L3');
+      confere(C,e.reenquadra===true,'dois toques rápidos no espaço vazio devolvem a câmera ao enquadramento da bancada');}
      confere(C,b.liberou===true,'ao sair da bancada, o WebGL é liberado');}
     /* Fonte e aterramento: a fonte não tem PE; o terra vem da haste pelo BEP */
     const fa=t.fonte||{};
