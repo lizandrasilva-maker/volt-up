@@ -25,7 +25,10 @@ const TERM3D={
   lamp:()=>[[-1.35,-1.35,.7],[1.35,-1.35,.7]],                        /* .0 = X1, .1 = X2 */
   dr:()=>[[-1.2,3.1,FRENTE+.05],[1.2,3.1,FRENTE+.05],[-1.2,-2.6,FRENTE+.05],[1.2,-2.6,FRENTE+.05]], /* .0 = entrada F, .1 = entrada N, .2 = saída F, .3 = saída N */
   btn:()=>[[-.85,-2.55,1.05],[.85,-2.55,1.05]],
-  sw:()=>[[-.85,-2.75,1.0],[.85,-2.75,1.0]],                           /* .0 = L (entrada da fase), .1 = R (retorno) */                      /* .0/.1 = contato (NA 3-4 na BL, NF 1-2 na BD) */
+  sw:()=>[[-.85,-2.75,1.0],[.85,-2.75,1.0]],
+  motor:()=>[[-1,2.75,3.25],[0,2.75,3.25],[1,2.75,3.25]],             /* caixa de ligação: .0 = 1, .1 = 2 (força), .2 = ⏚ (PE da carcaça) */
+  bep:()=>[[-1.8,0,.95],[-.6,0,.95],[.6,0,.95],[1.8,0,.95]],          /* barra de cobre: 4 bornes unidos */
+  haste:()=>[[0,.45,.85]],                                           /* conector no topo da haste */                           /* .0 = L (entrada da fase), .1 = R (retorno) */                      /* .0/.1 = contato (NA 3-4 na BL, NF 1-2 na BD) */
   /* contatora: .0/.1 = A1/A2 (bobina, no degrau recuado), .2/.3 = 1-2 (potência), .4/.5 = 13-14 (selo) */
   kc:()=>[[-2.4,3.1,FRENTE-RECUO+.05],[-2.4,-2.6,FRENTE-RECUO+.05],[0,3.1,FRENTE+.05],[0,-2.6,FRENTE+.05],[2.4,3.1,FRENTE+.05],[2.4,-2.6,FRENTE+.05]],
   /* relé térmico: .0/.1 = 1-2 (força), .2/.3 = 95-96 (NF de comando) */
@@ -37,7 +40,8 @@ const bornesDe=c=>(TERM3D[c.type]?TERM3D[c.type](c):[]).map(p=>new THREE.Vector3
 const PAL={corpoDIN:0xE6E9EF,frenteDIN:0xD5DAE2,trilho:0x9AA5B4,cavidade:0x1F2933,zinco:0xCBD5E1,fenda:0x3A4048,
   fonte:0x7C8A99,fonteFrente:0x5D6B7A,lcd:0xC6D68A,regua:0x2A2F36,alavanca:0x2F4A6E,pontaAlavanca:0xE24C3F,
   painel:0x1D3550,soquete:0xD9DDE3,base:0xE6E9EF,teste:0xECC94B,armado:0x38A169,desarmado:0xE53E3E,
-  botoeiraBase:0x334155,liga:0x2F855A,desliga:0xC53030,janela:0x1F2933,emboloOff:0x94A3B8,emboloOn:0xF97316,rearme:0x3182CE,dial:0x2F4A6E,espelho:0xF1F3F6,tecla:0xE6E9EF,marca:0x2F855A};
+  botoeiraBase:0x334155,liga:0x2F855A,desliga:0xC53030,janela:0x1F2933,emboloOff:0x94A3B8,emboloOn:0xF97316,rearme:0x3182CE,dial:0x2F4A6E,espelho:0xF1F3F6,tecla:0xE6E9EF,marca:0x2F855A,
+  motor:0x2B6CB0,motorTampa:0x245A94,eixo:0xCBD5E1,faixaEixo:0xECC94B,cobre:0xC87533,isolador:0x2A2F36,solo:0x6B4A2E};
 
 /* ---------- cache compartilhado (materiais e texturas estáticos) ----------
    Peças iguais usam o mesmo material; só o que muda com o estado (LED, bulbo, visor) tem material próprio.
@@ -90,7 +94,7 @@ function matCurto(){const C=cache();if(!C.mat.has('curto'))C.mat.set('curto',new
    O nome de cada borne é o MESMO da bancada 2D (REAL_TERMS em bancada-real.js; botoeira NF: 1-2), para o aluno
    reconhecer o borne nas duas vistas. A plaqueta é legível no celular: texto bold #070c16 sobre #f8fafc, borda
    do --contorno, e inclinada para a câmera 3/4 (gira em X para olhar para cima e para a frente). */
-function nomeBorne(c,k){if(c.type==='btn'&&c.nf)return ['1','2'][k];const T=typeof REAL_TERMS!=='undefined'&&REAL_TERMS[c.type];return (T&&T[k]&&T[k].n)||String(k)}
+function nomeBorne(c,k){if(c.type==='btn'&&c.nf)return ['1','2'][k];const T=typeof REAL_TERMS!=='undefined'&&REAL_TERMS[c.type];if(T&&T[k])return T[k].n||'⏚';return String(k)}
 const nomePeca=c=>c.type==='src'?'Fonte':c.id;
 const PLAQ={alt:1.1,incl:-.38};
 function plaqueta(g,txt,x,y,z){const larg=Math.max(1.1,.62*txt.length+.5);
@@ -223,7 +227,39 @@ function interruptor(c){const g=new THREE.Group(),bornes=bornesDe(c);
   poeParafusos(g,bornes);
   bornes.forEach((b,k)=>plaqueta(g,nomeBorne(c,k),b.x,-3.95,.55));
   return {g,bornes,corpo:[espelho,moldura,tecla],extra:{pino}}}
-const CONSTRUTOR={src:fonte,fuse:disjuntor,lamp:lampada,dr,btn:botoeira,kc:contatora,ft:reletermico,sw:interruptor};
+/* Motor monofásico: carcaça azul aletada deitada sobre pés, tampas, eixo com faixa amarela que GIRA quando o motor
+   está ligado (res.lamp[id], 0 a 1: velocidade proporcional) e caixa de ligação em cima com os bornes 1, 2 e ⏚. */
+function motorEl(c){const g=new THREE.Group(),bornes=bornesDe(c),zc=1.9;
+  const carc=new THREE.Mesh(new THREE.CylinderGeometry(1.8,1.8,4.6,28),mat(PAL.motor));carc.rotation.z=Math.PI/2;carc.position.set(0,0,zc);g.add(carc);
+  const aleta=new THREE.BoxGeometry(4.2,.16,.5);for(let i=0;i<10;i++){const a=i/10*Math.PI*2,m=new THREE.Mesh(aleta,mat(PAL.motorTampa));m.position.set(0,Math.cos(a)*1.85,zc+Math.sin(a)*1.85);m.rotation.x=-a;g.add(m)}
+  [-2.45,2.45].forEach(x=>{const t=new THREE.Mesh(new THREE.CylinderGeometry(1.6,1.75,.35,28),mat(PAL.motorTampa));t.rotation.z=Math.PI/2;t.position.set(x,0,zc);g.add(t)});
+  const grade=new THREE.Mesh(new THREE.CylinderGeometry(1.2,1.2,.1,24),mat(PAL.cavidade));grade.rotation.z=Math.PI/2;grade.position.set(-2.66,0,zc);g.add(grade);
+  /* eixo: gira em torno de X; a faixa amarela deixa a rotação visível */
+  const eixo=new THREE.Group();eixo.position.set(3,0,zc);g.add(eixo);
+  const haste=new THREE.Mesh(new THREE.CylinderGeometry(.32,.32,1.4,16),mat(PAL.eixo));haste.rotation.z=Math.PI/2;haste.position.x=.7;eixo.add(haste);
+  const faixa=new THREE.Mesh(new THREE.BoxGeometry(1.2,.12,.7),mat(PAL.faixaEixo));faixa.position.x=.75;eixo.add(faixa);
+  [-1.6,1.6].forEach(x=>{const p=new THREE.Mesh(new THREE.BoxGeometry(1.1,.5,3),mat(PAL.motorTampa));p.position.set(x,-2,zc);g.add(p)});/* pés */
+  const caixa=new THREE.Mesh(new THREE.BoxGeometry(3.4,1.3,2.6),mat(PAL.motorTampa));caixa.position.set(0,2.4,zc);g.add(caixa);
+  const placa=rotulo((c.lab||c.id)+' · 1~',2.6,.7,{fundo:'#f8fafc',cor:'#070c16',esc:.6});placa.position.set(0,.2,zc+1.85);g.add(placa);
+  poeParafusos(g,bornes);
+  bornes.forEach((b,k)=>plaqueta(g,nomeBorne(c,k),b.x,b.y+1.15,b.z+.2));
+  return {g,bornes,corpo:[carc,caixa],extra:{eixo}}}
+/* BEP: barra de cobre sobre dois isoladores, 4 parafusos (todos o mesmo ponto: equipotencialização) */
+function bep(c){const g=new THREE.Group(),bornes=bornesDe(c);
+  [-2.1,2.1].forEach(x=>{const i=new THREE.Mesh(new THREE.CylinderGeometry(.3,.35,.6,14),mat(PAL.isolador));i.rotation.x=Math.PI/2;i.position.set(x,0,.3);g.add(i)});
+  const barra=new THREE.Mesh(new THREE.BoxGeometry(5,.9,.35),mat(PAL.cobre));barra.position.set(0,0,.75);g.add(barra);
+  const lab=rotulo('BEP ⏚',2.4,.75,{fundo:'#f8fafc',cor:'#070c16',esc:.6});lab.position.set(0,1.15,.62);g.add(lab);
+  poeParafusos(g,bornes);
+  return {g,bornes,corpo:[barra],extra:{}}}
+/* Haste de aterramento cravada no solo, com o conector no topo (de onde sai o condutor até o BEP) */
+function haste(c){const g=new THREE.Group(),bornes=bornesDe(c);
+  const solo=new THREE.Mesh(new THREE.BoxGeometry(3.2,2.2,1.6),mat(PAL.solo));solo.position.set(0,-3.6,.8);g.add(solo);
+  const vara=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,5,14),mat(PAL.cobre));vara.position.set(0,-2,.85);g.add(vara);
+  const conector=new THREE.Mesh(new THREE.BoxGeometry(.9,.8,.6),mat(PAL.zinco));conector.position.set(0,.3,.85);g.add(conector);
+  const lab=rotulo((c.lab||c.id)+' · haste',2.4,.7,{fundo:'#f8fafc',cor:'#070c16',esc:.6});lab.position.set(1.9,-1,.62);g.add(lab);
+  poeParafusos(g,bornes);
+  return {g,bornes,corpo:[vara,conector,solo],extra:{}}}
+const CONSTRUTOR={src:fonte,fuse:disjuntor,lamp:lampada,dr,btn:botoeira,kc:contatora,ft:reletermico,sw:interruptor,motor:motorEl,bep,haste};
 
 /* ---------- caminho da energia em 3D (faixa no alto do mesmo canvas) ----------
    Poste com transformador → ramal → medidor na fachada → quadro → circuito (lâmpada), na mesma linguagem visual da
@@ -362,8 +398,9 @@ function quadro(){if(!E)return;E.pedido=0;const agora=performance.now();
   const gira=E.livre&&E.controls.autoRotate;if(gira)E.controls.update();/* giro automático do 360° */
   const r=E.renderer,[w,h]=E.tamanho,hb=E.faixaH||0;r.setScissorTest(true);
   r.setViewport(0,0,w,h);r.setScissor(0,0,w,h);E.efeito.render(E.scene,E.camera);
+  let rodando=false;if(!reduz())Object.values(E.pecas).forEach(p=>{if(p.c.type==='motor'&&p.gira>.04){p.extra.eixo.rotation.x+=.35*p.gira;rodando=true}});
   let flui=false;if(hb){flui=animaFaixa(agora);r.setViewport(0,h,w,hb);r.setScissor(0,h,w,hb);E.efeito.render(E.faixa.scene,E.faixa.camera)}
-  r.setScissorTest(false);if(E.anim.length||gira||flui)pede()}
+  r.setScissorTest(false);if(E.anim.length||gira||flui||rodando)pede()}
 const anima=(dur,passo)=>{if(reduz()){passo(1,performance.now());return}E.anim.push({t0:performance.now(),dur,passo});pede()};
 
 /* ---------- fios ----------
@@ -420,6 +457,8 @@ function atualizar(ctx){
     /* relé térmico: visor vermelho e botão de rearme saltado quando disparado (c.trip) */
     if(c.type==='ft'){p.extra.visor.material.color.setHex(c.trip?PAL.desarmado:PAL.armado);p.extra.visor.material.emissive.setHex(c.trip?0x6b1a12:0x0f4a24);p.extra.rearme.position.z=FRENTE+(c.trip?1.05:.75)}
     /* interruptor: a tecla inclina para ligado ou desligado (c.closed) */
+    /* motor: gira enquanto alimentado (res.lamp[id] de 0 a 1 vira a velocidade do eixo) */
+    if(c.type==='motor')p.gira=Math.max(0,Math.min(1,res.lamp[c.id]||0));
     if(c.type==='sw'){const alvo=c.closed?TECLA.on:TECLA.off;if(p.tec!==alvo){const pi=p.extra.pino,de=p.tec===undefined?alvo:pi.rotation.x;p.tec=alvo;anima(120,k=>{pi.rotation.x=de+(alvo-de)*k})}}
     if(c.type==='btn'){const alvo=c.pressed?BOTAO.afunda:0;if(p.emb!==alvo){const de=p.extra.embolo.position.z,para=BOTAO.z+alvo;p.emb=alvo;anima(90,k=>{p.extra.embolo.position.z=de+(para-de)*k})}}
     if(c.type==='dr'){p.extra.visor.material.color.setHex(c.trip?PAL.desarmado:PAL.armado);p.extra.visor.material.emissive.setHex(c.trip?0x6b1a12:0x0f4a24)}
@@ -508,6 +547,7 @@ const debug={
   visorDR:id=>E.pecas[id].extra.visor.material.color.getHex()===PAL.desarmado?'desarmado':'armado',
   emboloAlvo:id=>E.pecas[id].emb||0,
   tecla:id=>E.pecas[id].tec,
+  motorGira:id=>E.pecas[id].gira||0,
   emboloKC:id=>({on:!!E.pecas[id].on,cor:E.pecas[id].extra.embolo.material.color.getHexString()}),
   visorFT:id=>E.pecas[id].extra.visor.material.color.getHex()===PAL.desarmado?'disparado':'armado',
   livre:()=>!!E.livre,

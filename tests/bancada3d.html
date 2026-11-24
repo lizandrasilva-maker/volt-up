@@ -169,6 +169,25 @@ const coresDoFioCSS=k=>(CORES[k].c.match(/var\(--[\w-]+\)|#[0-9a-f]{3,8}\b/gi)).
    s.aprovouSvg=/aprovado/i.test(verificar());s.equivalente=s3===sig(BANCADA.st);s.s3=s3;s.ss=sig(BANCADA.st);
    /* Série ou Paralelo abre em 3D nos 3 níveis (interruptores S0, S1, S2) */
    VISTA3D.ligada=true;const pl=phaseById('paralelo');s.paralelo=['leve','moderado','full'].map(md=>{S.mode=md;S.seen[md+':paralelo:cena']=1;runBuild(pl,comARede(pl.dados[md]));return !!document.querySelector('.bench3d canvas')}).every(Boolean);S.mode='moderado';}
+  /* ---- Lote A (motor, BEP, haste): Partida Direta (Cap. 3) em 3D, montada pelo gabarito ---- */
+  {const m=R.partida={};S.mode='moderado';const pp=phaseById('partida'),tp=()=>comARede(pp.dados.moderado),peca=id=>BANCADA.st.comps.find(c=>c.id===id),espera=ms=>new Promise(r=>setTimeout(r,ms));
+   const sig=st=>J({fios:st.wires.map(w=>w.a+'-'+w.b+':'+w.cor),k:!!st.comps.find(c=>c.id==='K').on,bot:st.comps.filter(c=>c.type==='btn').map(c=>!!c.pressed)});
+   const GAB=testeSol('partida');
+   VISTA3D.ligada=true;S.seen['moderado:partida:cena']=1;runBuild(pp,tp());
+   m.em3d=!!document.querySelector('.bench3d canvas');m.term3d=BANCADA.st.comps.every(c=>D.bornesTERM3D(c)===terms(c).length);
+   m.plaquetas=J(D.plaquetas('M').map(p=>p.t))==='["1","2","⏚"]';
+   let ca='';GAB.forEach(w=>{if(w.cor!==ca){cor(w.cor);ca=w.cor}toque(w.a);toque(w.b)});
+   m.fios=BANCADA.st.wires.length===GAB.length&&D.motorGira('M')<0.05;
+   toque('BL');m.gira=peca('K').on===true&&D.motorGira('M')>0.5;await espera(800);m.selo=peca('K').on===true&&D.motorGira('M')>0.5;
+   toque('BD');m.para=peca('K').on===false&&D.motorGira('M')<0.05;await espera(800);
+   m.aprovou3d=/aprovado/i.test(verificar());m.giraAprovado=D.motorGira('M')>0.5;const s3=sig(BANCADA.st);
+   VISTA3D.ligada=false;runBuild(pp,tp());
+   const tap=t=>{svg().querySelector('[data-t="'+t+'"]').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));window.dispatchEvent(new PointerEvent('pointerup'))};
+   const aciona=id=>svg().querySelector('[data-sw="'+id+'"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));
+   ca='';GAB.forEach(w=>{if(w.cor!==ca){cor(w.cor);ca=w.cor}tap(w.a);tap(w.b)});
+   aciona('BL');await espera(800);aciona('BD');await espera(800);
+   m.aprovouSvg=/aprovado/i.test(verificar());m.equivalente=s3===sig(BANCADA.st);m.s3=s3;m.ss=sig(BANCADA.st);
+   VISTA3D.ligada=true;m.niveis=['leve','full'].map(md=>{S.mode=md;S.seen[md+':partida:cena']=1;runBuild(pp,comARede(pp.dados[md]));return !!document.querySelector('.bench3d canvas')}).every(Boolean);S.mode='moderado';}
   /* sair da bancada libera o WebGL */
   showMap();await new Promise(r=>setTimeout(r,0));R.liberou=VISTA3D.no===null;
 }catch(e){R.ERRO=e.message+' '+(e.stack||'')}

@@ -202,6 +202,10 @@ let pistas={};
       confere(C,s.desligado===true&&s.liga===true&&s.desliga===true,'tocar no interruptor inclina a tecla (c.closed) e liga e desliga a lâmpada');
       confere(C,s.aprovou3d===true&&s.aprovouSvg===true&&s.equivalente===true,'Primeiro Circuito: mesmos gestos na 3D e no SVG, mesmo estado e aprovação',s.s3+' / '+s.ss);
       confere(C,s.paralelo===true,'Série ou Paralelo abre em 3D nos 3 níveis');}
+     {const m=b.partida||{};
+      confere(C,m.em3d===true&&m.term3d===true&&m.plaquetas===true&&m.niveis===true,'Partida Direta (Cap. 3) abre em 3D nos 3 níveis: motor (1 2 ⏚), BEP e haste com os bornes do motor.js');
+      confere(C,m.fios===true&&m.gira===true&&m.selo===true&&m.para===true,'gabarito montado na 3D: LIGA faz o eixo girar, o selo mantém, DESLIGA para');
+      confere(C,m.aprovou3d===true&&m.giraAprovado===true&&m.aprovouSvg===true&&m.equivalente===true,'Partida Direta: mesmos gestos na 3D e no SVG, mesmo estado e aprovação (motor girando no fim)',m.s3+' / '+m.ss);}
      confere(C,b.liberou===true,'ao sair da bancada, o WebGL é liberado');}
     /* Fonte e aterramento: a fonte não tem PE; o terra vem da haste pelo BEP */
     const fa=t.fonte||{};
