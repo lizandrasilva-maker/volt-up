@@ -80,7 +80,7 @@ try{VISTA3D.ligada=localStorage.getItem('volt-vista')!=='2d'}catch(e){VISTA3D.li
 function escolhe3D(sim){VISTA3D.ligada=sim;try{if(sim)localStorage.removeItem('volt-vista');else localStorage.setItem('volt-vista','2d')}catch(e){}}
 /* peças que a vista 3D já desenha: fonte 1F+N, disjuntor, DR e lâmpada sem PE (Laboratório 3D e Quadro Novo).
    As outras bancadas ficam no SVG. */
-VISTA3D.suporta=st=>st.comps.every(c=>c.type==='src'||c.type==='fuse'||c.type==='dr'||c.type==='btn'||c.type==='kc'||c.type==='ft'||c.type==='sw'||c.type==='sw3'||c.type==='sw4'||c.type==='foto'||c.type==='ri'||c.type==='motor'||c.type==='bep'||c.type==='haste'||c.type==='boia'||(c.type==='lamp'&&c.pe!==true));
+VISTA3D.suporta=st=>st.comps.every(c=>c.type==='src'||c.type==='fuse'||c.type==='dr'||c.type==='btn'||c.type==='kc'||c.type==='ft'||c.type==='sw'||c.type==='sw3'||c.type==='sw4'||c.type==='foto'||c.type==='ri'||c.type==='pilha'||c.type==='motor'||c.type==='bep'||c.type==='haste'||c.type==='boia'||(c.type==='lamp'&&c.pe!==true));
 /* o botão 🧊 3D aparece em toda bancada cujas peças já existem em 3D, com ou sem ?3d=1 (o flag só abre direto em 3D
    e mostra os laboratórios). O Three.js é baixado no primeiro toque no botão. */
 function quer3D(st){return !!(VISTA3D.ligada&&VISTA3D.vista&&VISTA3D.vista.aceita(st))}
@@ -260,9 +260,9 @@ function runBuild(p,task){
     tirouFio:i=>{if(won||!st.wires[i])return;st.wires.splice(i,1);msg=null;render()}
   };
   const bancadaId=BANCADA_ID;BANCADA.st=st;
-  const pontos=cc?null:pontosDaMontagem(p.id,st);/* leve e moderado: contador ligados/esperados; full: só o anel */
+  const pontos=pontosDaMontagem(p.id,st);/* leve e moderado: contador ligados/esperados; full: só o anel */
   const render=()=>{
-    const r=resolve(st.comps,st.wires),R=vistaReal(),v3=!cc&&quer3D(st),p3=!cc&&pode3D(st);
+    const r=resolve(st.comps,st.wires),R=vistaReal(),v3=quer3D(st),p3=pode3D(st);
     VISTA3D.redesenha={id:bancadaId,f:render};
     if(p3&&VISTA3D.ligada&&!VISTA3D.vista&&!VISTA3D.erro)carrega3D();/* 3D é o padrão: baixa o Three.js na primeira bancada */
     const help='Toque em dois '+(R?'parafusos':'pontos ⚪')+' para ligar um fio.'+(L()?' Toque no fio para tirar.':'');
@@ -283,7 +283,7 @@ function runBuild(p,task){
     app.querySelectorAll('[data-3d]').forEach(b=>b.onclick=()=>{escolhe3D(b.dataset['3d']==='1');if(VISTA3D.ligada&&!VISTA3D.vista)carrega3D();sel=null;render()});
     app.querySelectorAll('[data-girar]').forEach(b=>b.onclick=()=>{VISTA3D.girar=!VISTA3D.girar;sel=null;render()});
     /* centro da bancada: a vista 3D (se ligada) ou o SVG; as duas falam com o mesmo ctl */
-    if(!(v3&&encaixa3D({st,res:r,sel,curto:curtoAgora,cor,editavel:!won,ctl,bancada:bancadaId,girar:!!VISTA3D.girar,pontos,dica:S.mode==='full'?'ponto':'conta'})))
+    if(!(v3&&encaixa3D({st,res:r,sel,curto:curtoAgora,cor,editavel:!won,ctl,bancada:bancadaId,girar:!!VISTA3D.girar,cc,pontos,dica:S.mode==='full'?'ponto':'conta'})))
       ligaSVGBancada(app.querySelector('.bench svg'),ctl,{zm,pos:t=>tpos(st.comps,t),centroX:id=>{const c=st.comps.find(x=>x.id===id);return R?RP(c)[0]:c.x}});
     const c=document.getElementById('clr');if(c)c.onclick=()=>{st.wires=[];sel=null;msg=null;render()};
     const k=document.getElementById('chk');if(k)k.onclick=verificar;

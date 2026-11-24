@@ -231,6 +231,10 @@ let pistas={};
         confere(C,o.em3d===true&&o.term3d===true&&o.plaquetas===true&&o.niveis===true,nome+' abre em 3D nos 3 níveis, com os bornes e nomes do motor.js e do 2D');
         confere(C,o.inverte===true,nome+': cada toque em qualquer interruptor inverte a lâmpada (comando de vários pontos)');
         confere(C,o.aprovou3d===true&&o.aprovouSvg===true&&o.equivalente===true,nome+': mesmos gestos na 3D e no SVG, mesmo estado e aprovação');}}
+     {const e=b.loteE||{};
+      confere(C,e.em3d===true&&e.term3d===true&&e.plaquetas===true&&e.niveis===true&&e.semFaixa===true,'Pilha e Lanterna (bancada CC) abre em 3D nos 3 níveis: pilha com + e −, sem a faixa do poste',JSON.stringify(e));
+      confere(C,e.pontos===true&&e.acende===true&&e.aprovou3d===true&&e.aprovouSvg===true&&e.equivalente===true,'lanterna: gabarito montado na 3D acende a lâmpada; mesmos gestos na 3D e no SVG, mesmo estado e aprovação',JSON.stringify(e));
+      confere(C,e.curto===true&&e.queima===true&&e.troca===true,'CC na 3D: fio direto na pilha esquenta (vermelha); 3 pilhas em série queimam a lâmpada e o toque troca por uma nova');}
      {const d=b.loteD||{},g=d.garagem||{},h=d.hall||{};
       confere(C,g.em3d===true&&g.term3d===true&&g.plaquetas===true&&g.niveis===true,'Garagem abre em 3D nos 3 níveis: fotocélula com os bornes L, N e C do motor.js e do 2D');
       confere(C,g.dia===true&&g.noite===true&&g.voltaDia===true,'fotocélula: de dia (sol) a luz fica apagada; tocar faz a noite (lua e estrelas) e a luz acende; tocar de novo volta o dia');
