@@ -157,11 +157,12 @@ function realComp(c,b,o){
   let s='';
   if(c.type==='src'){/* fonte de bancada (genérica, sem marca): caixa metálica, visor com a tensão, LED de ligado,
        etiqueta com o número de fases e a régua de bornes L1/L2/L3/N embaixo. Não tem PE: o terra vem da haste. */
-    const on=o&&o.res?!o.res.short:true;
+    /* depois de um curto sem disjuntor no caminho, a proteção da fonte desarma: visor "PROT", LED vermelho piscando */
+    const on=!c.trip;
     s=shadow(-30,-30,60,48,5)+'<rect x="-30" y="-30" width="60" height="48" rx="5" style="fill:#5b6672;stroke:#2f363d" stroke-width="1.2"/>'+
       '<rect x="-27" y="-27" width="54" height="42" rx="3" style="fill:#6c7884"/>'+
-      '<rect x="-22" y="-23" width="30" height="13" rx="2" style="fill:var(--lcd)"/><text x="-7" y="-13.6" text-anchor="middle" class="rtxt" style="font-size:7.5px;fill:var(--lcdink)">'+(c.V||220)+' V~</text>'+
-      '<circle cx="17" cy="-16.5" r="3" style="fill:'+(on?'#43d36b':'#7a2a24')+'"/><text x="17" y="-8" text-anchor="middle" class="rtxt" style="font-size:4px;fill:#e9edf3">ON</text>'+
+      '<rect x="-22" y="-23" width="30" height="13" rx="2" style="fill:'+(on?'var(--lcd)':'#e3b2a8')+'"/><text x="-7" y="-13.6" text-anchor="middle" class="rtxt" style="font-size:7.5px;fill:'+(on?'var(--lcdink)':'#7a1d12')+'">'+(on?(c.V||220)+' V~':'PROT')+'</text>'+
+      '<circle cx="17" cy="-16.5" r="3"'+(on?'':' class="led-pisca"')+' style="fill:'+(on?'#43d36b':'#e24c3f')+'"/><text x="17" y="-8" text-anchor="middle" class="rtxt" style="font-size:4px;fill:#e9edf3">'+(on?'ON':'TOQUE')+'</text>'+
       '<text x="0" y="-1" text-anchor="middle" class="rtxt" style="font-size:6px;fill:#ffffff;letter-spacing:.5px">FONTE</text>'+
       '<text x="0" y="8" text-anchor="middle" class="rtxt" style="font-size:5.5px;fill:#f4c430">'+fonteTxt(c)+'</text>'+
       '<rect x="-29" y="17" width="58" height="16" rx="2" class="janela"/>';
@@ -192,17 +193,18 @@ function realComp(c,b,o){
      (vermelho = contatos fechados, verde = abertos), como nos disjuntores reais */
   /* compacto: para módulos com marcação dos bornes impressa na frente (DR, relé de impulso), a alavanca fica
      só na faixa do meio e deixa livres as faixas de cima e de baixo */
-  const alavanca=(x,ligado,w,compacto)=>{w=w||12;const k=compacto?{s0:-8.5,sh:12,lh:7,y1:-9.5,y0:-2.6,iw:4.4}:{s0:-13,sh:16,lh:9.5,y1:-15.5,y0:-5,iw:4.2};
+  /* caiu = acabou de desarmar por curto: a alavanca desce com um tranco (animação única) */
+  const alavanca=(x,ligado,w,compacto,caiu)=>{w=w||12;const k=compacto?{s0:-8.5,sh:12,lh:7,y1:-9.5,y0:-2.6,iw:4.4}:{s0:-13,sh:16,lh:9.5,y1:-15.5,y0:-5,iw:4.2};
     const y=ligado?k.y1:k.y0;
     return '<rect x="'+(x-w/2)+'" y="'+k.s0+'" width="'+w+'" height="'+k.sh+'" rx="1.6" style="fill:#14171b"/>'+
-      '<rect x="'+(x-w/2+1)+'" y="'+y+'" width="'+(w-2)+'" height="'+k.lh+'" rx="1.6" style="fill:url(#gLever);stroke:#0b0d0f" stroke-width=".5"/>'+
+      '<g'+(caiu?' class="alav-cai"':'')+'><rect x="'+(x-w/2+1)+'" y="'+y+'" width="'+(w-2)+'" height="'+k.lh+'" rx="1.6" style="fill:url(#gLever);stroke:#0b0d0f" stroke-width=".5"/>'+
       '<path d="M'+(x-w/2+2.5)+' '+(y+1.8)+' H'+(x+w/2-2.5)+' M'+(x-w/2+2.5)+' '+(y+3.2)+' H'+(x+w/2-2.5)+'" style="stroke:#4b535c" stroke-width=".5"/>'+
-      '<text x="'+x+'" y="'+(y+k.lh-1.3)+'" text-anchor="middle" class="ltxt" style="font-size:3.4px">'+(ligado?'I':'O')+'</text>'+
+      '<text x="'+x+'" y="'+(y+k.lh-1.3)+'" text-anchor="middle" class="ltxt" style="font-size:3.4px">'+(ligado?'I':'O')+'</text></g>'+
       '<rect x="'+(x-w/2+.5)+'" y="'+k.iw+'" width="'+(w-1)+'" height="3.4" rx=".6" style="fill:#1f2328"/><rect x="'+(x-w/2+1.2)+'" y="'+(k.iw+.6)+'" width="'+(w-2.4)+'" height="2.2" rx=".4" style="fill:'+(ligado?'#d33a2c':'#43b05c')+'"/>'};
   if(c.type==='fuse'){/* disjuntor DIN unipolar (curva C, 10 A): alavanca em cima = ligado; desarmado = alavanca embaixo
        e janela verde (contatos abertos). Marcação impressa: C10 e a capacidade de interrupção em caixa (6000). */
-    const trip=c.broken&&c.show;
-    s=din(14)+alavanca(0,!trip)+
+    const trip=(c.broken&&c.show)||!!c.trip,caiu=!!(o.curto&&o.curto.quem===c.id);
+    s=din(14)+alavanca(0,!trip,12,false,caiu)+
       '<text class="rtxt" y="12.4" text-anchor="middle" style="font-size:5.4px">C10</text>'+
       '<rect x="-4.6" y="13.2" width="9.2" height="2.8" rx=".3" style="fill:none;stroke:#46505b" stroke-width=".35"/><text class="rtxt" y="15.4" text-anchor="middle" style="font-size:2.4px">6000</text>';
   }
@@ -385,7 +387,8 @@ function realComp(c,b,o){
       '<text x="-5" y="-17" text-anchor="middle" class="rtxt" style="font-size:4.6px;fill:#12355e">'+(v?'VAZIA':'CHEIA')+'</text>'+
       '<rect x="-21" y="18" width="42" height="15" rx="2" class="janela"/>'}
   /* toque no corpo aciona a peça (o interruptor simples já tem a sua área) */
-  if(o.toggle&&typeof ACION!=='undefined'&&ACION[c.type]&&c.type!=='sw'){const r=REAL_BOX[c.type];s+='<rect class="chit" data-sw="'+c.id+'" x="'+r[0]+'" y="'+r[1]+'" width="'+(r[2]-r[0])+'" height="'+(r[3]-r[1]-15)+'"/>'}
+  /* disjuntor ou fonte desarmados por curto também aceitam um toque (para religar) */
+  if(o.toggle&&typeof ACION!=='undefined'&&(ACION[c.type]||((c.type==='fuse'||c.type==='src')&&c.trip))&&c.type!=='sw'){const r=REAL_BOX[c.type];s+='<rect class="chit" data-sw="'+c.id+'" x="'+r[0]+'" y="'+r[1]+'" width="'+(r[2]-r[0])+'" height="'+(r[3]-r[1]-15)+'"/>'}
   if(o.pickComp&&c.type!=='src'){const r=REAL_BOX[c.type];s+='<rect class="chit" data-c="'+c.id+'" x="'+(r[0]-6)+'" y="'+(r[1]-4)+'" width="'+(r[2]-r[0]+12)+'" height="'+(r[3]-r[1]+8)+'"/>'}
   const [X,Y]=RP(c);return '<g transform="translate('+X+' '+Y+')">'+s+'</g>';
 }
@@ -433,7 +436,8 @@ function realBoard(st,o,r){
   let rings='',hits='';const taken=[],labs=[];
   st.wires.forEach((w,i)=>{const rt=realWireRoute(st.comps,w,taken),d=ptsPath(rt.pts);
     for(let j=1;j<rt.pts.length;j++)taken.push([rt.pts[j-1],rt.pts[j]]);
-    s+='<path class="wo" d="'+d+'"/><path class="w '+(w.cor||'cobre')+'" d="'+d+'"/>'+(w.cor==='terra'?'<path class="w2" d="'+d+'"/>':'');
+    s+='<path class="wo" d="'+d+'"/><path class="w '+(w.cor||'cobre')+'" d="'+d+'"/>'+(w.cor==='terra'?'<path class="w2" d="'+d+'"/>':'')+
+      (o.curto&&o.curto.fios.includes(i)?'<path class="wcurto" d="'+d+'"/>':'');/* fio do caminho do curto fica incandescente */
     rings+=anilhas(rt,i+1);if(o.pickWire)hits+='<path class="hit" data-w="'+i+'" d="'+d+'"/>'});
   s+=rings+hits;
   if(o.move)st.comps.forEach(c=>{const b=realBounds(c,3);
@@ -448,6 +452,7 @@ function realBoard(st,o,r){
       /* selo no canto da peça, para não cobrir fio nem etiqueta */
       s+='<g class="selo '+(ok?'ok':'no')+'" transform="translate('+b[2]+' '+b[1]+')"><circle r="8"/><text y="3.6" text-anchor="middle">'+(ok?'✓':'✗')+'</text><title>'+(ok?'passa':'não passa')+'</title></g>'}
   });
+  if(o.curto){const pt=pontoCurto(st.comps,o.curto.onde);if(pt)s+=faiscaSVG(pt[0],pt[1])}
   if(o.pickTerm)st.comps.forEach(c=>realTerms(c).forEach((T,k)=>{s+='<circle class="thit" data-t="'+c.id+'.'+k+'" cx="'+T.p[0]+'" cy="'+T.p[1]+'" r="'+(c.type==='src'?8:12)+'"/>'}));
   SW_FLIP=null;
   return s;

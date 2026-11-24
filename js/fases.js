@@ -48,7 +48,7 @@ function missao(goal,real,nota,rotulo){return '<div class="goal"><span class="gi
 /* Bancada com a cadeia de energia (poste → medidor → quadro) colada em cima e, por cima da bancada,
    os botões pequenos de vista (Real/Diagrama) e de zoom, como num mapa de celular.
    O estado da faixa (energia passando ou curto) vem da classe que board() põe no <svg>. */
-function benchWrap(svg,id,zm){const m=/^<svg[^>]*class="(\w*)/.exec(svg),est=m?m[1]:'',R=vistaReal();
+function benchWrap(svg,id,zm){const m=/^<svg[^>]*class="(\w*)/.exec(svg),est=m?(m[1]==='curto'?'short':m[1]):'',R=vistaReal();
   const ctl=zm?'<div class="bctl">'+'<button class="btn vbtn" data-vista="'+(R?'simb':'real')+'" aria-label="'+(R?'Ver o diagrama multifilar':'Ver as peças reais')+'">'+(R?'📐 Multifilar':'🔌 Real')+'</button>'+zm.ui()+'</div>':'';
   return '<div class="benchwrap">'+entrada(est)+'<div class="bench"'+(id?' id="'+id+'"':'')+'>'+svg+ctl+'</div>'+avisoModelo()+'</div>'}
 /* Aviso fixo em toda bancada: o motor do jogo é qualitativo (Etapa 2 da revisão).
@@ -70,6 +70,8 @@ window.addEventListener('scroll',()=>{benchY=window.scrollY},{passive:true});
    depois() redesenha quando a botoeira solta; BANCADA_ID evita redesenhar uma tela que já foi trocada. */
 let BANCADA_ID=0;
 function acionarPeca(c,lx,depois){
+  /* disjuntor ou fonte desarmados por curto: o toque religa (se o curto continuar, desarma de novo) */
+  if((c.type==='fuse'||c.type==='src')&&c.trip){c.trip=false;return}
   if(c.type==='sw')flipSwitch(c);
   else if(c.type==='sw2'){const k=lx<0?'a':'b';c[k]=!c[k];SW_FLIP=c.id+'.'+k}
   else if(c.type==='sw3'||c.type==='sw4'){c.pos=c.pos?0:1;SW_FLIP=c.id}
@@ -82,7 +84,9 @@ function acionarPeca(c,lx,depois){
 
 /* ---------- Bancada: montar ---------- */
 function runBuild(p,task){
-  const st={comps:clone(task.comps),wires:[]};let sel=null,tries=0,msg=null,won=false,cor='fase';
+  const st={comps:clone(task.comps),wires:[]};let sel=null,tries=0,msg=null,won=false,cor='fase',curto=null;
+  /* depois de ligar um fio ou acionar uma peça: se fechou um curto, a proteção desarma e a bancada anima */
+  const checa=onde=>{const ev=protegeCurto(st,onde);if(ev){curto=ev;msg=msgCurto(ev)}};
   const zm=benchZoom();let drawn=false,verPlanta=false;BANCADA_ID++;
   const render=()=>{
     const r=solve(st.comps,st.wires),R=vistaReal();
@@ -91,19 +95,19 @@ function runBuild(p,task){
     frame(p,missao(task.goal,task.real)+
       /* fases com projeto: a planta de fiação abre e fecha acima da bancada */
       (pl?'<button class="btn planta-btn" id="vplanta" aria-expanded="'+verPlanta+'">📄 '+(verPlanta?'Fechar a planta':'Ver a planta do projeto')+'</button>'+(verPlanta?plantaHTML(pl):''):'')+
-      (won?'':palette(cor))+benchWrap(board(st,{res:r,sel,pickTerm:!won,pickWire:!won,toggle:true,real:R,vb:zm.vb()}),'',zm)+statusChips(st,r)+
+      (won?'':palette(cor))+benchWrap(board(st,{res:r,sel,pickTerm:!won,pickWire:!won,toggle:true,real:R,vb:zm.vb(),curto}),'',zm)+statusChips(st,r)+
       (msg?'<div class="fb '+(won?'good':'bad')+'">'+(won?pick(PRAISE[S.mode])+' ':'')+msg+(won&&L()?'<br><small>Na vida real, só eletricista mexe na rede, e com tudo desligado.</small>':'')+'</div>':st.wires.length?'':'<p class="help">'+help+'</p>')+
       (won?'<button class="btn main" id="end">Concluir ⚡</button>':'<div class="row"><button class="btn ghost" id="clr">Limpar fios</button><button class="btn main" id="chk">Verificar</button></div>'));
-    keepScroll(drawn);drawn=true;
+    keepScroll(drawn);drawn=true;curto=null;/* a animação do curto roda uma vez só */
     const svg=app.querySelector('.bench svg');
     zm.bind(app.querySelector('.bench'),app);
     /* modo teste: "Montar pra mim" monta o gabarito e já aprova (não sobra nada para verificar) */
-    const ts=document.getElementById('tSol');if(ts)ts.onclick=()=>{st.wires=testeSol(p.id);sel=null;msg=null;verificar()};
+    const ts=document.getElementById('tSol');if(ts)ts.onclick=()=>{st.wires=testeSol(p.id);st.comps.forEach(c=>{if(c.type==='fuse'||c.type==='src')c.trip=false});sel=null;msg=null;verificar()};
     const vp=document.getElementById('vplanta');if(vp)vp.onclick=()=>{verPlanta=!verPlanta;render()};
     app.querySelectorAll('[data-vista]').forEach(b=>b.onclick=()=>{setVista(b.dataset.vista==='real');render()});
     app.querySelectorAll('[data-cor]').forEach(b=>b.onclick=()=>{cor=b.dataset.cor;render()});
     svg.querySelectorAll('[data-sw]').forEach(h=>h.addEventListener('click',ev=>{if(zm.busy())return;const c=st.comps.find(x=>x.id===h.dataset.sw);
-      acionarPeca(c,svgPoint(svg,ev).x-(R?RP(c)[0]:c.x),render);msg=null;render()}));
+      acionarPeca(c,svgPoint(svg,ev).x-(R?RP(c)[0]:c.x),render);msg=null;checa(c.id);render()}));
     svg.querySelectorAll('[data-w]').forEach(h=>h.addEventListener('click',()=>{if(zm.busy())return;st.wires.splice(+h.dataset.w,1);msg=null;render()}));
     svg.querySelectorAll('[data-t]').forEach(h=>h.addEventListener('pointerdown',e=>{
       e.preventDefault();const a=h.dataset.t,p0=tpos(st.comps,a);let line=null;
@@ -118,11 +122,13 @@ function runBuild(p,task){
     const k=document.getElementById('chk');if(k)k.onclick=verificar;
     const e=document.getElementById('end');if(e)e.onclick=()=>finish(p,Math.max(1,4-tries),3);
   };
-  const verificar=()=>{tries++;const m=task.check(st)||normCheck(st)||colorCheck(st);if(m){msg=m}else{won=true;st.comps.forEach(c=>{if(c.type==='sw')c.closed=true});/* liga tudo: a luz acende como recompensa */
+  const verificar=()=>{const desl=st.comps.find(c=>(c.type==='fuse'||c.type==='src')&&c.trip);
+    if(desl){msg=desarmadoMsg(desl);render();return}
+    tries++;const m=task.check(st)||normCheck(st)||colorCheck(st);if(m){msg=m}else{won=true;st.comps.forEach(c=>{if(c.type==='sw')c.closed=true});/* liga tudo: a luz acende como recompensa */
     /* comandos: um toque no LIGA / pulsador e a caixa vazia, para o motor girar e a luz do relé acender */
     st.comps.forEach(c=>{if(c.type==='ft'||c.type==='dr')c.trip=false;if(c.type==='boia')c.vazia=true;if(c.type==='foto')c.noite=true});
     st.comps.filter(c=>c.type==='btn'&&!c.nf).slice(0,1).forEach(c=>{c.pressed=true;solve(st.comps,st.wires);c.pressed=false;solve(st.comps,st.wires)});msg='Testei todas as posições dos interruptores e conferi as cores: aprovado!';S.xp+=tries===1?30:15;save()}render()};
-  const addWire=(a,b)=>{sel=null;msg=null;if(!st.wires.some(w=>(w.a===a&&w.b===b)||(w.a===b&&w.b===a)))st.wires.push(Object.assign(W(a,b),{cor}));render()};
+  const addWire=(a,b)=>{sel=null;msg=null;if(!st.wires.some(w=>(w.a===a&&w.b===b)||(w.a===b&&w.b===a))){st.wires.push(Object.assign(W(a,b),{cor}));checa(b)}render()};
   render();
 }
 
@@ -220,14 +226,15 @@ function runSandbox(){
   /* circuitos salvos antes do bocal sem PE: tira fios presos a bornes que não existem mais */
   sb.wires=sb.wires.filter(w=>[w.a,w.b].every(t=>{const [id,k]=t.split('.'),c=sb.comps.find(x=>x.id===id);return c&&+k<terms(c).length}));
   sb.comps.forEach(c=>{if(c.type==='btn')c.pressed=false});
-  let tool='build',cor='fase',sel=null,selC=null,probes=[],reading=null,msg=null,sure=false,box=false,cat='fundamentos';
+  let tool='build',cor='fase',sel=null,selC=null,probes=[],reading=null,msg=null,sure=false,box=false,cat='fundamentos',curto=null;
+  const checa=onde=>{const ev=protegeCurto(sb,onde);if(ev){curto=ev;msg={bad:1,t:msgCurto(ev)}}};
   const zm=benchZoom();let drawn=false;BANCADA_ID++;
   const persist=()=>{S.sandbox=sb;save()};
   const SPOTS=[[115,60],[185,60],[255,60],[308,60],[115,165],[185,165],[255,165],[308,165],[150,112],[230,112],[290,112]];
   const acionar=(c,lx)=>acionarPeca(c,lx,()=>{persist();render()});
   const getSvg=()=>document.querySelector('#bench svg');
   const sc=()=>sb.comps.find(c=>c.id===selC);
-  const benchHTML=()=>{const r=solve(sb.comps,sb.wires);return benchWrap(board(sb,{res:r,sel,selC,move:tool==='build',pickTerm:true,pickWire:tool==='build',probes:tool==='meter'?probes:null,real:vistaReal(),vb:zm.vb()}),'bench',zm)+statusChips(sb,r)};
+  const benchHTML=()=>{const r=solve(sb.comps,sb.wires);return benchWrap(board(sb,{res:r,sel,selC,move:tool==='build',pickTerm:true,pickWire:tool==='build',probes:tool==='meter'?probes:null,real:vistaReal(),vb:zm.vb(),curto}),'bench',zm)+statusChips(sb,r)};
   const redrawBench=()=>{document.getElementById('bw').innerHTML=benchHTML();bindBench()};
   const add=key=>{
     if(sb.comps.length>=14){msg={bad:1,t:'Bancada cheia: no máximo 13 peças além da fonte.'};render();return}
@@ -238,7 +245,7 @@ function runSandbox(){
     const livre=([x,y])=>!sb.comps.some(c=>Math.hypot(c.x-x,c.y-y)<(key==='haste'||key==='bep'?40:60));
     const spot=(key==='haste'?[[45,205],[130,215],[200,215]]:key==='bep'?[[95,192],[100,150]]:[]).concat(SPOTS).find(livre)||[185,112];
     sb.comps.push(C(pre+n,type,spot[0],spot[1],0,ex));selC=pre+n;msg=null;persist();render()};
-  const addWire=(a,b)=>{sel=null;msg=null;if(a.split('.')[0]!==b.split('.')[0]||true){if(!sb.wires.some(w=>(w.a===a&&w.b===b)||(w.a===b&&w.b===a)))sb.wires.push(Object.assign(W(a,b),{cor}))}persist();render()};
+  const addWire=(a,b)=>{sel=null;msg=null;if(!sb.wires.some(w=>(w.a===a&&w.b===b)||(w.a===b&&w.b===a))){sb.wires.push(Object.assign(W(a,b),{cor}));checa(b)}persist();render()};
   const render=()=>{
     const c=sc();
     /* botões de ação da peça selecionada */
@@ -261,7 +268,7 @@ function runSandbox(){
       (c&&tool==='build'?'<div class="row" style="align-items:center"><span class="chip">'+c.id+'</span>'+(vistaReal()?'':'<button class="btn sm" id="rot">↻ Girar</button>')+acoes.map(([k,t])=>'<button class="btn sm" data-ac="'+k+'">'+t+'</button>').join('')+(c.type!=='src'?'<button class="btn sm danger" id="del">🗑 Remover</button>':'')+'</div>':'')+
       (msg?'<div class="fb '+(msg.bad?'bad':'good')+'">'+msg.t+'</div>':drFuga?'<div class="fb info">🛡️ O '+drFuga.id+' desarmou: tem corrente escapando para o terra. Ache a fuga e toque no DR para rearmar.</div>':tool==='build'&&!sb.wires.length?'<p class="help">Abra a caixa para pegar peças. Toque em dois '+(vistaReal()?'parafusos':'pontos ⚪')+' para ligar um fio.</p>':'')+
       '<div class="row"><button class="btn ghost" id="clr">'+(sure?'Toque de novo para limpar':'Limpar bancada')+'</button><button class="btn main" id="insp">🔎 Inspecionar</button></div>');
-    keepScroll(drawn);drawn=true;
+    keepScroll(drawn);drawn=true;curto=null;/* a animação do curto roda uma vez só */
     document.getElementById('cx').onclick=()=>{box=!box;render()};
     const cxf=document.getElementById('cxf');if(cxf)cxf.onclick=()=>{box=false;render()};
     app.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>{tool=b.dataset.tool;probes=[];reading=null;sel=null;if(tool==='meter')selC=null;msg=null;box=false;render()});
@@ -274,12 +281,14 @@ function runSandbox(){
       /* fonte: troca o número de fases; fios presos em borne de fase que deixou de existir saem */
       if(k[0]==='f'){c.fases=+k.slice(1);sb.wires=sb.wires.filter(w=>[w.a,w.b].every(t=>{const [id,j]=t.split('.'),x=sb.comps.find(y=>y.id===id);return x&&+j<terms(x).length}));
         probes=[];reading=null;msg={t:'Fonte: '+fonteTxt(c)+'.'};persist();render();return}
-      acionar(c,k==='-1'?-1:1);persist();render()});
+      acionar(c,k==='-1'?-1:1);checa(c.id);persist();render()});
     const del=document.getElementById('del');if(del)del.onclick=()=>{sb.comps=sb.comps.filter(x=>x!==c);sb.wires=sb.wires.filter(w=>!w.a.startsWith(c.id+'.')&&!w.b.startsWith(c.id+'.'));selC=null;persist();render()};
     document.getElementById('clr').onclick=()=>{if(!sure){sure=true;render();return}sure=false;sb={comps:[BAT()],wires:[]};selC=null;sel=null;probes=[];reading=null;msg=null;persist();render()};
     document.getElementById('insp').onclick=()=>{
       const r=solve(sb.comps,sb.wires);const nl=Object.values(r.lamp).filter(b=>b>0.04).length;
-      if(!sb.wires.length)msg={bad:1,t:'Ainda não tem nenhum fio na bancada.'};
+      const desl=sb.comps.find(c=>(c.type==='fuse'||c.type==='src')&&c.trip);
+      if(desl)msg={bad:1,t:desarmadoMsg(desl)};
+      else if(!sb.wires.length)msg={bad:1,t:'Ainda não tem nenhum fio na bancada.'};
       else if(r.short)msg={bad:1,t:'Curto-circuito! Há um caminho sem carga entre fase e neutro (ou terra). Na vida real, o disjuntor desarmaria.'};
       else{const m=normCheck(sb)||colorCheck(sb);msg=m?{bad:1,t:m}:{t:'Inspeção aprovada: cores conforme a norma e '+nl+' carga(s) ligada(s) agora.'}}
       if(!msg.bad){S.xp+=2;S.flags.ofi=1;markDaily('ofi');save()}render()};
@@ -295,7 +304,7 @@ function runSandbox(){
         c.x=Math.max(34,Math.min(306,Math.round((ox+dx)/5)*5));c.y=vistaReal()?Math.max(REAL_Y[0],Math.min(REAL_Y[1],Math.round((oy+dy)/5)*5)):Math.max(34,Math.min(216,Math.round((oy+dy)/5)*5));redrawBench()};
       const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',up);
         if(zm.busy()){c.x=ox;c.y=oy;render();return}
-        if(!moved){selC=c.id;acionar(c,q0.x-(vistaReal()?RP(c)[0]:c.x))}msg=null;persist();render()};
+        msg=null;if(!moved){selC=c.id;acionar(c,q0.x-(vistaReal()?RP(c)[0]:c.x));checa(c.id)}persist();render()};
       window.addEventListener('pointermove',move);window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up)}));
     svg.querySelectorAll('[data-t]').forEach(h=>h.addEventListener('pointerdown',e=>{
       e.preventDefault();const a=h.dataset.t;

@@ -94,6 +94,15 @@ let pistas={};
     confere('Menu do usuário',mn.voltouAoMenu===true,'configurações voltam ao menu');
     confere('Menu do usuário',mn.semPersonagem===true,'primeira entrada pede o personagem antes do menu');
     confere('Menu do usuário',/location\.replace\('login\.html'\)/.test(fs.readFileSync(path.join(RAIZ,'js/main.js'),'utf8')),'sem login, o jogo abre a tela de login');
+    {const c=t.curto||{};
+     confere('Curto-circuito',c.fonte===true&&c.desligada===true,'sem disjuntor no caminho, a proteção da fonte desarma e tudo fica sem tensão');
+     confere('Curto-circuito',c.religa===true&&c.desarmaDeNovo===true,'tocar na fonte religa; se o curto continua, desarma de novo');
+     confere('Curto-circuito',c.jumper===true&&c.normal===true,'fase nos dois bornes da lâmpada sem neutro não é curto; circuito certo também não');
+     confere('Curto-circuito',c.seletivo==='D1'&&c.l2acesa===true,'curto na lâmpada L1 do quadro: desarma o D1 (não o geral) e L2 continua acesa',String(c.seletivo));
+     confere('Curto-circuito',c.fios>=2&&c.desenho===true&&c.desenhoDiagrama===true,'a bancada desenha a faísca e os fios incandescentes (real e diagrama)',c.fios+' fios');
+     confere('Curto-circuito',c.msg===true,'mensagem explica o curto');
+     confere('Curto-circuito',c.tela===true,'na bancada: ligar L1 direto no N mostra a faísca e a mensagem');
+     confere('Curto-circuito',c.verificaDesarmado===true,'"Verificar" com a proteção desarmada pede para corrigir e religar');}
     {const M=Object.entries(t.montar||{});
      confere('Modo teste',M.length>=27&&M.every(([,v])=>v==='aprovou'),'"Montar pra mim" monta e já aprova em todas as fases de montar (3 níveis)',M.filter(([,v])=>v!=='aprovou').map(([k,v])=>k+': '+v).join('; ')||M.length+' fases');}
     confere('Menu do usuário',JSON.stringify(t.ceu)==='["cap2","cap1","cap3"]','céu acompanha o capítulo (mapa e fase)',JSON.stringify(t.ceu));
