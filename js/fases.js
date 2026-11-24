@@ -159,6 +159,33 @@ function runPredict(p,list){
   render();
 }
 
+/* ---------- Multímetro com ponteiras ----------
+   O aparelho fica acima da bancada (visor, chave em V~, bornes VΩ e COM); os cabos descem até a bancada
+   e o aluno arrasta as pontas até os parafusos. Tocar num parafuso também leva uma ponta até ele. */
+function multimetroHTML(v,dica){
+  const val=v===null||v===undefined?'– – –':v.toFixed(v<10?2:1).replace('.',',');
+  return '<div class="mm"><div class="mm-corpo" aria-label="Multímetro: '+(v===null||v===undefined?'sem leitura':val+' volts')+'">'+
+    '<div class="mm-lcd"><b>'+val+'</b><small>V~</small></div>'+
+    '<div class="mm-baixo"><div class="mm-dial" aria-hidden="true"><i></i><span>V~</span></div>'+
+    '<div class="mm-bornes" aria-hidden="true"><span><i class="vr"></i>VΩ</span><span><i class="pr"></i>COM</span></div></div></div>'+
+    '<p class="help">'+dica+'</p></div>'}
+function dicaPonteiras(pt){return !pt.r.t&&!pt.k.t?'Arraste a <b style="color:#ff6b5e">ponta vermelha</b> e a <b>ponta preta</b> até dois parafusos (ou toque nos parafusos).'
+  :!(pt.r.t&&pt.k.t)?'Agora leve a outra ponta a um parafuso.':'Medindo a tensão entre os dois pontos (CA, valor eficaz). Arraste uma ponta para medir em outro lugar.'}
+/* arrastar as pontas: segue o dedo e, ao soltar, encaixa no parafuso mais perto (ou fica solta) */
+function ligaPonteiras(svg,comps,pt,mudou,zm){
+  svg.querySelectorAll('[data-ponta]').forEach(g=>g.addEventListener('pointerdown',e=>{
+    if(zm&&zm.busy())return;e.preventDefault();e.stopPropagation();
+    const id=g.dataset.ponta,P=pt[id],p0=pontaPos(comps,P),q0=svgPoint(svg,e),off=[p0[0]-q0.x,p0[1]-q0.y];let andou=false;
+    const cabo=svg.querySelector('[data-cabo="'+id+'"]');
+    const mv=ev=>{if(zm&&zm.busy())return;const q=svgPoint(svg,ev);P.p=[q.x+off[0],q.y+off[1]];andou=true;
+      g.setAttribute('transform','translate('+P.p[0].toFixed(1)+' '+P.p[1].toFixed(1)+')');if(cabo)cabo.setAttribute('d',caboD(id,P.p))};
+    const up=()=>{window.removeEventListener('pointermove',mv);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',up);
+      if(!andou)return;const t=bornePerto(comps,P.p);P.t=t;if(t)P.p=tpos(comps,t).slice();mudou(id)};
+    window.addEventListener('pointermove',mv);window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up)}));
+}
+/* toque num parafuso: leva a ponta que ainda está solta (ou a que não foi a última usada) */
+function tocaPonteira(comps,pt,t,ultima){const id=!pt.r.t?'r':!pt.k.t?'k':ultima==='r'?'k':'r';pt[id].t=t;pt[id].p=tpos(comps,t).slice();return id}
+
 /* ---------- Bancada: caça-defeito ---------- */
 function diagCircuit(V){return withPE({comps:[BAT(),C('F','fuse',125,48,0,{lab:'DJ'}),C('S1','sw',225,48,0,{closed:true}),C('L1','lamp',300,140,1)],
   wires:[W('B.0','F.0','v'),W('F.1','S1.0'),W('S1.1','L1.0','h'),W('L1.1','B.1','h')]})}
@@ -167,19 +194,19 @@ function runDiag(p,d){
   const startRound=()=>{let drawn=false;
     const st=diagCircuit(d.V);const fault=pick(d.cand);
     if(fault[0]==='w')st.wires[+fault.slice(1)].broken=true;else st.comps.find(c=>c.id===fault).broken=true;
-    const letters={};let n=0;st.comps.forEach(c=>[0,1].forEach(k=>letters[c.id+'.'+k]='ABCDEFGHIJKLMNOPQR'[n++]));
-    let tool=L()?'test':'meter',probes=[],reading=null,tags={},measures=0,wrong=0,fixed=false,msg=null,hint=false;
+    /* multímetro com as duas ponteiras: a medição conta quando as duas pontas estão em parafusos */
+    let tool=L()?'test':'meter',pt=novasPonteiras(),ultima=null,tags={},measures=0,wrong=0,fixed=false,msg=null,hint=false;
+    const mede=()=>{if(pt.r.t&&pt.k.t)measures++;msg=null};
     const render=()=>{
       const r=solve(st.comps,st.wires);
       const toolNames=L()?['test','🔍 Testar peça']:['meter','📏 Medir tensão'];
-      const meter=L()?'':'<div class="meter"><div><small>MULTÍMETRO</small><small>V~ (CA)</small></div><div class="lcd">'+(reading===null?'– – –':reading.toFixed(2).replace('.',',')+' V')+'</div></div>'+
-        '<p class="help">'+(probes.length===0?'Toque no 1º ponto (ponta vermelha).':probes.length===1?'Agora o 2º ponto (ponta preta).':'Pontas em '+letters[probes[0]]+' e '+letters[probes[1]]+' (CA: valor eficaz). Toque em outro ponto para nova medição.')+'</p>';
+      const meter=L()?'':multimetroHTML(leituraPonteiras(st.comps,r,pt),dicaPonteiras(pt));
       frame(p,progBar(ROUNDS,round,[score>=2])+
         missao(L()?'A lâmpada da cozinha não acende. Teste as peças e troque só a que quebrou.':'Cliente relata: a lâmpada da cozinha não acende; o resto da casa funciona. Ache a falha com até '+d.limit+' medições.',
           [['L1','💡','lâmpada da cozinha'],['S1','🔘','interruptor da cozinha'],['DJ','🎚','disjuntor da cozinha no quadro']],'','CHAMADO')+
         '<div class="seg"><button class="btn" id="t1" aria-pressed="'+(tool!=='fix')+'">'+toolNames[1]+'</button><button class="btn" id="t2" aria-pressed="'+(tool==='fix')+'">🔧 '+(S.mode==='full'?'Reparar':'Trocar')+'</button></div>'+
         (tool==='meter'?meter:'')+
-        benchWrap(board(st,{res:r,letters:tool==='meter'?letters:null,probes,tags:tool==='test'||tool==='fix'?tags:null,real:vistaReal(),vb:zm.vb(),
+        benchWrap(board(st,{res:r,ponteiras:tool==='meter'?pt:null,tags:tool==='test'||tool==='fix'?tags:null,real:vistaReal(),vb:zm.vb(),
            pickTerm:tool==='meter'&&!fixed,pickComp:(tool==='test'||tool==='fix')&&!fixed,pickWire:tool==='fix'&&!fixed&&S.mode==='full'}),'',zm)+
         '<div class="status"><span class="chip">'+(L()?'Testes: ':'Medições: ')+measures+(L()?'':' / '+d.limit)+'</span>'+(wrong?'<span class="chip">Trocas erradas: '+wrong+'</span>':'')+'</div>'+
         (msg?'<div class="fb '+(fixed?'good':msg.bad?'bad':'info')+'">'+msg.t+'</div>':'<p class="help">'+(tool==='fix'?(S.mode==='full'?'Toque na peça ou no fio (conexão frouxa) com defeito.':'Toque na peça que você quer trocar.'):tool==='test'?'Toque numa peça para testar se a energia passa por ela.':'')+'</p>')+
@@ -191,8 +218,8 @@ function runDiag(p,d){
       document.getElementById('t1').onclick=()=>{tool=L()?'test':'meter';msg=null;render()};
       document.getElementById('t2').onclick=()=>{tool='fix';msg=null;render()};
       svg.querySelectorAll('[data-t]').forEach(h=>h.addEventListener('click',()=>{
-        if(zm.busy())return;if(probes.length>=2)probes=[];probes.push(h.dataset.t);
-        if(probes.length===2){measures++;const rr=solve(st.comps,st.wires);reading=rr.vDiff(probes[0],probes[1])}else reading=null;msg=null;render()}));
+        if(zm.busy())return;ultima=tocaPonteira(st.comps,pt,h.dataset.t,ultima);mede();render()}));
+      if(tool==='meter')ligaPonteiras(svg,st.comps,pt,id=>{ultima=id;mede();render()},zm);
       svg.querySelectorAll('[data-c]').forEach(h=>h.addEventListener('click',()=>{
         if(zm.busy())return;const c=st.comps.find(x=>x.id===h.dataset.c);
         if(tool==='test'){measures++;tags[c.id]=!c.broken;msg=null;speak(c.broken?'não passa':'passa');render();return}
@@ -228,7 +255,7 @@ function runSandbox(){
   /* circuitos salvos antes do bocal sem PE: tira fios presos a bornes que não existem mais */
   sb.wires=sb.wires.filter(w=>[w.a,w.b].every(t=>{const [id,k]=t.split('.'),c=sb.comps.find(x=>x.id===id);return c&&+k<terms(c).length}));
   sb.comps.forEach(c=>{if(c.type==='btn')c.pressed=false});
-  let tool='build',cor='fase',sel=null,selC=null,probes=[],reading=null,msg=null,sure=false,box=false,cat='fundamentos',curto=null;
+  let tool='build',cor='fase',sel=null,selC=null,pt=novasPonteiras(),ultima=null,msg=null,sure=false,box=false,cat='fundamentos',curto=null;
   const checa=onde=>{const ev=protegeCurto(sb,onde);if(ev){curto=ev;msg={bad:1,t:msgCurto(ev)}}};
   const zm=benchZoom();let drawn=false;BANCADA_ID++;
   const persist=()=>{S.sandbox=sb;save()};
@@ -236,7 +263,7 @@ function runSandbox(){
   const acionar=(c,lx)=>acionarPeca(c,lx,()=>{persist();render()});
   const getSvg=()=>document.querySelector('#bench svg');
   const sc=()=>sb.comps.find(c=>c.id===selC);
-  const benchHTML=()=>{const r=solve(sb.comps,sb.wires);return benchWrap(board(sb,{res:r,sel,selC,move:tool==='build',pickTerm:true,pickWire:tool==='build',probes:tool==='meter'?probes:null,real:vistaReal(),vb:zm.vb(),curto}),'bench',zm)+statusChips(sb,r)};
+  const benchHTML=()=>{const r=solve(sb.comps,sb.wires);return benchWrap(board(sb,{res:r,sel,selC,move:tool==='build',pickTerm:true,pickWire:tool==='build',ponteiras:tool==='meter'?pt:null,real:vistaReal(),vb:zm.vb(),curto}),'bench',zm)+statusChips(sb,r)};
   const redrawBench=()=>{document.getElementById('bw').innerHTML=benchHTML();bindBench()};
   const add=key=>{
     if(sb.comps.length>=14){msg={bad:1,t:'Bancada cheia: no máximo 13 peças além da fonte.'};render();return}
@@ -265,7 +292,7 @@ function runSandbox(){
         '<span class="eyebrow">Biblioteca de peças</span><div class="seg3">'+Object.entries(BIBLIOTECAS).map(([k,b])=>'<button class="btn" data-cat="'+k+'" aria-pressed="'+(cat===k)+'">'+b.nome+'</button>').join('')+'</div>'+
         '<div class="pecas">'+BIBLIOTECAS[cat].pecas.map(([k,e,n])=>'<button class="btn peca" data-add="'+k+'"><span class="pe">'+e+'</span><span>'+n+'</span></button>').join('')+'</div>'+
         '<button class="btn ghost sm" id="cxf">Fechar a caixa</button></div>':'')+
-      (tool==='meter'?'<div class="meter"><div><small>MULTÍMETRO</small><small>V~ (CA)</small></div><div class="lcd">'+(reading===null?'– – –':reading.toFixed(2).replace('.',',')+' V')+'</div></div><p class="help">'+(probes.length===1?'Agora o 2º ponto (ponta preta).':'Toque em dois parafusos para medir a tensão entre eles.')+'</p>':'')+
+      (tool==='meter'?multimetroHTML(leituraPonteiras(sb.comps,solve(sb.comps,sb.wires),pt),dicaPonteiras(pt)):'')+
       '<div id="bw">'+benchHTML()+'</div>'+
       (c&&tool==='build'?'<div class="row" style="align-items:center"><span class="chip">'+c.id+'</span>'+(vistaReal()?'':'<button class="btn sm" id="rot">↻ Girar</button>')+acoes.map(([k,t])=>'<button class="btn sm" data-ac="'+k+'">'+t+'</button>').join('')+(c.type!=='src'?'<button class="btn sm danger" id="del">🗑 Remover</button>':'')+'</div>':'')+
       (msg?'<div class="fb '+(msg.bad?'bad':'good')+'">'+msg.t+'</div>':drFuga?'<div class="fb info">🛡️ O '+drFuga.id+' desarmou: tem corrente escapando para o terra. Ache a fuga e toque no DR para rearmar.</div>':tool==='build'&&!sb.wires.length?'<p class="help">Abra a caixa para pegar peças. Toque em dois '+(vistaReal()?'parafusos':'pontos ⚪')+' para ligar um fio.</p>':'')+
@@ -273,7 +300,7 @@ function runSandbox(){
     keepScroll(drawn);drawn=true;curto=null;/* a animação do curto roda uma vez só */
     document.getElementById('cx').onclick=()=>{box=!box;render()};
     const cxf=document.getElementById('cxf');if(cxf)cxf.onclick=()=>{box=false;render()};
-    app.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>{tool=b.dataset.tool;probes=[];reading=null;sel=null;if(tool==='meter')selC=null;msg=null;box=false;render()});
+    app.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>{tool=b.dataset.tool;pt=novasPonteiras();sel=null;if(tool==='meter')selC=null;msg=null;box=false;render()});
     app.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>{cat=b.dataset.cat;render()});
     app.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>{box=false;tool='build';add(b.dataset.add)});
     app.querySelectorAll('[data-vista]').forEach(b=>b.onclick=()=>{setVista(b.dataset.vista==='real');render()});
@@ -282,10 +309,10 @@ function runSandbox(){
     app.querySelectorAll('[data-ac]').forEach(b=>b.onclick=()=>{const k=b.dataset.ac;
       /* fonte: troca o número de fases; fios presos em borne de fase que deixou de existir saem */
       if(k[0]==='f'){c.fases=+k.slice(1);sb.wires=sb.wires.filter(w=>[w.a,w.b].every(t=>{const [id,j]=t.split('.'),x=sb.comps.find(y=>y.id===id);return x&&+j<terms(x).length}));
-        probes=[];reading=null;msg={t:'Fonte: '+fonteTxt(c)+'.'};persist();render();return}
+        pt=novasPonteiras();msg={t:'Fonte: '+fonteTxt(c)+'.'};persist();render();return}
       acionar(c,k==='-1'?-1:1);checa(c.id);persist();render()});
     const del=document.getElementById('del');if(del)del.onclick=()=>{sb.comps=sb.comps.filter(x=>x!==c);sb.wires=sb.wires.filter(w=>!w.a.startsWith(c.id+'.')&&!w.b.startsWith(c.id+'.'));selC=null;persist();render()};
-    document.getElementById('clr').onclick=()=>{if(!sure){sure=true;render();return}sure=false;sb={comps:[BAT()],wires:[]};selC=null;sel=null;probes=[];reading=null;msg=null;persist();render()};
+    document.getElementById('clr').onclick=()=>{if(!sure){sure=true;render();return}sure=false;sb={comps:[BAT()],wires:[]};selC=null;sel=null;pt=novasPonteiras();msg=null;persist();render()};
     document.getElementById('insp').onclick=()=>{
       const r=solve(sb.comps,sb.wires);const nl=Object.values(r.lamp).filter(b=>b>0.04).length;
       const desl=sb.comps.find(c=>(c.type==='fuse'||c.type==='src')&&c.trip);
@@ -299,6 +326,7 @@ function runSandbox(){
   const bindBench=()=>{
     const svg=getSvg();
     zm.bind(document.getElementById('bench'),app);
+    if(tool==='meter')ligaPonteiras(svg,sb.comps,pt,id=>{ultima=id;render()},zm);
     svg.querySelectorAll('[data-w]').forEach(h=>h.addEventListener('click',()=>{if(zm.busy())return;sb.wires.splice(+h.dataset.w,1);persist();render()}));
     svg.querySelectorAll('[data-mv]').forEach(h=>h.addEventListener('pointerdown',e=>{
       e.preventDefault();const c=sb.comps.find(x=>x.id===h.dataset.mv),q0=svgPoint(svg,e),ox=c.x,oy=c.y;let moved=false;
@@ -311,7 +339,7 @@ function runSandbox(){
     svg.querySelectorAll('[data-t]').forEach(h=>h.addEventListener('pointerdown',e=>{
       e.preventDefault();const a=h.dataset.t;
       if(zm.busy())return;
-      if(tool==='meter'){if(probes.length>=2)probes=[];probes.push(a);if(probes.length===2){const r=solve(sb.comps,sb.wires);reading=r.vDiff(probes[0],probes[1])}else reading=null;render();return}
+      if(tool==='meter'){ultima=tocaPonteira(sb.comps,pt,a,ultima);render();return}
       const p0=tpos(sb.comps,a);let line=null;
       const move=ev=>{if(zm.busy()){if(line){line.remove();line=null}return}const s2=getSvg(),q=svgPoint(s2,ev);if(!line&&Math.hypot(q.x-p0[0],q.y-p0[1])>12){line=document.createElementNS('http://www.w3.org/2000/svg','line');line.setAttribute('class','w tmp');line.setAttribute('x1',p0[0]);line.setAttribute('y1',p0[1]);s2.appendChild(line)}if(line){line.setAttribute('x2',q.x);line.setAttribute('y2',q.y)}};
       const up=ev=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',up);

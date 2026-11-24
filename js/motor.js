@@ -194,9 +194,9 @@ function board(st,o){
   const r=o.res||solve(st.comps,st.wires);
   const anyLit=Object.values(r.lamp).some(b=>b>0.04);
   let s='<svg viewBox="'+(o.vb||'0 0 340 250')+'" class="'+(o.curto?'curto':r.short?'short':anyLit?'on':'')+(R?' real-v':'')+(o.cls?' '+o.cls:'')+'" role="img" aria-label="Bancada de circuito'+(R?' em vista real':'')+'">';
-  if(R)return s+realBoard(st,o,r)+'</svg>';
+  if(R)return s+realBoard(st,o,r)+ponteirasSVG(st.comps,o.ponteiras)+'</svg>';
   /* a outra vista é o diagrama multifilar (js/multifilar.js); o desenho antigo abaixo fica só de reserva */
-  if(typeof multiBoard==='function')return s+multiBoard(st,o,r)+'</svg>';
+  if(typeof multiBoard==='function')return s+multiBoard(st,o,r)+ponteirasSVG(st.comps,o.ponteiras)+'</svg>';
   if(typeof SW_FLIP!=='undefined')SW_FLIP=null;
   st.wires.forEach((w,i)=>{const d=wirePath(st.comps,w);
     s+='<path class="w '+(w.cor||'cobre')+'" d="'+d+'"/>'+(w.cor==='terra'?'<path class="w2" d="'+d+'"/>':'');if(o.pickWire)s+='<path class="hit" data-w="'+i+'" d="'+d+'"/>'});
@@ -216,6 +216,29 @@ function board(st,o){
     if(o.pickTerm)s+='<circle class="thit" data-t="'+t+'" cx="'+p[0]+'" cy="'+p[1]+'" r="17"/>'}));
   return s+'</svg>';
 }
+/* ---------- Ponteiras do multímetro (vermelha no VΩ, preta no COM) ----------
+   O cabo sai do multímetro (acima da bancada, entra pela borda de baixo) e a ponta metálica fica em (x,y).
+   Ponta encaixada num borne segue o borne quando a vista muda (real ou diagrama). */
+const PARQUE={r:[284,236],k:[314,236]};
+function novasPonteiras(){return {r:{p:PARQUE.r.slice(),t:null},k:{p:PARQUE.k.slice(),t:null}}}
+const caboD=(id,p)=>{const x0=id==='r'?150:186;return 'M'+x0+' 262 C'+x0+' '+(p[1]+40).toFixed(1)+' '+p[0].toFixed(1)+' '+(p[1]+20).toFixed(1)+' '+p[0].toFixed(1)+' '+(p[1]-24).toFixed(1)};
+/* posição da ponta: no borne em que está encaixada (se a peça ou o borne sumiram, a ponta fica solta) */
+function pontaPos(comps,P){if(P.t){const [id,k]=P.t.split('.'),c=comps.find(x=>x.id===id);if(c&&+k<terms(c).length)return tpos(comps,P.t);P.t=null}return P.p}
+/* leitura ao vivo do multímetro: tensão entre as duas pontas, se as duas estiverem em parafusos */
+function leituraPonteiras(comps,res,pt){if(!pt)return null;pontaPos(comps,pt.r);pontaPos(comps,pt.k);return pt.r.t&&pt.k.t?res.vDiff(pt.r.t,pt.k.t):null}
+function ponteirasSVG(comps,pt){if(!pt)return '';let s='';
+  [['r','#d33a2c','#8f2219'],['k','#2a2f36','#0d0f12']].forEach(([id,c,e])=>{const p=pontaPos(comps,pt[id]);
+    s+='<path class="cabo-ponta" data-cabo="'+id+'" d="'+caboD(id,p)+'" style="stroke:'+c+'"/>'+
+      '<g class="ponta'+(pt[id].t?' no-borne':'')+'" data-ponta="'+id+'" transform="translate('+p[0].toFixed(1)+' '+p[1].toFixed(1)+')">'+
+      '<rect class="ponta-hit" x="-13" y="-36" width="26" height="40"/>'+
+      (pt[id].t?'<circle r="5.5" class="ponta-ok"/>':'')+
+      '<path d="M0 0 L-1.7 -2.2 V-9 H1.7 V-2.2 Z" style="fill:#e3e7eb;stroke:#6b737c;stroke-width:.5"/>'+
+      '<rect x="-4.6" y="-11.4" width="9.2" height="2.6" rx="1" style="fill:'+c+';stroke:'+e+';stroke-width:.5"/>'+
+      '<rect x="-3.3" y="-26" width="6.6" height="15" rx="2.6" style="fill:'+c+';stroke:'+e+';stroke-width:.6"/>'+
+      '<path d="M-1.6 -23 V-14" style="stroke:#fff;stroke-width:.8;opacity:.35"/></g>'});
+  return s}
+/* borne mais perto de um ponto (para a ponta encaixar), dentro do raio */
+function bornePerto(comps,p,raio){let best=null,bd=raio||16;comps.forEach(c=>terms(c).forEach((q,k)=>{const d=Math.hypot(q[0]-p[0],q[1]-p[1]);if(d<bd){bd=d;best=c.id+'.'+k}}));return best}
 /* Faísca do curto: clarão, raios, fagulhas, fumaça subindo e uma marca escura de queimado (animação única). */
 function faiscaSVG(x,y){let s='<g class="faisca" transform="translate('+x.toFixed(1)+' '+y.toFixed(1)+')" aria-hidden="true"><ellipse class="fz-marca" rx="7" ry="4"/><circle class="fz-flash" r="22"/>';
   for(let i=0;i<10;i++){const a=(i*36+(i%2?14:0))*Math.PI/180,L=i%2?15:24;s+='<line class="fz-raio" x1="0" y1="0" x2="'+(Math.cos(a)*L).toFixed(1)+'" y2="'+(Math.sin(a)*L).toFixed(1)+'" style="animation-delay:'+(i*14)+'ms"/>'}

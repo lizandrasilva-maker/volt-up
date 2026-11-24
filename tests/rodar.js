@@ -106,6 +106,10 @@ let pistas={};
      confere('Curto-circuito',c.dgDesliga===true,'Quadro Novo: tocar na alavanca do DG desliga o disjuntor geral');
      confere('Telas de bancada (desenho e aviso)',c.zoom===true,'zoom: "−" apagado com a bancada inteira; "+" amplia e "−" volta ao tamanho normal');
      confere('Curto-circuito',c.verificaDesarmado===true,'"Verificar" com a proteção desarmada pede para corrigir e religar');}
+    {const m=t.multimetro||{};
+     confere('Multímetro',m.temAparelho===true&&m.semLetras===true,'Caça-Defeito mostra o multímetro com as duas pontas e nenhuma letra nos parafusos');
+     confere('Multímetro',m.antes==='– – –'&&m.umaPonta==='– – –','sem as duas pontas nos parafusos, o visor não mede',m.antes+' / '+m.umaPonta);
+     confere('Multímetro',/^\d/.test(m.duas||'')&&m.encaixadas===2,'arrastando a vermelha e tocando no parafuso para a preta, as duas encaixam e o visor mede',m.duas+' ('+m.encaixadas+' encaixadas)');}
     {const M=Object.entries(t.montar||{});
      confere('Modo teste',M.length>=27&&M.every(([,v])=>v==='aprovou'),'"Montar pra mim" monta e já aprova em todas as fases de montar (3 níveis)',M.filter(([,v])=>v!=='aprovou').map(([k,v])=>k+': '+v).join('; ')||M.length+' fases');}
     confere('Menu do usuário',JSON.stringify(t.ceu)==='["cap2","cap1","cap3"]','céu acompanha o capítulo (mapa e fase)',JSON.stringify(t.ceu));
