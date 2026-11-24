@@ -258,6 +258,34 @@ const coresDoFioCSS=k=>(CORES[k].c.match(/var\(--[\w-]+\)|#[0-9a-f]{3,8}\b/gi)).
    VISTA3D.ligada=true;runBuild(phaseById('escada'),comARede(phaseById('escada').dados.leve));c3.escada.plaquetas=J(D.plaquetas('SP1').map(p=>p.t))==='["C","1","2"]';
    c3.corredor=roda('corredor',['SP1','SI','SP2','SI']);
    VISTA3D.ligada=true;runBuild(phaseById('corredor'),comARede(phaseById('corredor').dados.leve));c3.corredor.plaquetas=J(D.plaquetas('SI').map(p=>p.t))==='["1","2","3","4"]';S.mode='moderado';}
+  /* ---- Lote D: fotocélula (Garagem) e relé de impulso (Hall), pelo gabarito, na 3D e no SVG ---- */
+  {const d4=R.loteD={},espera=ms=>new Promise(r=>setTimeout(r,ms));
+   const tap=t=>{svg().querySelector('[data-t="'+t+'"]').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));window.dispatchEvent(new PointerEvent('pointerup'))};
+   const aciona=id=>svg().querySelector('[data-sw="'+id+'"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));
+   const peca=id=>BANCADA.st.comps.find(c=>c.id===id);
+   const sig=st=>J({fios:st.wires.map(w=>w.a+'-'+w.b+':'+w.cor),est:st.comps.filter(c=>c.type==='foto'||c.type==='ri').map(c=>c.type==='foto'?!!c.noite:!!c.on)});
+   const monta=(fid,md,t)=>{let ca='';testeSol(fid).forEach(w=>{if(w.cor!==ca){cor(w.cor);ca=w.cor}t(w.a);t(w.b)})};
+   const niveis=fid=>['leve','moderado','full'].map(md=>{S.mode=md;S.seen[md+':'+fid+':cena']=1;VISTA3D.ligada=true;runBuild(phaseById(fid),comARede(phaseById(fid).dados[md]));return !!document.querySelector('.bench3d canvas')}).every(Boolean);
+   /* Garagem: de dia apagada; tocar na fotocélula faz a noite (lua, estrelas) e a luz acende; tocar de novo, dia */
+   {const g=d4.garagem={},p=phaseById('garagem');S.mode='leve';S.seen['leve:garagem:cena']=1;VISTA3D.ligada=true;runBuild(p,comARede(p.dados.leve));
+    g.em3d=!!document.querySelector('.bench3d canvas');g.term3d=BANCADA.st.comps.every(c=>D.bornesTERM3D(c)===terms(c).length);g.plaquetas=J(D.plaquetas('FC').map(x=>x.t))==='["L","N","C"]';
+    monta('garagem','leve',toque);const n0=D.noite('FC');g.dia=n0.sol&&!n0.lua&&!n0.ceu&&n0.texto==='DIA'&&D.brilho('L1')<0.05;
+    toque('FC');const n1=D.noite('FC');g.noite=peca('FC').noite===true&&n1.lua&&!n1.sol&&n1.ceu&&n1.texto==='NOITE'&&D.brilho('L1')>0.5;
+    toque('FC');g.voltaDia=peca('FC').noite===false&&D.noite('FC').sol&&D.brilho('L1')<0.05;
+    g.aprovou3d=/aprovado/i.test(verificar());const s3=sig(BANCADA.st);
+    VISTA3D.ligada=false;runBuild(p,comARede(p.dados.leve));monta('garagem','leve',tap);aciona('FC');aciona('FC');
+    g.aprovouSvg=/aprovado/i.test(verificar());g.equivalente=s3===sig(BANCADA.st);g.s3=s3;g.ss=sig(BANCADA.st);g.niveis=niveis('garagem');}
+   /* Hall: cada pulso em P1 ou P2 inverte o relé (alavanca e visor) e a luz; a luz fica no estado depois de soltar */
+   {const h=d4.hall={},p=phaseById('impulso');S.mode='moderado';S.seen['moderado:impulso:cena']=1;VISTA3D.ligada=true;runBuild(p,comARede(p.dados.moderado));
+    h.em3d=!!document.querySelector('.bench3d canvas');h.term3d=BANCADA.st.comps.every(c=>D.bornesTERM3D(c)===terms(c).length);h.plaquetas=J(D.plaquetas('RI').map(x=>x.t))==='["A1","A2","1","2"]';
+    monta('impulso','moderado',toque);h.apagada=D.brilho('L1')<0.05&&D.releImpulso('RI').visor==='aberto';
+    toque('P1');const r1=D.releImpulso('RI');h.pulso1=peca('RI').on===true&&D.brilho('L1')>0.5&&r1.visor==='fechado'&&r1.alavanca<0;
+    await espera(800);h.segura=peca('P1').pressed===false&&D.brilho('L1')>0.5;
+    toque('P2');const r2=D.releImpulso('RI');h.pulso2=peca('RI').on===false&&D.brilho('L1')<0.05&&r2.visor==='aberto'&&r2.alavanca>0;await espera(800);
+    h.aprovou3d=/aprovado/i.test(verificar());const s3=sig(BANCADA.st);
+    VISTA3D.ligada=false;runBuild(p,comARede(p.dados.moderado));monta('impulso','moderado',tap);aciona('P1');await espera(800);aciona('P2');await espera(800);
+    h.aprovouSvg=/aprovado/i.test(verificar());h.equivalente=s3===sig(BANCADA.st);h.s3=s3;h.ss=sig(BANCADA.st);h.niveis=niveis('impulso');}
+   S.mode='moderado';VISTA3D.ligada=true;}
   /* sair da bancada libera o WebGL */
   showMap();await new Promise(r=>setTimeout(r,0));R.liberou=VISTA3D.no===null;
 }catch(e){R.ERRO=e.message+' '+(e.stack||'')}

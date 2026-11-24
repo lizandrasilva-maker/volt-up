@@ -224,6 +224,13 @@ let pistas={};
         confere(C,o.em3d===true&&o.term3d===true&&o.plaquetas===true&&o.niveis===true,nome+' abre em 3D nos 3 níveis, com os bornes e nomes do motor.js e do 2D');
         confere(C,o.inverte===true,nome+': cada toque em qualquer interruptor inverte a lâmpada (comando de vários pontos)');
         confere(C,o.aprovou3d===true&&o.aprovouSvg===true&&o.equivalente===true,nome+': mesmos gestos na 3D e no SVG, mesmo estado e aprovação');}}
+     {const d=b.loteD||{},g=d.garagem||{},h=d.hall||{};
+      confere(C,g.em3d===true&&g.term3d===true&&g.plaquetas===true&&g.niveis===true,'Garagem abre em 3D nos 3 níveis: fotocélula com os bornes L, N e C do motor.js e do 2D');
+      confere(C,g.dia===true&&g.noite===true&&g.voltaDia===true,'fotocélula: de dia (sol) a luz fica apagada; tocar faz a noite (lua e estrelas) e a luz acende; tocar de novo volta o dia');
+      confere(C,g.aprovou3d===true&&g.aprovouSvg===true&&g.equivalente===true,'Garagem: mesmos gestos na 3D e no SVG, mesmo estado e aprovação',g.s3+' / '+g.ss);
+      confere(C,h.em3d===true&&h.term3d===true&&h.plaquetas===true&&h.niveis===true,'Hall abre em 3D nos 3 níveis: relé de impulso com A1, A2, 1 e 2 do motor.js e do 2D');
+      confere(C,h.apagada===true&&h.pulso1===true&&h.segura===true&&h.pulso2===true,'relé de impulso: pulso no P1 acende (alavanca sobe, visor laranja) e a luz continua acesa ao soltar; pulso no P2 apaga');
+      confere(C,h.aprovou3d===true&&h.aprovouSvg===true&&h.equivalente===true,'Hall: mesmos gestos na 3D e no SVG, mesmo estado e aprovação',h.s3+' / '+h.ss);}
      confere(C,b.liberou===true,'ao sair da bancada, o WebGL é liberado');}
     /* Fonte e aterramento: a fonte não tem PE; o terra vem da haste pelo BEP */
     const fa=t.fonte||{};
