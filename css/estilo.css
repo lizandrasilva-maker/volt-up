@@ -653,7 +653,7 @@ svg.curto{animation:shake .32s 2}
    a próxima fase brilha em âmbar e o nome dela fica âmbar; as travadas continuam apagadas */
 /* paleta única: toda fase aberta é amarela com ícone escuro (as estrelas mostram o que já foi feito) */
 .node:not(.lock) .dot{background:var(--faixa);border-color:var(--amber)}
-.node:not(.lock) .dot svg{filter:grayscale(1) contrast(1.6) brightness(.42)}
+.node:not(.lock) .dot svg{filter:grayscale(1) contrast(3) brightness(.26)}
 .node.next .dot{border-color:var(--amber);animation:chama 1.6s ease-in-out infinite}
 .node.next .tt b{color:var(--amber)}
 @keyframes chama{0%,100%{box-shadow:0 0 0 3px var(--contorno),0 5px 0 3px var(--contorno),0 0 0 3px color-mix(in srgb,var(--amber) 0%,transparent)}
