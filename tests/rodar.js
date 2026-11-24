@@ -206,6 +206,10 @@ let pistas={};
       confere(C,m.em3d===true&&m.term3d===true&&m.plaquetas===true&&m.niveis===true,'Partida Direta (Cap. 3) abre em 3D nos 3 níveis: motor (1 2 ⏚), BEP e haste com os bornes do motor.js');
       confere(C,m.fios===true&&m.gira===true&&m.selo===true&&m.para===true,'gabarito montado na 3D: LIGA faz o eixo girar, o selo mantém, DESLIGA para');
       confere(C,m.aprovou3d===true&&m.giraAprovado===true&&m.aprovouSvg===true&&m.equivalente===true,'Partida Direta: mesmos gestos na 3D e no SVG, mesmo estado e aprovação (motor girando no fim)',m.s3+' / '+m.ss);}
+     {const x=b.caixa||{};
+      confere(C,x.em3d===true&&x.term3d===true&&x.plaquetas===true&&x.niveis===true,"Caixa d'Água (Cap. 3) abre em 3D nos 3 níveis: boia de nível com os bornes 1 e 2 do motor.js e do 2D");
+      confere(C,x.vaziaLiga===true&&x.encheu===true&&x.esvaziou===true,'boia: caixa vazia liga a bomba; tocar enche (água sobe, pera flutua, bomba para); tocar de novo esvazia e a bomba volta');
+      confere(C,x.aprovou3d===true&&x.aprovouSvg===true&&x.equivalente===true,"Caixa d'Água: mesmos gestos na 3D e no SVG, mesmo estado e aprovação",x.s3+' / '+x.ss);}
      confere(C,b.liberou===true,'ao sair da bancada, o WebGL é liberado');}
     /* Fonte e aterramento: a fonte não tem PE; o terra vem da haste pelo BEP */
     const fa=t.fonte||{};
