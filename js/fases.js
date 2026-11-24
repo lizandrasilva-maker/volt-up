@@ -70,8 +70,10 @@ window.addEventListener('scroll',()=>{benchY=window.scrollY},{passive:true});
    depois() redesenha quando a botoeira solta; BANCADA_ID evita redesenhar uma tela que já foi trocada. */
 let BANCADA_ID=0;
 function acionarPeca(c,lx,depois){
-  /* disjuntor ou fonte desarmados por curto: o toque religa (se o curto continuar, desarma de novo) */
-  if((c.type==='fuse'||c.type==='src')&&c.trip){c.trip=false;return}
+  /* disjuntor: o toque liga e desliga (depois de um curto, religa; se o curto continuar, desarma de novo).
+     Fonte: só religa a proteção depois de um curto. */
+  if(c.type==='fuse'){c.trip=!c.trip;SW_FLIP=c.id;return}
+  if(c.type==='src'&&c.trip){c.trip=false;return}
   if(c.type==='sw')flipSwitch(c);
   else if(c.type==='sw2'){const k=lx<0?'a':'b';c[k]=!c[k];SW_FLIP=c.id+'.'+k}
   else if(c.type==='sw3'||c.type==='sw4'){c.pos=c.pos?0:1;SW_FLIP=c.id}
@@ -250,7 +252,7 @@ function runSandbox(){
     const c=sc();
     /* botões de ação da peça selecionada */
     const acoes=c?({sw:[['x',c.closed?'Abrir':'Fechar']],sw2:[['-1','Seção 1'],['1','Seção 2']],sw3:[['x','Inverter']],sw4:[['x','Inverter']],foto:[['x',c.noite?'Virar dia':'Virar noite']],boia:[['x',c.vazia?'Encher a caixa':'Esvaziar a caixa']],dr:[['x',c.trip?'Rearmar':'Testar']],
-      ft:[['x',c.trip?'Rearmar':'Simular sobrecarga']],btn:[['x','Apertar']],
+      ft:[['x',c.trip?'Rearmar':'Simular sobrecarga']],btn:[['x','Apertar']],fuse:[['x',c.trip?'Ligar':'Desligar']],
       src:[1,2,3].map(n=>['f'+n,(nFases(c)===n?'✓ ':'')+n+(n===1?' fase':' fases')+' + N'])}[c.type]||[]):[];
     const drFuga=sb.comps.find(x=>x.type==='dr'&&x.trip&&x.porFuga);
     frame({nome:'Oficina Livre'},

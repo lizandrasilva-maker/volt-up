@@ -131,6 +131,12 @@ try{
     const tap=t=>{document.querySelector('[data-t="'+t+'"]').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));window.dispatchEvent(new PointerEvent('pointerup'))};
     tap('B.0');tap('B.1');cu.tela=!!document.querySelector('.bench .faisca')&&/Curto-circuito/.test((document.querySelector('.fb')||{}).textContent||'');
     document.getElementById('chk').click();cu.verificaDesarmado=/desarmad|desligad/.test((document.querySelector('.fb')||{}).textContent||'');
+    /* disjuntor liga e desliga com um toque: L1 apaga com ele desligado e acende de novo */
+    S.mode='moderado';const dj={comps:clone(phaseById('primeiro').dados.moderado.comps),wires:testeSol('primeiro')};
+    const F=dj.comps.find(c=>c.type==='fuse'),S1=dj.comps.find(c=>c.id==='S1');S1.closed=true;
+    const acesa1=lit(solve(dj.comps,dj.wires),'L1');acionarPeca(F,0);const apagada=!lit(solve(dj.comps,dj.wires),'L1')&&F.trip===true;
+    acionarPeca(F,0);cu.djLigaDesliga=acesa1&&apagada&&lit(solve(dj.comps,dj.wires),'L1');
+    runBuild(phaseById('primeiro'),phaseById('primeiro').dados.moderado);cu.djTocavel=!!document.querySelector('.bench [data-sw="F"]');
     R.curto=cu;}
   // 9) modo teste: "Montar pra mim" já aprova (vai direto para o Concluir), em toda fase de montar e nível
   {VOLT_TESTE_OK=true;entrarTeste(()=>{});const mt={};

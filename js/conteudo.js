@@ -26,7 +26,7 @@ function msgCurto(ev){
 }
 const desarmadoMsg=c=>{const nm=c.lab||c.id,dj=/^DJ|^DG/.test(nm)?nm:'disjuntor '+nm;
   return c.type==='src'?(L()?'A fonte está desligada pela proteção. Corrija o curto e toque na fonte para religar.':'A proteção da fonte está desarmada. Elimine o curto e toque na fonte para religar antes de verificar.')
-  :(L()?'O '+dj+' está desligado. Corrija o curto e toque nele para religar.':'O '+dj+' está desarmado. Elimine o curto e toque nele para rearmar antes de verificar.')};
+  :(L()?'O '+dj+' está desligado. Toque nele para ligar antes de verificar. Se ele caiu por curto, corrija a ligação primeiro.':'O '+dj+' está desligado. Ligue-o com um toque antes de verificar; se desarmou por curto, elimine o curto primeiro.')};
 const breakL=id=>st=>{const c=st.comps.find(x=>x.id===id);c.broken=true;c.show=true};
 const closeS=id=>st=>{st.comps.find(x=>x.id===id).closed=true};
 
