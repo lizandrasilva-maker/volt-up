@@ -113,6 +113,12 @@ try{
   // 8) céu por capítulo: o mapa e a fase usam o céu do capítulo certo
   R.ceu=[];S.chap='cap2';showMap();R.ceu.push(document.body.dataset.cap);S.chap='cap1';showMap();R.ceu.push(document.body.dataset.cap);
   S.seen['leve:partida:cena']=1;playPhase(PHASES.findIndex(p=>p.id==='partida'));R.ceu.push(document.body.dataset.cap);
+  // 9) modo teste: "Montar pra mim" já aprova (vai direto para o Concluir), em toda fase de montar e nível
+  {VOLT_TESTE_OK=true;entrarTeste(()=>{});const mt={};
+    for(const md of ['leve','moderado','full'])for(const p of PHASES.filter(p=>p.tipo==='build')){S.mode=md;
+      runBuild(p,p.dados[md]);const ts=document.getElementById('tSol');if(!ts){mt[md+':'+p.id]='sem botão';continue}
+      ts.click();mt[md+':'+p.id]=document.getElementById('end')?'aprovou':(document.querySelector('.fb')||{}).textContent||'não aprovou'}
+    R.montar=mt;VOLT_TESTE=false;S=lerPerfil(STORE);ensure();}
 }catch(e){R.ERRO=e.message+' '+e.stack}
 document.getElementById('out').textContent=JSON.stringify(R,null,1);
 </script></body></html>
