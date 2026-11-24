@@ -353,15 +353,16 @@ const PHASES=[
          {q:'Motor de In = 10 A, partida direta com Ip = 7 × In. Por que o disjuntor-motor não desarma nos 70 A da partida?',o:['A partida é curta e fica abaixo das curvas de disparo','O disjuntor-motor reconhece que é motor e ignora o pico','70 A ainda não é curto-circuito, e o disjuntor espera o curto'],w:'O pico de partida dura poucos segundos: fica abaixo da curva térmica, e o disparo magnético do disjuntor-motor é ajustado acima da corrente de partida (o valor exato está no catálogo do fabricante). Se o motor travar, a corrente alta continua e o térmico atua.'}]
   }},
  {id:'partida',nome:'Partida Direta',sub:'Esteira da castanha',kind:'bancada',tipo:'build',ic:'motor',cor:'#4f6f94',
-  card:{leve:'Verde liga, vermelho desliga, e o selo segura.',moderado:'LIGA em paralelo com o selo; DESLIGA (NF) antes dos dois.',full:'Partida direta: 95-96 em série com a bobina; motor pelo 1-2 da contatora e do relé.'},
+  card:{leve:'Verde liga, vermelho desliga, e o selo segura.',moderado:'LIGA em paralelo com o selo; DESLIGA (NF) antes dos dois.',full:'Partida direta: motor pela contatora e depois pelo relé térmico; 95-96 logo antes da bobina.'},
   dados:{
-   leve:{comps:[BAT(),C('BD','btn',130,60,0,{nf:true}),C('BL','btn',210,60,0,{nf:false}),C('K','kc',160,170,0),C('M','motor',272,170,0),...ATERRA()],
+   /* painel como o de verdade: contatora em cima, relé térmico acoplado logo embaixo dela; botoeiras em cima, à direita */
+   leve:{comps:[BAT(),C('BD','btn',230,55,0,{nf:true}),C('BL','btn',295,55,0,{nf:false}),C('K','kc',150,110,0),C('M','motor',285,190,0),...ATERRA()],
      real:[['BL','🟢','botão liga'],['BD','🔴','botão desliga'],['K','🧲','contatora'],['M','⚙️','motor da esteira']],
      goal:'O motor liga no verde, continua ligado ao soltar e para no vermelho. Não esqueça o terra do motor: haste no BEP, BEP no motor!',check:st=>partidaCheck(st,false)},
-   moderado:{comps:[BAT(),C('FT','ft',115,60,0),C('BD','btn',190,60,0,{nf:true}),C('BL','btn',265,60,0,{nf:false}),C('K','kc',160,170,0),C('M','motor',272,170,0),...ATERRA()],
+   moderado:{comps:[BAT(),C('K','kc',150,85,0),C('FT','ft',150,190,0),C('BD','btn',230,55,0,{nf:true}),C('BL','btn',295,55,0,{nf:false}),C('M','motor',285,190,0),...ATERRA()],
      real:[['BL','🟢','botoeira liga'],['BD','🔴','botoeira desliga'],['K','🧲','contatora'],['FT','🌡️','relé térmico'],['M','⚙️','motor da esteira']],
      goal:'Partida direta com selo e relé térmico: o 95-96 corta a bobina na sobrecarga.',check:st=>partidaCheck(st,true)},
-   full:{comps:[BAT(),C('DJ','fuse',100,60,0),C('FT','ft',168,60,0),C('BD','btn',235,60,0,{nf:true}),C('BL','btn',300,60,0,{nf:false}),C('K','kc',160,170,0),C('M','motor',272,170,0),...ATERRA()],
+   full:{comps:[BAT(),C('DJ','fuse',95,55,0),C('K','kc',155,85,0),C('FT','ft',155,190,0),C('BD','btn',235,55,0,{nf:true}),C('BL','btn',300,55,0,{nf:false}),C('M','motor',288,190,0),...ATERRA()],
      real:[['DJ','🎚','disjuntor do circuito'],['BL','🟢','botoeira liga'],['BD','🔴','botoeira desliga'],['K','🧲','contatora'],['FT','🌡️','relé térmico'],['M','⚙️','motor da esteira']],
      goal:'Partida direta completa: DJ, comando com selo, 95-96 em série com a bobina e motor pelo 1-2 da contatora e do relé, com PE.',check:st=>partidaCheck(st,true)}
   }},
