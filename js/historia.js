@@ -129,8 +129,11 @@ function showScene(lines,done){
         '<span class="vn-chap">'+(i+1)+' / '+lines.length+'</span>'+
         '<span class="vn-name">'+esc(sp.nome)+'</span>'+
         '<button class="vn-box" id="say" aria-live="polite"><span id="tx"></span><span class="vn-caret">▼</span></button>'+
-        '<div class="vn-ctrl"><button class="btn sm ghost" id="skip">Pular</button>'+(L()?'<button class="btn sm ghost" id="sp" aria-label="Ouvir">🔊</button>':'')+'<button class="btn sm main" id="go">'+(i<lines.length-1?'▶':'Bora! ⚡')+'</button></div>'+
-      '</div></section>';
+      '</div>'+
+      /* controles numa barra própria, embaixo da cena inteira: no celular o personagem é mais largo que a coluna dele
+         e cobria o "Pular" quando ele ficava junto do texto */
+      '<div class="vn-ctrl"><button class="btn sm ghost" id="skip">Pular</button>'+(L()?'<button class="btn sm ghost" id="sp" aria-label="Ouvir">🔊</button>':'')+'<button class="btn sm main" id="go">'+(i<lines.length-1?'▶':'Bora! ⚡')+'</button></div>'+
+      '</section>';
     bindHud();
     const tx=document.getElementById('tx'),plain=txt.replace(/<[^>]+>/g,'');
     const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
