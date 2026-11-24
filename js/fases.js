@@ -22,21 +22,28 @@ function runQuiz(p,list){
 }
 
 /* ---------- Classificar ---------- */
+/* Rótulos padrão (Guardião Verde); outras fases trazem os seus em p.bins, p.certo, p.dica e p.pergunta.
+   Com p.fig, cada item mostra uma ilustração que reage à resposta (ex.: o LED do testador). */
 function runSort(p,list){
   list=shuffle(list);let i=0,ok=0;const res=[];
+  const bins=p.bins||[{r:1,t:'♻️ Renovável'},{r:0,t:'⛔ Não renovável'}];
+  const certo=p.certo||['Não é renovável.','É renovável.'];
+  const dica=p.dica||'Quase! Pensa: ela pode acabar um dia?';
+  const perg=p.pergunta?(L()?p.pergunta.leve:p.pergunta.outro):(L()?'Essa energia acaba ou a natureza repõe?':'Classifique a fonte.');
+  const ilustra=(it,estado)=>p.fig&&FIG[p.fig]?'<figure class="lousa sort-fig" aria-hidden="true"><svg viewBox="0 0 320 180">'+FIG[p.fig]({e:it.i,n:it.t,estado})+'</svg></figure>':'';
   const render=()=>{
     const it=list[i];let tries=0;
-    frame(p,progBar(list.length,i,res)+'<div class="item" id="it"><span class="em">'+it.i+'</span><b>'+it.t+'</b></div>'+
-      '<div class="bins"><button class="btn bin r" data-r="1">♻️ Renovável</button><button class="btn bin n" data-r="0">⛔ Não renovável</button></div><div id="fb" class="opts"></div>',
-      L()?'Essa energia acaba ou a natureza repõe?':'Classifique a fonte.');
+    frame(p,progBar(list.length,i,res)+'<div id="ilu">'+ilustra(it,null)+'</div><div class="item" id="it"><span class="em">'+it.i+'</span><b>'+it.t+'</b></div>'+
+      '<div class="bins">'+bins.map(b=>'<button class="btn bin '+(b.r?'r':'n')+'" data-r="'+b.r+'">'+b.t+'</button>').join('')+'</div><div id="fb" class="opts"></div>',perg);
     app.querySelectorAll('.bin').forEach(b=>b.onclick=()=>{
       tries++;const right=+b.dataset.r===it.r;const fb=document.getElementById('fb');
       if(right||!L()){
         res[i]=right&&tries===1;if(res[i]){ok++;S.xp+=10;save()}
+        if(p.fig)document.getElementById('ilu').innerHTML=ilustra(it,it.r?'conduz':'isola');
         app.querySelectorAll('.bin').forEach(x=>x.disabled=true);if(!right)document.getElementById('it').classList.add('shake');
-        fb.innerHTML='<div class="fb '+(right?'good':'bad')+'">'+(right?pick(PRAISE[S.mode]):(it.r?'É renovável.':'Não é renovável.'))+' '+it.w+'</div>'+nextBtn(i===list.length-1);
+        fb.innerHTML='<div class="fb '+(right?'good':'bad')+'">'+(right?pick(PRAISE[S.mode]):certo[it.r])+' '+it.w+'</div>'+nextBtn(i===list.length-1);
         document.getElementById('nx').onclick=()=>{i++;i<list.length?render():finish(p,ok,list.length)};
-      }else{document.getElementById('it').classList.add('shake');b.disabled=true;fb.innerHTML='<div class="fb bad">Quase! Pensa: ela pode acabar um dia?</div>'}
+      }else{document.getElementById('it').classList.add('shake');b.disabled=true;fb.innerHTML='<div class="fb bad">'+dica+'</div>'}
     });
   };
   render();
@@ -213,7 +220,7 @@ function diagCircuit(V){return withPE({comps:[BAT(),C('F','fuse',125,48,0,{lab:'
 function runDiag(p,d){
   const ROUNDS=2;let round=0,score=0;const zm=benchZoom();
   const startRound=()=>{let drawn=false;
-    const st=diagCircuit(d.V);const fault=pick(d.cand);
+    const st=diagCircuit(d.V||rede().V);const fault=pick(d.cand);
     if(fault[0]==='w')st.wires[+fault.slice(1)].broken=true;else st.comps.find(c=>c.id===fault).broken=true;
     /* multímetro com as duas ponteiras: a medição conta quando as duas pontas estão em parafusos */
     let tool=L()?'test':'meter',pt=novasPonteiras(),ultima=null,tags={},measures=0,wrong=0,fixed=false,msg=null,hint=false;

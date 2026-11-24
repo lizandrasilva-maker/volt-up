@@ -32,7 +32,7 @@ function multiSym(c,b,o){
   switch(c.type){
     case 'src':{const nf=nFases(c);
       s='<rect x="-18" y="-20" width="36" height="40" rx="5" class="mbody"/><path d="M-9 -7 q4.5 -8 9 0 t9 0" class="ms" style="stroke:var(--amber)"/>'+
-        '<text y="6" text-anchor="middle" class="mtx">'+(nf===1?'1F+N':nf+'F+N')+'</text><text y="15" text-anchor="middle" class="mtx"'+(c.trip?' style="fill:var(--fase)"':'')+'>'+(c.trip?'PROT':(c.V||220)+' V~')+'</text>'+
+        '<text y="6" text-anchor="middle" class="mtx">'+(nf===1?'1F+N':nf+'F+N')+'</text><text y="15" text-anchor="middle" class="mtx"'+(c.trip?' style="fill:var(--fase)"':'')+'>'+(c.trip?'PROT':rede().V+' V~')+'</text>'+
         ln(0,-30,0,-20)+ln(0,20,0,30)+(nf>=2?ln(18,-10,28,-10):'')+(nf>=3?ln(18,10,28,10):'');break}
     /* pilha: traço longo = polo positivo, traço curto e grosso = polo negativo */
     case 'pilha':s=ln(-26,0,-4,0)+ln(4,0,26,0)+'<path d="M-4 -12 V12" class="ms"/><path d="M4 -6 V6" class="ms" style="stroke-width:4"/>'+

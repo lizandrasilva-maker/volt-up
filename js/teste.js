@@ -96,10 +96,10 @@ TESTE_SOL['quadronovo:full']=TESTE_SOL['quadronovo:moderado'];TESTE_SOL['impulso
 function testeSol(pid){const s=TESTE_SOL[pid+':'+S.mode];return s?s.map(([a,b,cor])=>Object.assign(W(a,b),{cor})):null}
 
 /* ---------- Roteiro: a história inteira em texto, com atalho para ver cada cena ou jogar a fase ---------- */
-const TIPO_NOME={quiz:'Quiz',sort:'Classificar',build:'Bancada: montar',predict:'Bancada: prever',diag:'Bancada: diagnóstico'};
+const TIPO_NOME={aula:'Aula',quiz:'Quiz',sort:'Classificar',build:'Bancada: montar',predict:'Bancada: prever',diag:'Bancada: diagnóstico'};
 function falasHTML(lines){
   const nm=esc(S.name||charOf().nome);
-  return '<div class="falas">'+lines.map(([who,t])=>'<p><b>'+(who==='eu'?nm:NPC[who].nome)+':</b> '+esc(t).replace(/\{nome\}/g,nm)+'</p>').join('')+'</div>';
+  return '<div class="falas">'+lines.map(([who,t])=>'<p><b>'+(who==='eu'?nm:NPC[who].nome)+':</b> '+esc(rd(t)).replace(/\{nome\}/g,nm)+'</p>').join('')+'</div>';
 }
 function showRoteiro(){
   setMode();
@@ -112,7 +112,7 @@ function showRoteiro(){
     ch.fases.forEach((id,i)=>{const p=phaseById(id),sc=cenaDe(id);
       body+='<div class="rot-item"><div class="rot-h"><b>'+(i+1)+'. '+p.nome+'</b><span class="chip">'+TIPO_NOME[p.tipo]+'</span></div>'+
         '<p class="help">'+p.sub+'</p>'+(sc?falasHTML(sc):'<p class="help">Sem cena antes da fase.</p>')+
-        '<p class="rot-card">🃏 '+p.card[S.mode]+'</p>'+
+        (p.tipo==='aula'?'<p class="help">Aula:</p>'+falasHTML(p.dados[S.mode].quadros.map(q=>[q.who||'chico',q.t])):'')+'<p class="rot-card">🃏 '+rd(p.card[S.mode])+'</p>'+
         '<div class="row">'+(sc?'<button class="btn sm" data-cena="fase:'+id+'">▶ Ver cena</button>':'')+'<button class="btn sm main" data-jogar="'+PHASES.indexOf(p)+'">🎮 Jogar</button></div></div>'});
     if(ch.fim)body+='<div class="rot-item"><div class="rot-h"><b>Fim do capítulo</b><button class="btn sm" data-cena="fim:'+ch.id+'">▶ Ver cena</button></div>'+falasHTML(ch.fim)+'</div>';
     body+='</section>';

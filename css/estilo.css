@@ -659,3 +659,79 @@ svg.curto{animation:shake .32s 2}
 @keyframes chama{0%,100%{box-shadow:0 0 0 3px var(--contorno),0 5px 0 3px var(--contorno),0 0 0 3px color-mix(in srgb,var(--amber) 0%,transparent)}
   50%{box-shadow:0 0 0 3px var(--contorno),0 5px 0 3px var(--contorno),0 0 22px 7px color-mix(in srgb,var(--amber) 60%,transparent)}}
 .node.lock .dot{background:var(--panel)}
+/* ================= AULA (teoria) e ilustrações animadas ================= */
+.aula{display:flex;flex-direction:column;gap:12px}
+.aula-pontos{display:flex;gap:6px;justify-content:center}
+.aula-pontos i{width:22px;height:7px;border-radius:99px;background:color-mix(in srgb,var(--ink) 18%,transparent);border:1.5px solid var(--contorno)}
+.aula-pontos i.ok{background:var(--ok)}.aula-pontos i.cur{background:var(--amber);width:34px}
+.lousa{margin:0;border-radius:16px;border:3px solid var(--contorno);box-shadow:var(--sombra);overflow:hidden;
+  background:radial-gradient(120% 90% at 50% 0%,#1f3a52,#13283c 70%);animation:entraBaixo .3s ease-out both}
+.lousa svg{display:block;width:100%;height:auto}
+.aula-fala{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-radius:14px;background:var(--panel2);border:3px solid var(--contorno);box-shadow:var(--sombra)}
+.aula-fala p{margin:0;font-weight:800;line-height:1.45;text-wrap:pretty}
+.aula-quem{display:flex;align-items:center;gap:8px}
+.aula-quem svg{width:38px;height:38px;border-radius:50%;box-shadow:0 0 0 2px var(--amber)}
+.aula-quem b{font-family:var(--display);font-weight:400;font-size:14px;color:var(--amber)}
+.aula-fala .btn{align-self:flex-start}
+.sort-fig{max-width:420px;align-self:center;width:100%}
+#ilu{display:flex;justify-content:center}
+/* elementos das ilustrações */
+.af-t{fill:var(--ink);font:800 11px var(--body)}
+.af-tit{font:400 12px var(--display);fill:var(--amber)}
+.af-sub{fill:#b9c8da;font-weight:700}
+.af-escuro{fill:#1b1a10}
+.af-ok{fill:var(--ok);color:var(--ok)}.af-erro{fill:var(--erro);color:var(--erro)}.af-info{color:var(--info)}.af-amb{fill:var(--amber);color:var(--amber)}
+.af-seta{stroke:currentColor;color:#b9c8da;stroke-width:2.5;fill:none}
+.af-seta.af-ok{stroke:var(--ok)}.af-seta.af-erro{stroke:var(--erro)}.af-seta.af-info{stroke:var(--info)}.af-seta.af-amb{stroke:var(--amber)}
+.af-bola{fill:#22405e;stroke:var(--contorno);stroke-width:2.5}
+.af-cartao{fill:#1d3550;stroke:var(--contorno);stroke-width:2.5}
+.af-pilha{fill:#2f3b48;stroke:#eef2f7;stroke-width:1.5}.af-pilha-neg{fill:#c9a227}
+.af-metal{fill:#c9cfd8;stroke:#7c858f;stroke-width:1}
+.af-bulbo{fill:#3a4a5c;stroke:#eef2f7;stroke-width:2}.af-bulbo.on{fill:#ffe98a}
+.af-fil{fill:none;stroke:#8a96a6;stroke-width:2}.af-fil.on{stroke:#ff9d2e}
+.af-fio{fill:none;stroke:#d9894a;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+.af-fio.vermelho{stroke:var(--erro)}
+.af-fluxo{fill:none;stroke:#fff3a8;stroke-width:4;stroke-linecap:round;stroke-dasharray:0 14;animation:afFlui .7s linear infinite}
+.af-fluxo.rev{animation-direction:reverse}.af-fluxo.parado{display:none}
+.af-fluxo.agua{stroke:#bfe6ff}.af-fluxo.fina{animation-duration:1.4s}
+@keyframes afFlui{to{stroke-dashoffset:-14}}
+.af-cano{fill:none;stroke:#7c858f;stroke-width:12}.af-cano.fino{stroke-width:5}
+.af-caixa{fill:#24415f;stroke:#c9cfd8;stroke-width:2}.af-agua{fill:#3d8fd1;opacity:.75}
+.af-cota{stroke:var(--amber);stroke-width:2;stroke-dasharray:4 3}
+.af-chave{stroke:#eef2f7;stroke-width:4;stroke-linecap:round}
+.af-pos{fill:#ff8a7a;stroke:var(--contorno);stroke-width:1.5}.af-neg{fill:#7cc4ff;stroke:var(--contorno);stroke-width:1.5}.af-neu{fill:#8a96a6;stroke:var(--contorno);stroke-width:1.5}
+.af-orb{fill:none;stroke:color-mix(in srgb,var(--info) 45%,transparent);stroke-width:1.5}
+.af-eletron{offset-rotate:0deg;animation:afOrbita 3.9s linear infinite}
+@keyframes afOrbita{from{offset-distance:0%}to{offset-distance:100%}}
+.af-cabelo{fill:#3b2a1e;stroke:#20150e;stroke-width:2}.af-pente{fill:#e24c3f}
+.af-pula{animation:afPula 1.5s ease-in-out infinite}
+@keyframes afPula{0%{transform:translate(-30px,0);opacity:0}30%{opacity:1}100%{transform:translate(70px,8px);opacity:0}}
+.af-afasta{animation:afAfasta 1.6s ease-in-out infinite alternate}.af-afasta.r{animation-name:afAfastaR}
+@keyframes afAfasta{to{transform:translateX(-14px)}}@keyframes afAfastaR{to{transform:translateX(14px)}}
+.af-junta{animation:afJunta 1.6s ease-in-out infinite alternate}.af-junta.r{animation-name:afJuntaR}
+@keyframes afJunta{to{transform:translateX(12px)}}@keyframes afJuntaR{to{transform:translateX(-12px)}}
+.af-mao{fill:#c58b62;stroke:#7a4e33;stroke-width:2}.af-porta{fill:#7a4a1f}
+.af-raio{fill:none;stroke:#fff3a8;stroke-width:3;stroke-linejoin:round}
+.af-pisca{animation:afPisca 1.2s steps(1) infinite}
+@keyframes afPisca{0%,60%{opacity:0}61%,80%{opacity:1}81%{opacity:.2}90%{opacity:1}}
+.af-deriva{animation:afDeriva 2.4s linear infinite}
+@keyframes afDeriva{from{transform:translateX(-10px)}to{transform:translateX(10px)}}
+.af-treme{animation:afTreme .35s ease-in-out infinite alternate}
+@keyframes afTreme{to{transform:translate(1.5px,-1px)}}
+.af-capa{fill:#eef2f7;stroke:var(--contorno);stroke-width:2.5}.af-cobre{fill:#c87533;stroke:#7a4219;stroke-width:1.5}.af-cobre.fio{fill:#d98a45}
+.af-copo{fill:none;stroke:#c9e4f5;stroke-width:3}
+.af-amostra{fill:#2a3f58;stroke:#c9cfd8;stroke-width:2;stroke-dasharray:5 3}
+.af-ponta{stroke:var(--erro);stroke-width:4;stroke-linecap:round}
+.af-barra{fill:#c9cfd8;stroke:var(--contorno);stroke-width:2}.af-barra.luz{fill:var(--amber)}.af-barra.calor{fill:#e06a3a}
+.af-cresce{transform-box:fill-box;transform-origin:left;animation:afCresce .8s ease-out both .2s}
+@keyframes afCresce{from{transform:scaleX(0)}}
+.af-pulsa{animation:afPulsa 1.6s ease-in-out infinite alternate}
+@keyframes afPulsa{from{opacity:.65}to{opacity:1}}
+.af-entra{animation:entraBaixo .45s ease-out both}
+/* tela da rede elétrica */
+.rede-grupo{display:flex;flex-direction:column;gap:8px}
+.rede-seg{display:grid;grid-template-columns:1fr;gap:8px}
+.rede-seg .btn{text-align:left}.rede-seg .btn[aria-pressed="true"]{background:var(--faixa);color:#1b1a10;border-color:var(--contorno)}
+.rede-seg .btn[aria-pressed="true"] small{color:#3b3410}
+.af-led{fill:#5a2a24;stroke:#eef2f7;stroke-width:1.5}.af-led.on{fill:#ff6b4a}
+.af-perna{stroke:#c9cfd8;stroke-width:2}

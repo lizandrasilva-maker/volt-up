@@ -7,7 +7,7 @@ document.documentElement.style.setProperty('--art','url('+IMG.oficina+')');
    Cada tela principal anota seu nome ao abrir; uma fase anota o id (o índice muda quando entram fases novas). */
 const TELA_KEY='volt-tela';
 const guardaTela=t=>{try{sessionStorage.setItem(TELA_KEY,JSON.stringify(t))}catch(e){}};
-const TELAS={menu:showHome,mapa:showMap,perfil:showFicha,conquistas:showConquistas,album:showAlbum,oficina:runSandbox,calc:showCalc,config:showConfig,plano:showPlano};
+const TELAS={menu:showHome,mapa:showMap,perfil:showFicha,conquistas:showConquistas,album:showAlbum,oficina:runSandbox,calc:showCalc,config:showConfig,plano:showPlano,rede:showRede};
 Object.entries(TELAS).forEach(([k,f])=>{window[f.name]=function(a){guardaTela({t:k,a:typeof a==='string'?a:undefined});return f.apply(this,arguments)}});
 const _playPhase=playPhase;
 playPhase=function(i){if(PHASES[i])guardaTela({t:'fase',id:PHASES[i].id});return _playPhase.apply(this,arguments)};

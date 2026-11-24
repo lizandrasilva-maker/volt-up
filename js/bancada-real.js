@@ -164,7 +164,7 @@ function realComp(c,b,o){
     const on=!c.trip;
     s=shadow(-30,-30,60,48,5)+'<rect x="-30" y="-30" width="60" height="48" rx="5" style="fill:#5b6672;stroke:#2f363d" stroke-width="1.2"/>'+
       '<rect x="-27" y="-27" width="54" height="42" rx="3" style="fill:#6c7884"/>'+
-      '<rect x="-22" y="-23" width="30" height="13" rx="2" style="fill:'+(on?'var(--lcd)':'#e3b2a8')+'"/><text x="-7" y="-13.6" text-anchor="middle" class="rtxt" style="font-size:7.5px;fill:'+(on?'var(--lcdink)':'#7a1d12')+'">'+(on?(c.V||220)+' V~':'PROT')+'</text>'+
+      '<rect x="-22" y="-23" width="30" height="13" rx="2" style="fill:'+(on?'var(--lcd)':'#e3b2a8')+'"/><text x="-7" y="-13.6" text-anchor="middle" class="rtxt" style="font-size:7.5px;fill:'+(on?'var(--lcdink)':'#7a1d12')+'">'+(on?rede().V+' V~':'PROT')+'</text>'+
       '<circle cx="17" cy="-16.5" r="3"'+(on?'':' class="led-pisca"')+' style="fill:'+(on?'#43d36b':'#e24c3f')+'"/><text x="17" y="-8" text-anchor="middle" class="rtxt" style="font-size:4px;fill:#e9edf3">'+(on?'ON':'TOQUE')+'</text>'+
       '<text x="0" y="-1" text-anchor="middle" class="rtxt" style="font-size:6px;fill:#ffffff;letter-spacing:.5px">FONTE</text>'+
       '<text x="0" y="8" text-anchor="middle" class="rtxt" style="font-size:5.5px;fill:#f4c430">'+fonteTxt(c)+'</text>'+
@@ -315,7 +315,7 @@ function realComp(c,b,o){
       '<rect x="-6.5" y="'+(on?-2.2:-5.4)+'" width="13" height="4" rx=".8" class="embolo" style="fill:'+(on?'#f39c12':'#6b747e')+'"/>'+
       '<text x="0" y="'+(on?0.9:-2.3)+'" text-anchor="middle" class="ltxt" style="font-size:3.6px">'+(on?'I':'O')+'</text>'+
       '<path d="M-18 -5.5 V5.5 M-15.5 -5.5 V5.5 M15.5 -5.5 V5.5 M18 -5.5 V5.5" style="stroke:#aeb6bf" stroke-width="1"/>'+
-      '<text x="0" y="6.4" text-anchor="middle" class="rtxt" style="font-size:3.2px">220V~</text>'}
+      '<text x="0" y="6.4" text-anchor="middle" class="rtxt" style="font-size:3.2px">'+rede().V+'V~</text>'}
   if(c.type==='ft'){/* relé térmico (genérico): dial de ajuste de corrente com escala, botão azul de rearme (R),
        botão vermelho de teste/desliga, janela do indicador de disparo (verde = normal, laranja = disparado) */
     const trip=!!c.trip;
@@ -367,7 +367,7 @@ function realComp(c,b,o){
       '<path d="M-11 2 V-14 Q-11 -24 0 -24 Q11 -24 11 -14 V2 Z" style="fill:url(#gFan);stroke:#1e242b" stroke-width=".8"/>'+
       '<path d="M-7 -14 Q-7 -21 0 -21 Q7 -21 7 -14 V-11 H-7 Z" style="fill:'+(n?'#3a4a66':'#e8f2fa')+';stroke:#9aa7b5" stroke-width=".6" opacity=".9"/>'+
       '<rect x="-2.4" y="-16.4" width="4.8" height="3.4" rx=".6" style="fill:#c0392b"/><path d="M-1.6 -14.7 h.8 v-1 h.8 v1 h.8 v-1 h.8" style="fill:none;stroke:#f5d7a1" stroke-width=".35"/>'+
-      '<text y="-4" text-anchor="middle" class="ltxt" style="font-size:3.2px">220V~</text>'+
+      '<text y="-4" text-anchor="middle" class="ltxt" style="font-size:3.2px">'+rede().V+'V~</text>'+
       /* fios até a régua */
       '<path d="M-4 6 C-4 12 -20 11 -20 18" style="fill:none;stroke:#1a1d21;stroke-width:1.8"/>'+
       '<path d="M0 6 V18" style="fill:none;stroke:#eef1f4;stroke-width:1.8"/><path d="M0 6 V18" style="fill:none;stroke:#9aa3ad;stroke-width:.4"/>'+
@@ -380,7 +380,7 @@ function realComp(c,b,o){
     s=din(21)+alavanca(-9,on,11,true)+
       '<text x="8" y="-3.4" text-anchor="middle" class="rtxt" style="font-size:4.6px">RI</text>'+
       '<rect x="2.5" y="-1" width="11" height="6.6" rx="1" style="fill:none;stroke:#46505b" stroke-width=".4"/><path d="M4.3 4 V1 H7.8 V4 H11.6" style="fill:none;stroke:#46505b" stroke-width=".5"/>'+
-      '<text x="8" y="8.6" text-anchor="middle" class="rtxt" style="font-size:2.8px">220V~</text>'}
+      '<text x="8" y="8.6" text-anchor="middle" class="rtxt" style="font-size:2.8px">'+rede().V+'V~</text>'}
   if(c.type==='boia'){/* boia de nível dentro da caixa d'água: com a caixa vazia a pera desce e o contato fecha */
     /* caixa d'água de polietileno (genérica) em corte: tampa, parede mais larga em cima, água com nível,
        boia tipo pera pendurada pelo cabo, que sai pela tampa e desce até a régua de bornes.

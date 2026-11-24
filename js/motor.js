@@ -66,7 +66,7 @@ function solveOnce(comps,wires){
   const u=UF();
   comps.forEach(c=>{terms(c).forEach((_,k)=>u.find(c.id+'.'+k));links(c).forEach(([a,b])=>u.union(c.id+'.'+a,c.id+'.'+b))});
   wires.forEach(w=>{if(!w.broken)u.union(w.a,w.b)});
-  const src=comps.find(c=>c.type==='src'),V=src.V||220;
+  const src=comps.find(c=>c.type==='src'),V=rede().V;
   const fases=FASE_BORNE.slice(0,nFases(src)).map(k=>u.find(src.id+'.'+k));
   const P=fases[0],N=u.find(src.id+'.1');
   /* terra = o que está ligado a uma haste; rede de proteção = terra + BEP (mesmo que o BEP ainda não esteja na haste) */
@@ -148,7 +148,7 @@ const lit=(r,id)=>r.lamp[id]>0.04;
 /* Nome do borne da fonte: 0 → L1, 1 → N, 2 → L2, 3 → L3 */
 const bFonte=k=>k===1?'N':FASE_NOME[FASE_BORNE.indexOf(k)];
 /* Rótulo da fonte: fases + neutro e tensões (fase-neutro; entre fases = √3 × fase-neutro) */
-function fonteTxt(c){const nf=nFases(c),V=c.V||220;return (nf===1?'1F+N':nf+'F+N')+' · '+(nf===1?V+' V':V+'/'+Math.round(V*Math.sqrt(3))+' V')}
+function fonteTxt(c){const nf=nFases(c),r=rede();return (nf===1?'1F+N':nf+'F+N')+' · '+(nf===1?r.V+' V':r.V+'/'+r.FF+' V')+' · '+r.Hz+' Hz'}
 function bright(b){return b<=0.04?'apagada':b>=0.9?'forte':b>=0.2?'média':'fraca'}
 
 /* ---------- Desenho da bancada ---------- */
@@ -176,7 +176,7 @@ function compSVG(c,b,o){
   const leads='<line class="sym" x1="-26" y1="0" x2="-14" y2="0"/><line class="sym" x1="14" y1="0" x2="26" y2="0"/>';
   let s='';
   if(c.type==='src')return '<g transform="translate('+c.x+' '+c.y+')"><line class="sym" x1="0" y1="-30" x2="0" y2="-20"/><line class="sym" x1="0" y1="20" x2="0" y2="30"/><line class="sym" x1="18" y1="0" x2="28" y2="0"/>'+
-    '<rect x="-18" y="-20" width="36" height="40" rx="6" style="fill:var(--panel2);stroke:var(--ink)" stroke-width="2.5"/><path d="M-9 -4 q4.5 -8 9 0 t9 0" style="stroke:var(--amber);fill:none" stroke-width="2.5"/><text x="0" y="13" text-anchor="middle" style="fill:var(--ink);font:900 9px var(--body)">220V</text></g>';
+    '<rect x="-18" y="-20" width="36" height="40" rx="6" style="fill:var(--panel2);stroke:var(--ink)" stroke-width="2.5"/><path d="M-9 -4 q4.5 -8 9 0 t9 0" style="stroke:var(--amber);fill:none" stroke-width="2.5"/><text x="0" y="13" text-anchor="middle" style="fill:var(--ink);font:900 9px var(--body)">'+rede().V+'V</text></g>';
   if(c.type==='lamp'){const on=b>0.04,sh=c.broken&&c.show;
     s=(on?'<circle r="28" style="fill:var(--amber)" opacity="'+(0.12+0.4*Math.sqrt(b)).toFixed(2)+'"/>':'')+leads+
       '<circle r="14" style="fill:'+(on?'var(--amber)':'var(--panel2)')+';fill-opacity:'+(on?(0.35+0.65*Math.sqrt(b)).toFixed(2):1)+';stroke:'+(sh?'var(--fase)':'var(--ink)')+'" stroke-width="2.5" '+(sh?'stroke-dasharray="4 4"':'')+'/>'+
@@ -255,7 +255,7 @@ function realHTML(list){if(!list)return '';return '<div class="real" aria-label=
    'short' (curto: o cabo pisca em vermelho) ou '' (parado). */
 function entrada(estado){
   const on=estado==='on',sc=estado==='short';
-  const t=L()?['Poste','Medidor','Quadro','Circuito']:['Trafo 13,8 kV→220 V','Medidor kWh','Quadro + DJ','220 V~ · 60 Hz'];
+  const t=L()?['Poste','Medidor','Quadro','Circuito']:['Trafo 13,8 kV→'+rede().V+' V','Medidor kWh','Quadro + DJ',rede().V+' V~ · '+rede().Hz+' Hz'];
   const cabo='M66 33 H111 M139 33 H193 M227 33 H289';
   return '<div class="entrada'+(on?' on':sc?' short':'')+'" aria-label="Caminho da energia: '+t.join(', ')+(on?' (energia passando)':sc?' (curto-circuito)':'')+'"><svg viewBox="0 0 340 66" aria-hidden="true">'+
    '<defs><linearGradient id="eMetal" x1="0" x2="1"><stop offset="0" stop-color="#7c858f"/><stop offset=".45" stop-color="#d7dce1"/><stop offset="1" stop-color="#6c747d"/></linearGradient>'+
