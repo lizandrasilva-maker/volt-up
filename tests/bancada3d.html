@@ -15,6 +15,8 @@ const R={};
 const coresDoFioCSS=k=>(CORES[k].c.match(/var\(--[\w-]+\)|#[0-9a-f]{3,8}\b/gi)).map(x=>x.startsWith('var(')?getComputedStyle(document.documentElement).getPropertyValue(x.slice(4,-1)).trim():x);
 (async()=>{try{
   S.mode='moderado';S.char='aprendiz';S.vista={moderado:'real'};
+  /* a montagem abre em 3D por padrão; quem escolhe 2D fica no 2D neste aparelho */
+  R.padrao3d=VISTA3D.ligada===true;escolhe3D(false);R.lembra2d=localStorage.getItem('volt-vista')==='2d'&&VISTA3D.ligada===false;escolhe3D(true);
   VISTA3D.flag=true;VISTA3D.ligada=true;
   await carrega3D();
   R.carregou=!!VISTA3D.vista;R.erro=VISTA3D.erro;
@@ -241,6 +243,23 @@ const coresDoFioCSS=k=>(CORES[k].c.match(/var\(--[\w-]+\)|#[0-9a-f]{3,8}\b/gi)).
    for(let k=1;k<=4;k++){dedo('pointermove',11,q0.x-10*k,q0.y);dedo('pointermove',12,q0.x+60+10*k,q0.y)}
    dedo('pointerup',12,q0.x+100,q0.y);dedo('pointerup',11,q0.x-40,q0.y);
    z.pinca=D.distancia()<dd0*.85;z.pincaSemFio=BANCADA.st.wires.length===fios&&!BANCADA.st.wires.length;z.desvioPinca=Math.round(perto(q0,D.tela('L1.1')));}
+  /* ---- Girar: arrastar sobre uma peça gira a vista (não aciona); o botão 🔄 Girar desliga a montagem ---- */
+  {const g=R.girar={};S.mode='moderado';VISTA3D.ligada=true;VISTA3D.girar=false;runBuild(LAB3D,comARede(LAB3D.dados.moderado));
+   const dj=()=>BANCADA.st.comps.find(c=>c.id==='DJ'),t0=dj().trip,p=D.tela('DJ');let chegou=false;cv().addEventListener('pointerdown',()=>{chegou=true},{once:true});
+   pe('pointerdown',p,cv());pe('pointermove',{x:p.x+60,y:p.y});pe('pointerup',{x:p.x+60,y:p.y});
+   g.arrastoGira=chegou&&dj().trip===t0;
+   toque('DJ');g.toqueAciona=dj().trip!==t0;toque('DJ');
+   const bg=document.querySelector('[data-girar]');g.botao=!!bg;if(bg)bg.click();g.ligou=VISTA3D.girar===true&&document.querySelector('[data-girar]').getAttribute('aria-pressed')==='true';
+   const n=BANCADA.st.wires.length,t1=dj().trip;toque('B.0');toque('DJ.0');toque('DJ');g.semMontar=BANCADA.st.wires.length===n&&dj().trip===t1;
+   document.querySelector('[data-girar]').click();toque('B.0');toque('DJ.0');g.voltaMontar=VISTA3D.girar===false&&BANCADA.st.wires.length===n+1;}
+  /* ---- Pontos de conexão: anel e contador ligados/esperados em cada borne do circuito ---- */
+  {const pc=R.pontos={},p=phaseById('escada');S.mode='leve';S.seen['leve:escada:cena']=1;VISTA3D.ligada=true;VISTA3D.girar=false;runBuild(p,comARede(p.dados.leve));
+   const sol=testeSol('escada'),esp={};sol.forEach(w=>[w.a,w.b].forEach(t=>{esp[t]=(esp[t]||0)+1}));
+   const d0=D.dicas();pc.inicio=Object.keys(esp).every(t=>d0[t]==='falta 0/'+esp[t])&&Object.keys(d0).length===Object.keys(esp).length;
+   let ca='';sol.forEach(w=>{if(w.cor!==ca){cor(w.cor);ca=w.cor}toque(w.a);toque(w.b)});
+   pc.completo=Object.values(D.dicas()).every(v=>/^ok /.test(v));
+   cor('retorno');toque('SP1.1');toque('SP2.0');pc.sobra=/^sobra 2\/1/.test(D.dicas()['SP1.1']||'');
+   S.mode='full';S.seen['full:escada:cena']=1;runBuild(p,comARede(p.dados.full));const df=D.dicas();pc.fullSoAnel=Object.keys(df).length>0&&Object.values(df).every(v=>v==='falta');S.mode='moderado';}
   /* ---- Lote C: interruptor paralelo (Escada) e intermediário (Corredor), pelo gabarito, na 3D e no SVG ---- */
   {const c3=R.loteC={};S.mode='leve';
    const tap=t=>{svg().querySelector('[data-t="'+t+'"]').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));window.dispatchEvent(new PointerEvent('pointerup'))};
