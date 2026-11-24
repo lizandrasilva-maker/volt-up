@@ -77,7 +77,7 @@ try{const q=new URLSearchParams(location.search).get('3d');if(q==='1')localStora
 VISTA3D.ligada=VISTA3D.flag;
 /* peças que a vista 3D já desenha: fonte 1F+N, disjuntor, DR e lâmpada sem PE (Laboratório 3D e Quadro Novo).
    As outras bancadas ficam no SVG. */
-VISTA3D.suporta=st=>st.comps.every(c=>(c.type==='src'&&nFases(c)===1)||c.type==='fuse'||c.type==='dr'||c.type==='btn'||c.type==='kc'||c.type==='ft'||c.type==='sw'||c.type==='motor'||c.type==='bep'||c.type==='haste'||c.type==='boia'||(c.type==='lamp'&&c.pe!==true));
+VISTA3D.suporta=st=>st.comps.every(c=>c.type==='src'||c.type==='fuse'||c.type==='dr'||c.type==='btn'||c.type==='kc'||c.type==='ft'||c.type==='sw'||c.type==='motor'||c.type==='bep'||c.type==='haste'||c.type==='boia'||(c.type==='lamp'&&c.pe!==true));
 /* o botão 🧊 3D aparece em toda bancada cujas peças já existem em 3D, com ou sem ?3d=1 (o flag só abre direto em 3D
    e mostra os laboratórios). O Three.js é baixado no primeiro toque no botão. */
 function quer3D(st){return !!(VISTA3D.ligada&&VISTA3D.vista&&VISTA3D.vista.aceita(st))}
@@ -201,6 +201,9 @@ window.addEventListener('scroll',()=>{benchY=window.scrollY},{passive:true});
    DR e relé térmico disparam (teste/sobrecarga) ou rearmam, fotocélula vira dia/noite, boia enche/esvazia.
    lx = posição do toque em relação ao centro (no interruptor duplo, esquerda = seção 1).
    depois() redesenha quando a botoeira solta; BANCADA_ID evita redesenhar uma tela que já foi trocada. */
+/* troca o número de fases da fonte (1, 2 ou 3 + N); os fios presos em borne de fase que deixou de existir saem.
+   Usada pela Oficina e pelas bancadas das fases (a vista 3D pede com acionou(id, 'fases:n')). */
+function aplicaFases(st,c,n){c.fases=Math.max(1,Math.min(3,n));st.wires=st.wires.filter(w=>[w.a,w.b].every(t=>{const [id,j]=t.split('.'),x=st.comps.find(y=>y.id===id);return x&&+j<terms(x).length}))}
 let BANCADA_ID=0;
 function acionarPeca(c,lx,depois){
   /* disjuntor: o toque liga e desliga (depois de um curto, religa; se o curto continuar, desarma de novo).
@@ -238,7 +241,10 @@ function runBuild(p,task){
   const ctl={
     tocouBorne:a=>{if(won)return;if(sel===null)sel=a;else if(sel===a)sel=null;else{addWire(sel,a);return}render()},
     arrastouFio:(a,b)=>{if(won)return;if(b&&b!==a)addWire(a,b);else render()},
-    acionou:(id,lado)=>{const c=st.comps.find(x=>x.id===id);if(!c)return;acionarPeca(c,lado,render);msg=null;checa(c.id);render()},
+    acionou:(id,lado)=>{const c=st.comps.find(x=>x.id===id);if(!c)return;
+      /* fonte: configurar 1F+N, 2F+N ou 3F+N */
+      if(c.type==='src'&&typeof lado==='string'&&lado.startsWith('fases:')){aplicaFases(st,c,+lado.slice(6));sel=null;msg=null;render();return}
+      acionarPeca(c,lado,render);msg=null;checa(c.id);render()},
     tirouFio:i=>{if(won||!st.wires[i])return;st.wires.splice(i,1);msg=null;render()}
   };
   const bancadaId=BANCADA_ID;BANCADA.st=st;
@@ -460,7 +466,7 @@ function runSandbox(){
     const rot=document.getElementById('rot');if(rot)rot.onclick=()=>{c.v=!c.v;persist();render()};
     app.querySelectorAll('[data-ac]').forEach(b=>b.onclick=()=>{const k=b.dataset.ac;
       /* fonte: troca o número de fases; fios presos em borne de fase que deixou de existir saem */
-      if(k[0]==='f'){c.fases=+k.slice(1);sb.wires=sb.wires.filter(w=>[w.a,w.b].every(t=>{const [id,j]=t.split('.'),x=sb.comps.find(y=>y.id===id);return x&&+j<terms(x).length}));
+      if(k[0]==='f'){aplicaFases(sb,c,+k.slice(1));
         pt=novasPonteiras();msg={t:'Fonte: '+fonteTxt(c)+'.'};persist();render();return}
       acionar(c,k==='-1'?-1:1);checa(c.id);persist();render()});
     const del=document.getElementById('del');if(del)del.onclick=()=>{sb.comps=sb.comps.filter(x=>x!==c);sb.wires=sb.wires.filter(w=>!w.a.startsWith(c.id+'.')&&!w.b.startsWith(c.id+'.'));selC=null;persist();render()};

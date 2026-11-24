@@ -20,7 +20,9 @@ const LARG_DIN={fuse:DIN.W,dr:2*DIN.W,kc:3*DIN.W,ft:2*DIN.W};/* largura de cada 
 const RECUO=.7;/* degrau recuado da bobina da contatora (A1/A2) */
 const FRENTE=DIN.z0+DIN.D;/* face frontal dos módulos DIN */
 const TERM3D={
-  src:()=>[[-1.25,-3.6,3.3],[1.25,-3.6,3.3]],                         /* .0 = L1, .1 = N */
+  /* fonte: índices do motor.js .0 = L1, .1 = N, .2 = L2, .3 = L3; na régua, da esquerda para a direita, L1 L2 L3 N (como no 2D) */
+  src:c=>{const n=typeof nFases==='function'?nFases(c):1,ordem=[0,...(n>=2?[2]:[]),...(n>=3?[3]:[]),1],pos=[];
+    ordem.forEach((k,i)=>{pos[k]=[(i-(ordem.length-1)/2)*1.25,-3.6,3.3]});return pos},
   fuse:()=>[[0,3.1,DIN.z0+DIN.D+.05],[0,-2.6,DIN.z0+DIN.D+.05]],      /* .0 = entrada (topo), .1 = saída (base) */
   lamp:()=>[[-1.35,-1.35,.7],[1.35,-1.35,.7]],                        /* .0 = X1, .1 = X2 */
   dr:()=>[[-1.2,3.1,FRENTE+.05],[1.2,3.1,FRENTE+.05],[-1.2,-2.6,FRENTE+.05],[1.2,-2.6,FRENTE+.05]], /* .0 = entrada F, .1 = entrada N, .2 = saída F, .3 = saída N */
@@ -41,7 +43,7 @@ const bornesDe=c=>(TERM3D[c.type]?TERM3D[c.type](c):[]).map(p=>new THREE.Vector3
 const PAL={corpoDIN:0xE6E9EF,frenteDIN:0xD5DAE2,trilho:0x9AA5B4,cavidade:0x1F2933,zinco:0xCBD5E1,fenda:0x3A4048,
   fonte:0x7C8A99,fonteFrente:0x5D6B7A,lcd:0xC6D68A,regua:0x2A2F36,alavanca:0x2F4A6E,pontaAlavanca:0xE24C3F,
   painel:0x1D3550,soquete:0xD9DDE3,base:0xE6E9EF,teste:0xECC94B,armado:0x38A169,desarmado:0xE53E3E,
-  botoeiraBase:0x334155,liga:0x2F855A,desliga:0xC53030,janela:0x1F2933,emboloOff:0x94A3B8,emboloOn:0xF97316,rearme:0x3182CE,dial:0x2F4A6E,espelho:0xF1F3F6,tecla:0xE6E9EF,marca:0x2F855A,
+  botoeiraBase:0x334155,liga:0x2F855A,desliga:0xC53030,janela:0x1F2933,emboloOff:0x94A3B8,emboloOn:0xF97316,rearme:0x3182CE,dial:0x2F4A6E,espelho:0xF1F3F6,tecla:0xE6E9EF,marca:0x2F855A,wago:0xDDE3EA,alavancaWago:0xF28C28,
   motor:0x2B6CB0,motorTampa:0x245A94,eixo:0xCBD5E1,faixaEixo:0xECC94B,cobre:0xC87533,isolador:0x2A2F36,solo:0x6B4A2E,
   caixaAgua:0x1F4F86,tampa:0x2A66A8,agua:0x5AA9E6,aguaCorte:0x8CC8F2,pera:0xEEF3F7,caboBoia:0x1F2328};
 
@@ -119,13 +121,13 @@ function fonte(c){const g=new THREE.Group(),bornes=bornesDe(c);
   const visor=new THREE.Mesh(new THREE.BoxGeometry(3.6,1.4,.1),mat(PAL.lcd));visor.position.set(-.3,2.9,2.62);g.add(visor);
   const tx=rotuloVivo(3.4,1.2,{cor:'#1c240e'});tx.position.set(-.3,2.9,2.69);g.add(tx);
   const led=new THREE.Mesh(new THREE.SphereGeometry(.32,16,12),matUnico(0x43b05c,{emissive:0x1f7a36}));led.position.set(1.95,2.9,2.68);g.add(led);
-  const nome=rotulo('FONTE 1F+N',4.6,.8,{cor:'#eef2f7'});nome.position.set(0,.8,2.62);g.add(nome);
+  const nf=typeof nFases==='function'?nFases(c):1,nome=rotulo('FONTE '+nf+'F+N',4.6,.8,{cor:'#eef2f7'});nome.position.set(0,.8,2.62);g.add(nome);
   const regua=new THREE.Mesh(new THREE.BoxGeometry(5,1.9,.8),mat(PAL.regua));regua.position.set(0,-3.6,2.8);g.add(regua);
   poeParafusos(g,bornes);
   const cf=coresDoFio('fase')[0],cn=coresDoFio('neutro')[0];
-  [[0,'L1',cf],[1,'N',cn]].forEach(([k,t,cor])=>{const anel=new THREE.Mesh(new THREE.TorusGeometry(.66,.09,8,24),mat(cor));anel.position.copy(bornes[k]).add(new THREE.Vector3(0,0,-.06));g.add(anel);
+  bornes.map((_,k)=>[k,nomeBorne(c,k),k===1?cn:cf]).forEach(([k,t,cor])=>{const anel=new THREE.Mesh(new THREE.TorusGeometry(.66,.09,8,24),mat(cor));anel.position.copy(bornes[k]).add(new THREE.Vector3(0,0,-.06));g.add(anel);
     plaqueta(g,nomeBorne(c,k),bornes[k].x,-1.95,3.55)});
-  return {g,bornes,corpo:[caixa,frente,visor],extra:{led,visor:tx}}}
+  return {g,bornes,corpo:[caixa,frente,visor,regua],extra:{led,visor:tx},fases:nf}}
 function disjuntor(c){const g=new THREE.Group(),bornes=bornesDe(c),{W,H,D,z0}=DIN;
   const corpo=new THREE.Mesh(new THREE.BoxGeometry(W,H,D),mat(PAL.corpoDIN));corpo.position.z=z0+D/2;g.add(corpo);
   const frente=new THREE.Mesh(new THREE.BoxGeometry(W*.9,H*.46,.7),mat(PAL.frenteDIN));frente.position.set(0,0,z0+D+.35);g.add(frente);
@@ -395,12 +397,17 @@ function construir(st){
   Object.entries(linhas).forEach(([y,cs])=>{const x0=Math.min(...cs.map(c=>pos2d(c).x-LARG_DIN[c.type]/2)),x1=Math.max(...cs.map(c=>pos2d(c).x+LARG_DIN[c.type]/2));E.scene.add(trilho(x0-1.5,x1+1.5,+y))});
   /* esfera de toque compartilhada (invisível, maior que o parafuso) */
   const toque=semContorno(new THREE.MeshBasicMaterial({colorWrite:false,depthWrite:false}));cache().unicos.push(toque);E.matToque=toque;const geoToque=new THREE.SphereGeometry(1.2,10,8);
-  st.comps.forEach(c=>{const f=CONSTRUTOR[c.type];if(!f)return;
-    const p=f(c);p.g.position.copy(pos2d(c));E.scene.add(p.g);p.g.updateMatrixWorld(true);E.pecas[c.id]={c,...p,ang:c.trip?.5:-.5,caixa:new THREE.Box3().setFromObject(p.g)};
-    p.corpo.forEach(m=>{m.userData.peca=c.id;E.hits.push(m)});
-    p.bornes.forEach((v,k)=>{const id=c.id+'.'+k,w=p.g.localToWorld(v.clone());E.bornes[id]=w;
-      const h=new THREE.Mesh(geoToque,toque);h.position.copy(w);h.userData.t=id;E.scene.add(h);E.hits.push(h)})});
+  E.geoToque=geoToque;st.comps.forEach(constroiPeca);
 }
+function constroiPeca(c){const f=CONSTRUTOR[c.type];if(!f)return;
+  const p=f(c);p.g.position.copy(pos2d(c));E.scene.add(p.g);p.g.updateMatrixWorld(true);E.pecas[c.id]={c,...p,toques:[],ang:c.trip?.5:-.5,caixa:new THREE.Box3().setFromObject(p.g)};
+  p.corpo.forEach(m=>{m.userData.peca=c.id;E.hits.push(m)});
+  p.bornes.forEach((v,k)=>{const id=c.id+'.'+k,w=p.g.localToWorld(v.clone());E.bornes[id]=w;
+    const h=new THREE.Mesh(E.geoToque,E.matToque);h.position.copy(w);h.userData.t=id;E.scene.add(h);E.hits.push(h);E.pecas[c.id].toques.push(h)})}
+/* refaz uma peça (ex.: a fonte que passou de 1 para 3 fases): tira a antiga, monta a nova e redesenha os fios */
+function refazPeca(c){const p=E.pecas[c.id];if(!p)return;E.scene.remove(p.g);p.g.traverse(o=>{if(o.geometry)o.geometry.dispose()});
+  E.hits=E.hits.filter(h=>h.userData.peca!==c.id&&!(h.userData.t&&h.userData.t.split('.')[0]===c.id));(p.toques||[]).forEach(h=>E.scene.remove(h));
+  Object.keys(E.bornes).forEach(k=>{if(k.split('.')[0]===c.id)delete E.bornes[k]});delete E.pecas[c.id];constroiPeca(c);E.assinaturaFios=''}
 /* tamanho do canvas acompanha a largura da bancada (4:3, até 520 px de altura) */
 /* canvas = faixa do caminho da energia em cima + bancada embaixo (4:3, até 520 px) */
 function dimensiona(){const w=Math.max(260,Math.round(E.no.clientWidth||E.no.parentElement&&E.no.parentElement.clientWidth||340)),h=Math.round(Math.min(w*.78,520)),hb=Math.round(Math.min(FX.maxAlt,w*FX.altura));
@@ -487,7 +494,16 @@ function desenhaFios(st){
     const geo=tubo(cur,FIO.raio,8);listras(geo,cur.getLength());const m=new THREE.Mesh(geo,matFio(cor));m.userData={w:i,cor,a:w.a,rota:rota.ultima};
     const h=new THREE.Mesh(tubo(cur,FIO.toque,6),E.matToque);h.userData.w=i;m.userData.toque=h;
     E.scene.add(m,h);E.fios.push(m);E.hits.push(h)});
+  poeWagos(st);
 }
+/* Emenda com conector Wago: quando 2 ou mais fios chegam ao mesmo borne, eles se juntam num conector de alavancas
+   (uma alavanca laranja por fio, mais uma para o fio que segue até o borne), no ponto em que os caminhos se separam. */
+function poeWagos(st){(E.wagos||[]).forEach(w=>{E.scene.remove(w);w.traverse(o=>{if(o.geometry)o.geometry.dispose()})});E.wagos=[];
+  const conta={};st.wires.forEach(w=>[w.a,w.b].forEach(t=>{if(E.bornes[t])conta[t]=(conta[t]||0)+1}));
+  Object.entries(conta).filter(([,n])=>n>=2).forEach(([t,n])=>{const s=saida(t),T=s.T,vias=n+1,g=new THREE.Group();
+    const corpo=new THREE.Mesh(new THREE.BoxGeometry(.55*vias+.2,.75,.85),mat(PAL.wago));g.add(corpo);
+    for(let i=0;i<vias;i++){const al=new THREE.Mesh(new THREE.BoxGeometry(.38,.3,.62),mat(PAL.alavancaWago));al.position.set((i-(vias-1)/2)*.55,.5,0);g.add(al)}
+    g.position.set(T.x,s.borda,T.z+FIO.frente);g.userData={wago:t,vias};E.scene.add(g);E.wagos.push(g)})}
 /* curto: os fios do caminho trocam para o material de curto (pulsa) e a faísca estala onde o curto fechou */
 function animaCurto(curto){
   const ms=E.fios.filter(f=>curto.fios.includes(f.userData.w));E.curtoAte=performance.now()+1400;
@@ -501,6 +517,8 @@ function animaCurto(curto){
 
 function atualizar(ctx){
   if(!E)return;E.ctx=ctx;const st=ctx.st,res=ctx.res||{lamp:{}};
+  /* fonte que mudou de número de fases: refaz a peça antes de atualizar o estado */
+  st.comps.forEach(c=>{const p=E.pecas[c.id];if(p&&c.type==='src'&&p.fases!==nFases(c))refazPeca(c)});
   st.comps.forEach(c=>{const p=E.pecas[c.id];if(!p)return;
     /* disjuntor e DR: a alavanca (no DR, as duas acopladas) cai quando c.trip */
     if(c.type==='fuse'||c.type==='dr'){const alvo=c.trip?.5:-.5;if(p.ang!==alvo){const de=p.extra.pino.rotation.x;p.ang=alvo;anima(180,k=>{p.extra.pino.rotation.x=de+(alvo-de)*k})}else p.extra.pino.rotation.x=alvo}
@@ -519,7 +537,7 @@ function atualizar(ctx){
     if(c.type==='btn'){const alvo=c.pressed?BOTAO.afunda:0;if(p.emb!==alvo){const de=p.extra.embolo.position.z,para=BOTAO.z+alvo;p.emb=alvo;anima(90,k=>{p.extra.embolo.position.z=de+(para-de)*k})}}
     if(c.type==='dr'){p.extra.visor.material.color.setHex(c.trip?PAL.desarmado:PAL.armado);p.extra.visor.material.emissive.setHex(c.trip?0x6b1a12:0x0f4a24)}
     if(c.type==='src'){p.extra.led.material.color.setHex(c.trip?0xe24c3f:0x43b05c);p.extra.led.material.emissive.setHex(c.trip?0x7a1d12:0x1f7a36);
-      trocaTexto(p.extra.visor,c.trip?'PROT':(typeof rede==='function'?rede().V:220)+' V~')}
+      const r=typeof rede==='function'?rede():{V:220,FF:380};trocaTexto(p.extra.visor,c.trip?'PROT':(nFases(c)>1?r.V+'/'+r.FF:r.V)+' V~')}
     if(c.type==='lamp'){const b=Math.max(0,Math.min(1,res.lamp[c.id]||0));p.brilho=b;
       p.extra.bulbo.material.color.setHex(b>.04?0xfff2a8:0x5a6b7d);p.extra.bulbo.material.emissive.setRGB(1*b,.85*b,.3*b);
       p.extra.brilho.visible=b>.04;p.extra.brilho.material.opacity=b;p.extra.brilho.scale.setScalar(5+5*b)}});
@@ -539,6 +557,20 @@ function textoBorne(id){const [pid,k]=id.split('.'),p=E.pecas[pid];return p?nome
 function mostraBadge(x,y,txt){const r=E.no.getBoundingClientRect(),b=E.badge;clearTimeout(E.badgeT);b.textContent=txt;b.style.left=(x-r.left)+'px';b.style.top=(y-r.top)+'px';b.hidden=false}
 function escondeBadge(ms){clearTimeout(E.badgeT);if(ms)E.badgeT=setTimeout(()=>{if(E)E.badge.hidden=true},ms);else E.badge.hidden=true}
 
+/* ---------- seletor de fases da fonte (HTML sobre a cena) ---------- */
+function abreFases(c,x,y){fechaFases();const r=E.no.getBoundingClientRect(),d=document.createElement('div');d.className='fases3d';d.setAttribute('role','group');d.setAttribute('aria-label','Fases da fonte');
+  d.innerHTML='<b>Fonte</b>'+[1,2,3].map(n=>'<button type="button" class="btn" data-f="'+n+'" aria-pressed="'+(nFases(c)===n)+'">'+n+'F+N</button>').join('');
+  d.style.left=Math.max(8,Math.min(r.width-230,x-r.left-110))+'px';d.style.top=Math.max(8,y-r.top-70)+'px';
+  d.querySelectorAll('[data-f]').forEach(b=>b.addEventListener('click',()=>{const ctl=E.ctx.ctl;fechaFases();ctl.acionou(c.id,'fases:'+b.dataset.f)}));
+  E.no.appendChild(d);E.seletor=d}
+function fechaFases(){if(E&&E.seletor){E.seletor.remove();E.seletor=null}}
+/* dois toques rápidos no mesmo ponto do espaço vazio: volta a câmera ao enquadramento da bancada (sem botão) */
+function toqueVazio(e){if(e.isPrimary===false)return;const t0=performance.now(),x0=e.clientX,y0=e.clientY;
+  const up=ev=>{window.removeEventListener('pointerup',up);if(!E||performance.now()-t0>300||Math.hypot(ev.clientX-x0,ev.clientY-y0)>12)return;
+    const u=E.ultimoToqueVazio;E.ultimoToqueVazio={t:performance.now(),x:x0,y:y0};
+    if(u&&performance.now()-u.t<400&&Math.hypot(u.x-x0,u.y-y0)<30){E.ultimoToqueVazio=null;enquadra();pede()}};
+  window.addEventListener('pointerup',up)}
+
 /* ---------- toque: raycast nos bornes, peças e fios; o resto vai para o OrbitControls ---------- */
 /* retângulo da bancada na tela (o canvas tem a faixa do caminho da energia em cima) */
 function areaBancada(){const r=E.cv.getBoundingClientRect(),b=E.faixaH||0;return {left:r.left,top:r.top+b,width:r.width,height:r.height-b}}
@@ -554,7 +586,8 @@ function pontoNoPlano(x,y){const r=areaBancada();
   E.raycaster.setFromCamera(ndc(x,y,r),E.camera);const q=new THREE.Vector3();return E.raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,0,1),-3),q)?q:null}
 function aoTocar(e){
   if(!E||!E.ctx||e.target!==E.cv||(e.button!==undefined&&e.button>0))return;
-  const alvo=alvoEm(e.clientX,e.clientY);if(!alvo)return;/* espaço vazio: girar, aproximar e arrastar a câmera */
+  fechaFases();
+  const alvo=alvoEm(e.clientX,e.clientY);if(!alvo){toqueVazio(e);return}/* espaço vazio: girar, aproximar e arrastar a câmera */
   e.stopPropagation();e.preventDefault();
   const ctl=E.ctx.ctl,ed=E.ctx.editavel!==false,x0=e.clientX,y0=e.clientY;let arrastando=false;
   if(alvo.t)mostraBadge(x0,y0,textoBorne(alvo.t));
@@ -567,7 +600,7 @@ function aoTocar(e){
     if(ev.type==='pointercancel')return;
     if(arrastando){const fim=alvoEm(ev.clientX,ev.clientY);ctl.arrastouFio(alvo.t,fim&&fim.t||null);return}
     if(alvo.t){if(ed)ctl.tocouBorne(alvo.t)}
-    else if(alvo.peca)ctl.acionou(alvo.peca,alvo.lado||0);
+    else if(alvo.peca){const pc=E.pecas[alvo.peca];if(pc&&pc.c.type==='src'&&!pc.c.trip&&ed)abreFases(pc.c,ev.clientX,ev.clientY);else ctl.acionou(alvo.peca,alvo.lado||0)}
     else if(alvo.w!==undefined&&ed)ctl.tirouFio(alvo.w)};
   window.addEventListener('pointermove',move);window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up);
 }
@@ -577,7 +610,7 @@ function destruir(){if(!E)return;
   if(E.pedido)cancelAnimationFrame(E.pedido);E.ro.disconnect();E.no.removeEventListener('pointerdown',aoTocar,true);E.controls.dispose();
   E.scene.traverse(o=>{if(o.geometry)o.geometry.dispose()});E.faixa.scene.traverse(o=>{if(o.geometry)o.geometry.dispose()});
   if(CACHE){CACHE.mat.forEach(m=>m.dispose());CACHE.tex.forEach(t=>t.dispose());CACHE.unicos.forEach(m=>{if(m.map)m.map.dispose();m.dispose()});CACHE=null}
-  clearTimeout(E.badgeT);E.badge.remove();
+  clearTimeout(E.badgeT);E.badge.remove();fechaFases();
   E.renderer.dispose();try{E.renderer.forceContextLoss()}catch(e){}E.cv.remove();E=null}
 
 /* ---------- inspeção para os testes ---------- */
@@ -611,6 +644,10 @@ const debug={
   telaTeste:id=>naTela(E.pecas[id].extra.teste.getWorldPosition(new THREE.Vector3())),
   visorDR:id=>E.pecas[id].extra.visor.material.color.getHex()===PAL.desarmado?'desarmado':'armado',
   emboloAlvo:id=>E.pecas[id].emb||0,
+  wagos:()=>(E.wagos||[]).map(w=>w.userData.wago+':'+w.userData.vias).sort(),
+  seletorFases:()=>E.seletor,
+  camera:()=>E.camera.position.toArray().map(v=>+v.toFixed(2)),
+  giraCamera:()=>{E.camera.position.applyAxisAngle(new THREE.Vector3(0,1,0),1.1);E.camera.lookAt(E.controls.target);E.controls.update()},
   tecla:id=>E.pecas[id].tec,
   motorGira:id=>E.pecas[id].gira||0,
   nivel:id=>E.pecas[id].nivel,

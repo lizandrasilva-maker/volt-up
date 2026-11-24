@@ -747,3 +747,8 @@ svg.curto{animation:shake .32s 2}
 .badge-borne{position:absolute;z-index:3;pointer-events:none;transform:translate(-50%,calc(-100% - 46px));white-space:nowrap;
   background:#f8fafc;color:#070c16;font:900 15px/1.2 var(--body);padding:5px 11px;border:3px solid var(--contorno);border-radius:10px;box-shadow:3px 4px 0 var(--contorno)}
 .badge-borne[hidden]{display:none}
+/* seletor de fases da fonte na bancada 3D */
+.fases3d{position:absolute;z-index:4;display:flex;align-items:center;gap:6px;padding:8px 10px;border-radius:12px;background:var(--panel2);border:3px solid var(--contorno);box-shadow:3px 4px 0 var(--contorno)}
+.fases3d b{font:900 13px var(--body);color:var(--ink);margin-right:2px}
+.fases3d .btn{min-height:40px;padding:4px 10px;font-size:14px}
+.fases3d .btn[aria-pressed="true"]{background:var(--faixa);color:#1b1a10;border-color:var(--contorno)}
