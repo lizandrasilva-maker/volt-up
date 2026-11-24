@@ -372,65 +372,6 @@ function releImpulso(c){const g=new THREE.Group(),bornes=bornesDe(c),{H,D,z0}=DI
   return {g,bornes,corpo:[corpo,frente,alav,ponta,visor],extra:{pino,visor}}}
 const CONSTRUTOR={src:fonte,fuse:disjuntor,lamp:lampada,dr,btn:botoeira,kc:contatora,ft:reletermico,sw:interruptor,sw3:interruptor,sw4:interruptor,motor:motorEl,bep,haste,boia:boiaEl,foto:fotocelula,ri:releImpulso,pilha:pilhaEl};
 
-/* ---------- caminho da energia em 3D (faixa no alto do mesmo canvas) ----------
-   Poste com transformador → ramal → medidor na fachada → quadro → circuito (lâmpada), na mesma linguagem visual da
-   bancada (toon + contorno). Ligado: a energia corre pelos cabos (pontos de luz), o LED do medidor pisca e a lâmpada
-   acende. Curto: os cabos piscam em vermelho. Legendas iguais às do SVG (entrada() em motor.js), com a rede escolhida.
-   Fica no mesmo contexto WebGL (viewport de cima), sem abrir um segundo canvas no celular. */
-const FX={altura:.33,maxAlt:160,ceu:0x10233a,cabo:0x1F2933,fluxo:0xFFE680,larg:41,alt:16.6,centro:[1.2,5.3,0]};
-function montaFaixa(){
-  const V=THREE.Vector3,sc=new THREE.Scene();sc.background=new THREE.Color(FX.ceu);
-  sc.add(new THREE.HemisphereLight(0xDCE6F2,0x3A4A6B,.9));const sol=new THREE.DirectionalLight(0xFFFDF5,2.2);sol.position.set(10,16,24);sc.add(sol);
-  const F={scene:sc,camera:new THREE.PerspectiveCamera(26,3,.5,300),cabos:[],pontos:[],estado:'',legendas:[]};
-  const box=(w,h,d,cor,x,y,z)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(cor));m.position.set(x,y,z);sc.add(m);return m};
-  const cil=(rt,rb,h,cor,x,y,z,deitado)=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,18),mat(cor));m.position.set(x,y,z);if(deitado)m.rotation.x=Math.PI/2;sc.add(m);return m};
-  /* calçada, fachada e beiral */
-  box(48,1.5,6,0x2A3646,1,-1.25,0);/* calçada com meio-fio alto: as legendas ficam pintadas na frente dele */box(31,10.2,.8,0xE8DCC4,4.6,4.3,-1.4);box(31.6,.5,1.4,0xC9B79A,4.6,9.6,-1.1);
-  /* poste de concreto com cruzeta, isoladores e a rede de média tensão saindo da tela */
-  cil(.3,.5,12.6,0xB8C0CA,-16,5.8,0);box(6.2,.45,.5,0x8A94A3,-16,11.3,0);
-  [-18.6,-16,-13.4].forEach(x=>{cil(.17,.24,.8,0xE6E9EF,x,11.9,0);const mt=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([new V(x,12.3,0),new V(-21,11.9,0),new V(-27,11.6,0)]),12,.07,6,false),mat(FX.cabo));sc.add(mt)});
-  /* transformador no poste: tanque com aletas e 3 buchas */
-  cil(1.15,1.15,2.6,0x7C8A99,-14.3,8.1,.9);
-  for(let i=0;i<6;i++){const a=i/6*Math.PI*2,al=box(.12,2.1,.7,0x6B7889,-14.3+Math.cos(a)*1.25,8.1,.9+Math.sin(a)*1.25);al.rotation.y=-a}
-  [-.6,0,.6].forEach(dx=>cil(.14,.2,.6,0xE6E9EF,-14.3+dx,9.7,.9));
-  box(.9,.25,.25,0x8A94A3,-15.3,8.1,.4);/* suporte */
-  /* medidor (padrão de entrada) na fachada: visor kWh e LED que pisca com consumo */
-  box(2.6,3.4,1,0xCBD5E1,-5.4,4.6,-.5);box(2.1,1.9,.12,0x9FB6C9,-5.4,5.1,.05);
-  const visor=rotulo('0427 kWh',1.9,.62,{fundo:'#c6d68a',cor:'#1c240e',esc:.58});visor.position.set(-5.4,5.25,.13);sc.add(visor);
-  const led=new THREE.Mesh(new THREE.SphereGeometry(.16,12,8),matUnico(0x5a1a12,{emissive:0x000000}));led.position.set(-4.6,4.4,.15);sc.add(led);
-  /* quadro de distribuição: porta aberta com a fileira de disjuntores */
-  box(3.8,4.6,.9,0xEEF2F7,3,4.6,-.55);box(3.2,3.9,.1,0x2A2F36,3,4.6,-.05);
-  for(let i=0;i<4;i++){box(.6,1.3,.5,0xE6E9EF,1.8+i*.8,4.6,.2);box(.36,.45,.3,0x2F4A6E,1.8+i*.8,4.9,.5)}
-  const porta=box(.15,4.6,3.4,0xEEF2F7,4.95,4.6,1.1);porta.rotation.y=-.35;
-  /* circuito: arandela na parede com a lâmpada */
-  box(1.2,1.4,.5,0xD9DDE3,13.4,6.2,-.8);cil(.45,.55,.9,0xCBD5E1,13.4,6.2,-.2,true);
-  const bulbo=new THREE.Mesh(new THREE.SphereGeometry(.85,20,14),matUnico(0x5a6b7d,{emissive:0x000000}));bulbo.position.set(13.4,6.2,.75);sc.add(bulbo);
-  const brilho=sprite(texturaBrilho('brilho',['rgba(255,246,200,1)','rgba(255,216,77,.55)']),6);brilho.position.copy(bulbo.position);brilho.visible=false;sc.add(brilho);
-  /* cabos: ramal com barriga (como o de verdade) e, na fachada, em linhas retas até o quadro e a lâmpada */
-  const cabo=cur=>{const m=new THREE.Mesh(new THREE.TubeGeometry(cur,64,.13,8,false),mat(FX.cabo));m.userData.cur=cur;sc.add(m);F.cabos.push(m);return m};
-  cabo(new THREE.CatmullRomCurve3([new V(-13.7,9.95,.9),new V(-10.5,8.1,.6),new V(-7.6,7.6,.1),new V(-5.4,7.2,-.4),new V(-5.4,6.35,-.4)],false,'catmullrom',.5));
-  cabo(caminho([new V(-5.4,2.9,-.3),new V(-5.4,1.7,-.3),new V(3,1.7,-.3),new V(3,2.3,-.3)]));
-  cabo(caminho([new V(3,6.9,-.3),new V(3,8.2,-.3),new V(13.4,8.2,-.3),new V(13.4,6.9,-.3)]));
-  const pg=new THREE.SphereGeometry(.24,10,8),pm=semContorno(new THREE.MeshBasicMaterial({color:FX.fluxo}));cache().unicos.push(pm);
-  F.cabos.forEach((c,ci)=>{for(let i=0;i<4;i++){const p=new THREE.Mesh(pg,pm);p.visible=false;p.userData={cur:c.userData.cur,fase:i/4+ci*.13};sc.add(p);F.pontos.push(p)}});
-  /* legendas: as mesmas do SVG */
-  const r=typeof rede==='function'?rede():{V:220,Hz:60},leve=typeof L==='function'&&L();
-  const textos=leve?['Poste','Medidor','Quadro','Circuito']:['Trafo 13,8 kV→'+r.V+' V','Medidor kWh','Quadro + DJ',r.V+' V~ · '+r.Hz+' Hz'];
-  [-15,-5.4,3,13.4].forEach((x,i)=>{const t=textos[i],l=rotulo(t,Math.max(3.4,t.length*.56),1.25,{cor:'#f8fafc',esc:.7});l.position.set(x,-1.25,3.06);sc.add(l);F.legendas.push(t)});
-  Object.assign(F,{led,bulbo,brilho});return F}
-function enquadraFaixa(){const F=E.faixa,c=new THREE.Vector3(...FX.centro),meia=Math.tan(F.camera.fov*Math.PI/360);
-  const d=Math.max(FX.alt,FX.larg/F.camera.aspect)/2/meia;F.camera.position.copy(c).addScaledVector(new THREE.Vector3(.06,.12,1).normalize(),d);F.camera.lookAt(c);F.camera.updateProjectionMatrix()}
-/* estado da faixa: 'on' (alguma carga ligada), 'short' (curto agora) ou '' */
-function estadoFaixa(est){const F=E.faixa;if(!F||F.estado===est)return;F.estado=est;
-  F.pontos.forEach(p=>p.visible=est==='on'&&!reduz());
-  F.cabos.forEach(c=>c.material=est==='short'?matCurto():mat(FX.cabo));
-  const on=est==='on';F.bulbo.material.color.setHex(on?0xfff2a8:0x5a6b7d);F.bulbo.material.emissive.setRGB(on?1:0,on?.85:0,on?.3:0);F.brilho.visible=on;
-  if(!on){F.led.material.emissive.setHex(0x000000)}}
-/* energia correndo: pontos andando pelos cabos e LED do medidor piscando */
-function animaFaixa(agora){const F=E.faixa;if(!F||F.estado!=='on'||reduz())return false;
-  F.pontos.forEach(p=>{const u=(agora/1800+p.userData.fase)%1;p.position.copy(p.userData.cur.getPointAt(u)).add(new THREE.Vector3(0,0,.18))});
-  F.led.material.emissive.setHex(Math.floor(agora/350)%2?0xff3b2a:0x000000);return true}
-
 /* ---------- estado da cena (uma bancada 3D por vez) ---------- */
 let E=null;
 
@@ -457,7 +398,7 @@ function montar(no,ctx){
   E.sel=new THREE.Mesh(new THREE.TorusGeometry(.85,.14,10,32),anel);E.sel.visible=false;scene.add(E.sel);
   E.faisca=sprite(texturaBrilho('faisca',['rgba(255,255,255,1)','rgba(255,160,60,.8)']),6);E.faisca.visible=false;scene.add(E.faisca);
   /* badge do borne: aparece acima do dedo durante o toque e o arraste (o polegar cobre a plaqueta) */
-  E.faixa=montaFaixa();E.faixaH=0;E.semFaixa=!!ctx.cc;/* bancada CC (pilhas): sem a faixa do poste */
+  E.faixaH=0;E.plano=!!ctx.plano;configuraModo();
   E.badge=document.createElement('div');E.badge.className='badge-borne';E.badge.hidden=true;E.badge.setAttribute('aria-live','polite');no.appendChild(E.badge);
   construir(ctx.st);
   /* caixa que envolve as peças desta bancada: a câmera enquadra o que existe (cada fase tem um arranjo) */
@@ -492,30 +433,31 @@ function constroiPeca(c){const f=CONSTRUTOR[c.type];if(!f)return;
 function refazPeca(c){const p=E.pecas[c.id];if(!p)return;E.scene.remove(p.g);p.g.traverse(o=>{if(o.geometry)o.geometry.dispose()});
   E.hits=E.hits.filter(h=>h.userData.peca!==c.id&&!(h.userData.t&&h.userData.t.split('.')[0]===c.id));(p.toques||[]).forEach(h=>E.scene.remove(h));
   Object.keys(E.bornes).forEach(k=>{if(k.split('.')[0]===c.id)delete E.bornes[k]});delete E.pecas[c.id];constroiPeca(c);E.assinaturaFios=''}
-/* tamanho do canvas acompanha a largura da bancada (4:3, até 520 px de altura) */
-/* canvas = faixa do caminho da energia em cima + bancada embaixo (4:3, até 520 px) */
-function dimensiona(){const w=Math.max(260,Math.round(E.no.clientWidth||E.no.parentElement&&E.no.parentElement.clientWidth||340)),h=Math.round(Math.min(w*.78,520)),hb=E.semFaixa?0:Math.round(Math.min(FX.maxAlt,w*FX.altura));
-  if(w===E.tamanho[0]&&h===E.tamanho[1]&&hb===E.faixaH)return false;E.tamanho=[w,h];E.faixaH=hb;E.renderer.setSize(w,h+hb);
-  E.camera.aspect=w/h;E.camera.updateProjectionMatrix();E.faixa.camera.aspect=w/hb;enquadraFaixa();enquadra();
+/* tamanho do canvas acompanha a largura da bancada; o espaço que era da faixa do poste agora é da montagem */
+function dimensiona(){const w=Math.max(260,Math.round(E.no.clientWidth||E.no.parentElement&&E.no.parentElement.clientWidth||340)),h=Math.round(Math.min(w*1.05,600));
+  if(w===E.tamanho[0]&&h===E.tamanho[1])return false;E.tamanho=[w,h];E.renderer.setSize(w,h);
+  E.camera.aspect=w/h;E.camera.updateProjectionMatrix();enquadra();
   return true}
+/* 2D: a mesma cena e as mesmas peças, vistas de frente e paradas (não gira; arrastar move a vista, pinça aproxima).
+   3D: câmera livre. A troca não remonta a cena: só muda a câmera e os gestos. */
+function configuraModo(){const c=E.controls,p=!!E.plano;c.enableRotate=!p;c.touches.ONE=p?THREE.TOUCH.PAN:THREE.TOUCH.ROTATE;c.mouseButtons.LEFT=p?THREE.MOUSE.PAN:THREE.MOUSE.ROTATE;
+  E.camera.fov=p?20:34;E.camera.updateProjectionMatrix()}
 /* põe a câmera em 3/4 frontal-superior, longe o bastante para caber todas as peças com folga (reenquadra quando o tamanho muda) */
 /* câmera sempre livre (360°): arrastar no espaço vazio dá a volta na instalação; tocar em borne, peça ou fio continua
    montando (o toque sem movimento vai para o ctl, o arraste no vazio vai para a câmera). Sem botão de modo. */
 function limites(c){c.minAzimuthAngle=-Infinity;c.maxAzimuthAngle=Infinity;c.minPolarAngle=.08;c.maxPolarAngle=Math.PI-.08}
 function enquadra(){if(!E.caixa||E.caixa.isEmpty())return;const tam=E.caixa.getSize(new THREE.Vector3()),c=E.caixa.getCenter(new THREE.Vector3());
   const meia=Math.tan(E.camera.fov*Math.PI/360),d=Math.max(tam.y*1.25,tam.x*1.15/E.camera.aspect)/2/meia+tam.z;
-  E.camera.position.copy(c).addScaledVector(new THREE.Vector3(.13,.2,1).normalize(),d);E.controls.target.copy(c);
+  E.camera.position.copy(c).addScaledVector(E.plano?new THREE.Vector3(0,0,1):new THREE.Vector3(.13,.2,1).normalize(),d);E.controls.target.copy(c);
   E.dist=d;E.controls.minDistance=d*.18;E.controls.maxDistance=d*2.2;E.controls.update()}
 
 /* ---------- desenho sob demanda: só há laço enquanto alguma animação está rodando ---------- */
 function pede(){if(E&&!E.pedido)E.pedido=requestAnimationFrame(quadro)}
 function quadro(){if(!E)return;E.pedido=0;const agora=performance.now();
   E.anim=E.anim.filter(a=>{const k=Math.min(1,(agora-a.t0)/a.dur);a.passo(k,agora);return k<1});
-  const r=E.renderer,[w,h]=E.tamanho,hb=E.faixaH||0;r.setScissorTest(true);
-  r.setViewport(0,0,w,h);r.setScissor(0,0,w,h);E.efeito.render(E.scene,E.camera);
+  E.efeito.render(E.scene,E.camera);
   let rodando=false;if(!reduz())Object.values(E.pecas).forEach(p=>{if(p.c.type==='motor'&&p.gira>.04){p.extra.eixo.rotation.x+=.35*p.gira;rodando=true}});
-  let flui=false;if(hb){flui=animaFaixa(agora);r.setViewport(0,h,w,hb);r.setScissor(0,h,w,hb);E.efeito.render(E.faixa.scene,E.faixa.camera)}
-  r.setScissorTest(false);if(E.anim.length||flui||rodando)pede()}
+  if(E.anim.length||rodando)pede()}
 const anima=(dur,passo)=>{if(reduz()){passo(1,performance.now());return}E.anim.push({t0:performance.now(),dur,passo});pede()};
 
 /* ---------- fios ----------
@@ -617,7 +559,8 @@ function animaCurto(curto){
 }
 
 function atualizar(ctx){
-  if(!E)return;E.ctx=ctx;const st=ctx.st,res=ctx.res||{lamp:{}};E.cv.style.cursor=ctx.girar?'grab':'';E.no.classList.toggle('girando',!!ctx.girar);
+  if(!E)return;E.ctx=ctx;const st=ctx.st,res=ctx.res||{lamp:{}};
+  if(E.plano!==!!ctx.plano){E.plano=!!ctx.plano;configuraModo();enquadra()}/* troca 2D ↔ 3D sem remontar */E.cv.style.cursor=ctx.girar?'grab':'';E.no.classList.toggle('girando',!!ctx.girar);
   /* fonte que mudou de número de fases: refaz a peça antes de atualizar o estado */
   st.comps.forEach(c=>{const p=E.pecas[c.id];if(p&&c.type==='src'&&p.fases!==nFases(c))refazPeca(c)});
   st.comps.forEach(c=>{const p=E.pecas[c.id];if(!p)return;
@@ -657,9 +600,7 @@ function atualizar(ctx){
   if(!(ctx.curto&&ctx.curto.fios))E.fios.forEach(f=>{f.material=!ponto||res.net(f.userData.a)===ponto?matFio(f.userData.cor):matFioApagado(f.userData.cor)});
   const sb=ctx.sel&&E.bornes[ctx.sel];E.sel.visible=!!sb;if(sb)E.sel.position.copy(sb).add(new THREE.Vector3(0,0,.3));
   if(ctx.curto&&ctx.curto.fios)animaCurto(ctx.curto);
-  /* caminho da energia: ligado se alguma carga está ligada; curto se acabou de haver curto */
-  estadoFaixa(ctx.curto?'short':Object.values(res.lamp||{}).some(b=>b>.04)?'on':'');
-  dimensiona();const bancada=E.no.parentElement;if(bancada)bancada.style.setProperty('--faixa3d',(E.faixaH||0)+'px');pede();
+  dimensiona();pede();
 }
 
 /* ---------- badge do borne (HTML, pointer-events: none) ---------- */
@@ -750,7 +691,7 @@ function aoTocar(e){
 function destruir(){if(!E)return;
   if(E.pedido)cancelAnimationFrame(E.pedido);E.ro.disconnect();E.no.removeEventListener('pointerdown',aoTocar,true);E.no.removeEventListener('pointerdown',rastreia,true);
   window.removeEventListener('pointermove',moveDedos);window.removeEventListener('pointerup',soltaDedo);window.removeEventListener('pointercancel',soltaDedo);E.cv.removeEventListener('wheel',rodaMouse);E.controls.dispose();
-  E.scene.traverse(o=>{if(o.geometry)o.geometry.dispose()});E.faixa.scene.traverse(o=>{if(o.geometry)o.geometry.dispose()});
+  E.scene.traverse(o=>{if(o.geometry)o.geometry.dispose()});
   if(CACHE){CACHE.mat.forEach(m=>m.dispose());CACHE.tex.forEach(t=>t.dispose());CACHE.unicos.forEach(m=>{if(m.map)m.map.dispose();m.dispose()});CACHE=null}
   clearTimeout(E.badgeT);E.badge.remove();fechaFases();
   E.renderer.dispose();try{E.renderer.forceContextLoss()}catch(e){}E.cv.remove();E=null}
@@ -799,7 +740,8 @@ const debug={
   noite:id=>{const e=E.pecas[id].extra;return {lua:e.lua.visible,sol:e.sol.visible,ceu:e.ceu.material.color.getHex()===PAL.ceuNoite,texto:e.txt.userData.vivo.txt}},
   releImpulso:id=>{const p=E.pecas[id];return {alavanca:p.angRI,visor:p.extra.visor.material.color.getHex()===PAL.riOn?'fechado':'aberto'}},
   visorFT:id=>E.pecas[id].extra.visor.material.color.getHex()===PAL.desarmado?'disparado':'armado',
-  faixa:()=>({estado:E.faixa.estado,legendas:E.faixa.legendas,altura:E.faixaH,pontos:E.faixa.pontos.filter(p=>p.visible).length,cabos:E.faixa.cabos.length}),
+  faixa:()=>({altura:E.faixaH||0}),
+  plano:()=>({plano:!!E.plano,gira:E.controls.enableRotate,fov:E.camera.fov,frente:Math.abs(E.camera.position.x-E.controls.target.x)<.01&&Math.abs(E.camera.position.y-E.controls.target.y)<.01}),
   badge:()=>({visivel:!E.badge.hidden,texto:E.badge.textContent}),
   plaquetas:pid=>{const o=[];E.pecas[pid].g.traverse(m=>{if(m.userData.plaqueta)o.push({t:m.userData.plaqueta,incl:m.rotation.x,alt:m.geometry.parameters.height})});return o},
   nomeBorne:(pid,k)=>nomeBorne(E.pecas[pid].c,k),
