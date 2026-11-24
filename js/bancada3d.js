@@ -75,6 +75,8 @@ function texturaListrada(c1,c2){const C=cache(),k='listra:'+c1+c2;if(C.tex.has(k
 function matFio(k){const C=cache(),ch='fio:'+k;if(C.mat.has(ch))return C.mat.get(ch);const cs=coresDoFio(k);
   const m=cs.length>1?new THREE.MeshToonMaterial({color:0xffffff,map:texturaListrada(cs[0],cs[1]),gradientMap:tons()}):new THREE.MeshToonMaterial({color:new THREE.Color(cs[0]),gradientMap:tons()});
   m.userData.cores=cs;C.mat.set(ch,m);return m}
+/* fio esmaecido: quando um borne está selecionado, o que não é do mesmo ponto elétrico fica translúcido */
+function matFioApagado(k){const C=cache(),ch='fioApagado:'+k;if(C.mat.has(ch))return C.mat.get(ch);const m=matFio(k).clone();m.transparent=true;m.opacity=.18;m.depthWrite=false;m.userData.cores=matFio(k).userData.cores;C.mat.set(ch,m);return m}
 /* curto: material vermelho emissivo compartilhado; o pulso muda só a intensidade dele */
 function matCurto(){const C=cache();if(!C.mat.has('curto'))C.mat.set('curto',new THREE.MeshToonMaterial({color:0xff2a2a,emissive:0xff2a2a,emissiveIntensity:1,gradientMap:tons()}));return C.mat.get('curto')}
 
@@ -214,9 +216,9 @@ function construir(st){
   const linhas={};st.comps.filter(c=>LARG_DIN[c.type]).forEach(c=>{const y=pos2d(c).y;(linhas[y]=linhas[y]||[]).push(c)});
   Object.entries(linhas).forEach(([y,cs])=>{const x0=Math.min(...cs.map(c=>pos2d(c).x-LARG_DIN[c.type]/2)),x1=Math.max(...cs.map(c=>pos2d(c).x+LARG_DIN[c.type]/2));E.scene.add(trilho(x0-1.5,x1+1.5,+y))});
   /* esfera de toque compartilhada (invisível, maior que o parafuso) */
-  const toque=semContorno(new THREE.MeshBasicMaterial({colorWrite:false,depthWrite:false}));cache().unicos.push(toque);const geoToque=new THREE.SphereGeometry(1.2,10,8);
+  const toque=semContorno(new THREE.MeshBasicMaterial({colorWrite:false,depthWrite:false}));cache().unicos.push(toque);E.matToque=toque;const geoToque=new THREE.SphereGeometry(1.2,10,8);
   st.comps.forEach(c=>{const f=CONSTRUTOR[c.type];if(!f)return;
-    const p=f(c);p.g.position.copy(pos2d(c));E.scene.add(p.g);p.g.updateMatrixWorld(true);E.pecas[c.id]={c,...p,ang:c.trip?.5:-.5};
+    const p=f(c);p.g.position.copy(pos2d(c));E.scene.add(p.g);p.g.updateMatrixWorld(true);E.pecas[c.id]={c,...p,ang:c.trip?.5:-.5,caixa:new THREE.Box3().setFromObject(p.g)};
     p.corpo.forEach(m=>{m.userData.peca=c.id;E.hits.push(m)});
     p.bornes.forEach((v,k)=>{const id=c.id+'.'+k,w=p.g.localToWorld(v.clone());E.bornes[id]=w;
       const h=new THREE.Mesh(geoToque,toque);h.position.copy(w);h.userData.t=id;E.scene.add(h);E.hits.push(h)})});
@@ -237,19 +239,37 @@ function quadro(){if(!E)return;E.pedido=0;const agora=performance.now();
   E.efeito.render(E.scene,E.camera);if(E.anim.length)pede()}
 const anima=(dur,passo)=>{if(reduz()){passo(1,performance.now());return}E.anim.push({t0:performance.now(),dur,passo});pede()};
 
-/* ---------- fios: tubo sobre curva Catmull-Rom; sai perpendicular ao borne (+Z) e faz barriga ---------- */
-function curvaFio(a,b){const d=a.distanceTo(b),sag=1+d*.16;
-  const m=a.clone().add(b).multiplyScalar(.5).add(new THREE.Vector3(0,-sag,2.4+d*.04));
-  return new THREE.CatmullRomCurve3([a,a.clone().add(new THREE.Vector3(0,0,1.3)),m,b.clone().add(new THREE.Vector3(0,0,1.3)),b],false,'catmullrom',.5)}
-function malhaFio(a,b,cor){const cur=curvaFio(a,b),geo=new THREE.TubeGeometry(cur,56,.26,10,false);
-  /* listras do terra: repete a textura compartilhada pelo comprimento, escalando as UVs da própria geometria */
-  const rep=Math.max(2,Math.round(cur.getLength()*1.2)),uv=geo.attributes.uv;for(let i=0;i<uv.count;i++)uv.setX(i,uv.getX(i)*rep);
-  const m=new THREE.Mesh(geo,matFio(cor));m.userData.cor=cor;return m}
+/* ---------- fios ----------
+   Organizados como num diagrama: finos, em ângulo reto com cantos arredondados, cada um na sua pista.
+   O fio sai do borne para a frente, corre pela face da peça até a borda (por cima ou por baixo, conforme o lado do
+   borne), mergulha até perto da chapa e segue numa pista própria (altura e profundidade diferentes para cada fio),
+   para fios paralelos não se sobreporem. Um tubo invisível mais grosso em volta mantém o toque fácil. */
+const FIO={raio:.13,toque:.5,canto:.45,frente:.45,margem:.35,pista:.3,prof:.09,z0:.85,pistas:7};
+function saida(id){const T=E.bornes[id],p=E.pecas[id.split('.')[0]],cx=p.caixa,c=cx.getCenter(new THREE.Vector3()),dir=T.y>=c.y?1:-1;
+  return {T,dir,borda:dir>0?cx.max.y+FIO.margem:cx.min.y-FIO.margem}}
+/* polilinha com cantos arredondados (curva quadrática em cada canto) */
+function caminho(pts){const P=pts.filter((p,i)=>i===0||p.distanceTo(pts[i-1])>1e-3),cp=new THREE.CurvePath();let atual=P[0].clone();
+  for(let i=1;i<P.length-1;i++){const a=P[i-1],p=P[i],b=P[i+1],li=p.distanceTo(a),lo=b.distanceTo(p),r=Math.min(FIO.canto,li/2,lo/2);
+    const ent=p.clone().addScaledVector(p.clone().sub(a).normalize(),-r),sai=p.clone().addScaledVector(b.clone().sub(p).normalize(),r);
+    if(atual.distanceTo(ent)>1e-3)cp.add(new THREE.LineCurve3(atual,ent));cp.add(new THREE.QuadraticBezierCurve3(ent,p.clone(),sai));atual=sai}
+  cp.add(new THREE.LineCurve3(atual,P[P.length-1].clone()));return cp}
+function rota(w,i){const a=saida(w.a),b=saida(w.b),A=a.T,B=b.T,V=THREE.Vector3,pista=i%FIO.pistas;
+  const zL=FIO.z0+pista*FIO.prof,yc=a.borda+a.dir*(.45+pista*FIO.pista),zA=A.z+FIO.frente,zB=B.z+FIO.frente;
+  return caminho([A,new V(A.x,A.y,zA),new V(A.x,a.borda,zA),new V(A.x,a.borda,zL),new V(A.x,yc,zL),new V(B.x,yc,zL),new V(B.x,b.borda,zL),new V(B.x,b.borda,zB),new V(B.x,B.y,zB),B])}
+function tubo(cur,raio,lados){return new THREE.TubeGeometry(cur,Math.max(32,Math.round(cur.getLength()*5)),raio,lados,false)}
+function listras(geo,comp){const rep=Math.max(2,Math.round(comp*1.2)),uv=geo.attributes.uv;for(let i=0;i<uv.count;i++)uv.setX(i,uv.getX(i)*rep)}
+/* fio provisório do arraste: reto e fino, do borne até o dedo */
+function curvaFio(a,b){const m=a.clone().add(b).multiplyScalar(.5).add(new THREE.Vector3(0,0,1.2));return new THREE.CatmullRomCurve3([a,a.clone().add(new THREE.Vector3(0,0,.8)),m,b],false,'catmullrom',.5)}
+function malhaFio(a,b,cor){const cur=curvaFio(a,b),geo=tubo(cur,FIO.raio,8);listras(geo,cur.getLength());const m=new THREE.Mesh(geo,matFio(cor));m.userData.cor=cor;return m}
 function tiraMalha(m){E.scene.remove(m);m.geometry.dispose()}/* material e textura são do cache */
+function tiraFio(f){const h=f.userData.toque;if(h){E.hits.splice(E.hits.indexOf(h),1);tiraMalha(h)}tiraMalha(f)}
 function desenhaFios(st){
   const ass=st.wires.map(w=>w.a+'>'+w.b+':'+(w.cor||'')).join('|');if(ass===E.assinaturaFios)return;E.assinaturaFios=ass;
-  E.fios.forEach(f=>{E.hits.splice(E.hits.indexOf(f),1);tiraMalha(f)});E.fios=[];
-  st.wires.forEach((w,i)=>{const a=E.bornes[w.a],b=E.bornes[w.b];if(!a||!b)return;const m=malhaFio(a,b,w.cor||'fase');m.userData.w=i;E.scene.add(m);E.fios.push(m);E.hits.push(m)});
+  E.fios.forEach(tiraFio);E.fios=[];
+  st.wires.forEach((w,i)=>{if(!E.bornes[w.a]||!E.bornes[w.b])return;const cor=w.cor||'fase',cur=rota(w,i);
+    const geo=tubo(cur,FIO.raio,8);listras(geo,cur.getLength());const m=new THREE.Mesh(geo,matFio(cor));m.userData={w:i,cor,a:w.a};
+    const h=new THREE.Mesh(tubo(cur,FIO.toque,6),E.matToque);h.userData.w=i;m.userData.toque=h;
+    E.scene.add(m,h);E.fios.push(m);E.hits.push(h)});
 }
 /* curto: os fios do caminho trocam para o material de curto (pulsa) e a faísca estala onde o curto fechou */
 function animaCurto(curto){
@@ -276,6 +296,9 @@ function atualizar(ctx){
       p.extra.bulbo.material.color.setHex(b>.04?0xfff2a8:0x5a6b7d);p.extra.bulbo.material.emissive.setRGB(1*b,.85*b,.3*b);
       p.extra.brilho.visible=b>.04;p.extra.brilho.material.opacity=b;p.extra.brilho.scale.setScalar(5+5*b)}});
   desenhaFios(st);
+  /* realce do ponto elétrico: com um borne selecionado, só os fios do mesmo potencial ficam cheios */
+  const ponto=ctx.sel&&res.net?res.net(ctx.sel):null;E.realce=ponto;
+  if(!(ctx.curto&&ctx.curto.fios))E.fios.forEach(f=>{f.material=!ponto||res.net(f.userData.a)===ponto?matFio(f.userData.cor):matFioApagado(f.userData.cor)});
   const sb=ctx.sel&&E.bornes[ctx.sel];E.sel.visible=!!sb;if(sb)E.sel.position.copy(sb).add(new THREE.Vector3(0,0,.3));
   if(ctx.curto&&ctx.curto.fios)animaCurto(ctx.curto);
   dimensiona();pede();
@@ -335,7 +358,14 @@ const debug={
   contorno:()=>E.contorno,
   corFio:i=>{const f=E.fios.find(m=>m.userData.w===i);return f?f.material.userData.cores:null},
   tela:id=>E.bornes[id]?naTela(E.bornes[id]):naTela(E.pecas[id].corpo[0].getWorldPosition(new THREE.Vector3())),
-  telaFio:i=>{const f=E.fios.find(m=>m.userData.w===i);return naTela(f.geometry.parameters.path.getPoint(.5))},
+  telaFio:i=>{const f=E.fios.find(m=>m.userData.w===i),cur=f.geometry.parameters.path;
+    for(const u of [.5,.4,.6,.3,.7,.2,.8,.15,.85]){const p=naTela(cur.getPointAt(u)),a=alvoEm(p.x,p.y);if(a&&a.w===i)return p}return naTela(cur.getPointAt(.5))},
+  realcados:()=>E.fios.filter(f=>!f.material.transparent).length,
+  /* todo trecho reto do fio anda num eixo só (x, y ou z): traçado em ângulo reto, como no diagrama */
+  ortogonal:()=>E.fios.every(f=>f.geometry.parameters.path.curves.filter(c=>c.isLineCurve3).every(c=>{const d=c.v2.clone().sub(c.v1);return [d.x,d.y,d.z].filter(v=>Math.abs(v)>1e-6).length<=1})),
+  /* pistas: fios diferentes correm em profundidades diferentes (não ficam um sobre o outro) */
+  pistas:()=>new Set(E.fios.map(f=>f.geometry.parameters.path.curves.find(c=>c.isLineCurve3&&Math.abs(c.v1.z-c.v2.z)<1e-6&&c.v1.z<2).v1.z.toFixed(2))).size,
+  raioFio:()=>E.fios.length?E.fios[0].geometry.parameters.radius:null,
   telaTeste:id=>naTela(E.pecas[id].extra.teste.getWorldPosition(new THREE.Vector3())),
   visorDR:id=>E.pecas[id].extra.visor.material.color.getHex()===PAL.desarmado?'desarmado':'armado',
   emboloAlvo:id=>E.pecas[id].emb||0,

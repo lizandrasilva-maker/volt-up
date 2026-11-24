@@ -71,7 +71,12 @@ Padroniza o visual e a construção das peças 3D da bancada (`js/bancada3d.js`)
 - **Módulos DIN estilizados para o toque:** 1 módulo = **2,4** de largura (disjuntor unipolar), 2 módulos = 4,8 (DR bipolar), contatora = 3 módulos (7,2). Altura do módulo 8, profundidade 4,6 sobre o trilho (que tem 0,75 de altura).
 - **Tabela `TERM3D`** (em `bancada3d.js`): para cada tipo de peça, a posição local de cada borne, com **os mesmos índices do `motor.js`** (`terms(c)`). O construtor da peça lê a `TERM3D` para pôr o parafuso; nunca define borne por conta própria. Os ids ficam `idPeca.indice` (ex.: `DJ.0`).
 - **Área de toque:** cada borne tem uma esfera invisível (raio ≥ 1,2) maior que o parafuso, equivalente a pelo menos 44×44 px no celular. O raycast dá prioridade ao borne sobre peça e fio.
-- **Fio sem atravessar peça:** a curva `CatmullRomCurve3` sai perpendicular ao borne (+Z) antes de curvar, com barriga para baixo e para a frente.
+- **Fios legíveis como diagrama (`rota()` em `bancada3d.js`):** nada de arco grosso cruzando a bancada.
+  - **Finos:** raio `0,13` (`FIO.raio`); um tubo invisível de raio `0,5` em volta (material de toque) mantém o toque fácil.
+  - **Em ângulo reto com cantos arredondados:** o fio sai do borne para a frente, corre pela face da peça até a borda (por cima se o borne está na metade de cima da peça, por baixo se está na de baixo), mergulha até perto da chapa e segue em trechos horizontais e verticais (`CurvePath` de `LineCurve3` com uma `QuadraticBezierCurve3` em cada canto).
+  - **Cada fio na sua pista:** altura do corredor e profundidade mudam por fio (`FIO.pista`, `FIO.prof`, `FIO.pistas`), para fios paralelos não se sobreporem.
+  - **Realce do ponto elétrico:** com um borne selecionado (`ctx.sel`), os fios do mesmo potencial (`ctx.res.net`) ficam cheios e os outros ficam translúcidos (`matFioApagado`, do cache).
+  - Toda peça nova precisa da `caixa` (`Box3` do grupo) para o fio saber por onde sair.
 
 ### Bornes do solver (não invente bornes que o `motor.js` não tem)
 | Peça (`type`) | Bornes |
@@ -122,7 +127,7 @@ Os três polos de potência da contatora (`1/L1`, `3/L2`, `5/L3`) e o motor trif
 
 1. **`TERM3D`:** todos os bornes da peça estão mapeados com os mesmos índices do `motor.js` (mesma quantidade de `terms(c)`)?
 2. **Toque no celular:** cada borne tem esfera invisível maior que o parafuso, plaqueta com o nome do 2D e é alcançável sem girar a câmera?
-3. **Fio:** sai perpendicular ao borne e não atravessa a carcaça?
+3. **Fio:** sai pela borda da peça, corre em ângulo reto na sua pista e não esconde os bornes vizinhos?
 4. **Estado:** a peça reage a `c.on`, `c.trip`, `c.pressed`, `res.lamp[id]` e `ctx.curto` em `atualizar(ctx)`?
 5. **Cache:** materiais e texturas vêm de `mat()`/`textura()`/`rotulo()`; nenhum `new MeshToonMaterial` solto por peça?
 6. **Testes:** `VISTA3D.suporta` inclui a peça nova, e `tests/bancada3d.html` cobre os gestos dela com o mesmo resultado no SVG? Rode `node tests/rodar.js`.

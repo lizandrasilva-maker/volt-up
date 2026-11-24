@@ -171,6 +171,8 @@ let pistas={};
      confere(C,b.materiais-b.materiaisAntes<=2&&b.materiais<b.malhasAgora*0.6,'materiais em cache: 3 fios acrescentam no máximo 2 materiais (fase e neutro) e peças repetidas dividem os seus',(b.materiais-b.materiaisAntes)+' novos; '+b.materiais+' materiais / '+b.malhasAgora+' malhas');
      confere(C,b.contorno==='#070c16','contorno anime com o --contorno do jogo',b.contorno);
      confere(C,b.corFase===true&&b.corNeutro===true&&b.terraListrado===true,'cores dos fios vêm da tabela CORES do 2D; o terra é listrado nas duas cores dela');
+     confere(C,b.fioFino===true&&b.ortogonal===true&&b.pistas===3,'fios finos, em ângulo reto e cada um na sua pista (legíveis como diagrama)',b.pistas+' pistas');
+     confere(C,b.realce===true&&b.realceSai===true,'realce do ponto elétrico: borne selecionado deixa cheios só os fios do mesmo potencial');
      confere(C,b.mesmoCanvas===true,'o mesmo canvas é reencaixado a cada redesenho (1 montagem)');
      confere(C,b.aprovou3d===true&&b.aprovouSvg===true&&b.equivalente===true&&b.svgVoltou===true,'mesmos gestos na 3D e no SVG deixam a bancada no mesmo estado',b.st3d+' / '+b.stSvg);
      {const q=b.quadro||{};
