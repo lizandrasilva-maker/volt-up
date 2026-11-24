@@ -41,7 +41,7 @@ Object.assign(NPC,{
 /* personagens com arte própria (img/<id>.webp e img/<id>_body.webp); os outros seguem com o desenho simples */
 ['chico','fatima','lia','socorro','damiao','rayane','raimundo'].forEach(k=>{if(IMG[k]&&IMG[k+'_body']){NPC[k].body=IMG[k+'_body'];NPC[k].svg=picSVG(IMG[k])}});
 const CHAPTERS=[
- {id:'cap1',nome:'A Casa Acesa',tema:'Fundamentos e circuitos',fases:['faisca','entrada','primeiro','previsao','paralelo','defeito','renovavel','seguranca','ohm'],
+ {id:'cap1',nome:'A Casa Acesa',tema:'Fundamentos e circuitos',fases:['faisca','lanterna','entrada','seguranca','primeiro','previsao','paralelo','defeito','ohm','renovavel'],
   intro:[['chico','Gente nova na oficina! Boas-vindas, {nome}.'],['eu','Bom dia, Mestre! Pronto pra começar o serviço!'],['chico','Calma. Primeiro a gente treina aqui na bancada da oficina. Depois vamos atender clientes de verdade.'],['chico','Começamos pelo básico: de onde vem a energia e como ela chega até uma lâmpada.']],
   fim:[['fatima','Mestre Chico! Agora a casa inteira apagou! Nenhuma luz e nenhuma tomada funcionam!'],['chico','Quando a casa toda apaga, o problema não é uma lâmpada. Precisamos olhar o quadro de distribuição.'],['eu','Então vamos ver o quadro da casa dela?'],['chico','Esse é o próximo capítulo, {nome}. Lá você vai aprender disjuntor geral e DR.']]},
 
@@ -77,13 +77,17 @@ const CHAPTERS=[
 ];
 const SCENES={
   faisca:[['chico','Antes de mexer em qualquer coisa, me responde umas perguntas. Quero ver como você pensa.']],
-  entrada:[['chico','Olha pela janela da oficina: lá no poste tem o transformador, e na parede tem o medidor.'],['chico','É por esse caminho que a energia chega. {nome}, me mostra que você entendeu.']],
-  primeiro:[['chico','Essa é a sua bancada de treino. Tem uma fonte de energia, um interruptor e uma lâmpada.'],['chico','Na régua da fonte, L1 é a fase e N é o neutro. O neutro já chega aterrado pela fonte.'],['chico','A fonte não tem terra. Quando precisar, você crava a haste no chão e liga no BEP. E na obra, confira a fase com o instrumento antes de ligar.'],['chico','Ligue do jeito da NBR 5410: fase no interruptor, retorno até a lâmpada e neutro azul-claro direto no bocal.']],
+  lanterna:{
+   leve:[['chico','Agora a primeira montagem: uma lanterna. Duas pilhas, uma lâmpada e fio.'],['chico','Pilha tem dois lados, o + e o −. A energia sai de um, passa pela lâmpada e volta pelo outro.'],['eu','Então o caminho tem que ser fechado, de ponta a ponta!'],['chico','Isso. E com as duas pilhas certinhas, a lâmpada acende forte. Bora ver?']],
+   moderado:[['chico','Primeira montagem, em corrente contínua: duas pilhas de 1,5 V e uma lâmpada de lanterna de 3 V.'],['chico','Na pilha a corrente sai pelo + e volta pelo −. Polaridade importa.'],['eu','Para dar 3 V, as pilhas vão em série: o − de uma no + da outra.'],['chico','Exato. Põe o interruptor no caminho e me mostra a lanterna acesa.']],
+   full:[['chico','Lanterna de 3 V: lâmpada de 3 V e 0,3 A. Na caixa tem três pilhas de 1,5 V.'],['chico','Monte com o interruptor e decida quantas pilhas usar. Tensão demais rompe o filamento.'],['eu','Duas em série dão 3 V. Pela lei de Ohm, a lâmpada tem uns 10 Ω e puxa uns 0,3 A.'],['chico','Então prova na bancada.']]},
+  entrada:[['chico','Pilha dá para a lanterna. A energia da casa inteira vem de mais longe: do poste.'],['chico','Olha pela janela da oficina: lá no poste tem o transformador, e na parede tem o medidor.'],['chico','É por esse caminho que a energia chega. {nome}, me mostra que você entendeu.']],
+  primeiro:[['chico','Agora a bancada é de 220 V, igual à rede da casa: fonte, interruptor e lâmpada.'],['chico','Na régua da fonte, L1 é a fase e N é o neutro. O neutro já chega aterrado pela fonte.'],['chico','A fonte não tem terra. Quando precisar, você crava a haste no chão e liga no BEP. E na obra, confira a fase com o instrumento antes de ligar.'],['chico','Ligue do jeito da NBR 5410: fase no interruptor, retorno até a lâmpada e neutro azul-claro direto no bocal.']],
   previsao:[['chico','Ainda na bancada: eletricista bom prevê o que vai acontecer antes de ligar. Topa um desafio?'],['eu','Topo! Vou pensar antes de responder.']],
   paralelo:[['fatima','Bom dia! Sou a Dona Fátima, moro aqui na rua. Quero colocar duas lâmpadas na minha sala.'],['fatima','E quero as duas bem fortes, viu?'],['chico','Primeira cliente, {nome}! Cuidado: tem um jeito de ligar que deixa as duas fraquinhas.']],
   defeito:[['fatima','Mestre, a lâmpada da minha cozinha não acende mais! As outras luzes da casa estão funcionando.'],['chico','Se só a cozinha apagou, o problema está no circuito da cozinha. Vamos testar peça por peça: aqui não se troca nada no chute.']],
-  renovavel:[['fatima','Mestre, minha vizinha instalou placa solar. Isso é energia que não acaba?'],['chico','Boa pergunta. {nome}, explica pra ela de onde vem cada energia.']],
-  seguranca:[['chico','Antes do próximo serviço na casa da Dona Fátima, vamos revisar a parte mais importante do ofício.'],['eu','Segurança primeiro!']],
+  renovavel:[['fatima','Mestre, com a conta alta desse jeito... Minha vizinha instalou placa solar. Isso é energia que não acaba?'],['chico','Boa pergunta. {nome}, explica pra ela de onde vem cada energia.']],
+  seguranca:[['chico','A rede de 220 V machuca de verdade. Antes de mexer nela, a parte mais importante do ofício.'],['eu','Segurança primeiro!']],
   ohm:[['fatima','E por que a minha conta de luz vem tão alta?'],['chico','Hora de fazer conta: potência, tempo e consumo.']],
   /* Cap. 2 */
   quadro:[['lia','Antes de abrir o quadro, me diga: para que serve cada peça dele?']],
@@ -143,6 +147,12 @@ const PHASES=[
          {q:'Uma fonte com rendimento de 80 % entrega 40 W à carga. Quanto ela dissipa em calor?',o:['10 W','32 W','50 W'],w:'Pentrada = 40 ÷ 0,8 = 50 W. Perdas = 50 − 40 = 10 W. 50 W é a potência de entrada, não a perda; 32 W aplica o rendimento sobre a saída (40 × 0,8), o erro mais comum.'},
          {q:'Circuito de 30 m (ida e volta = 60 m) em 2,5 mm², ρ = 0,0172 Ω·mm²/m, com 20 A. Potência perdida no cabo?',o:['≈ 165 W','≈ 83 W','≈ 8 W'],w:'R = 0,0172 × 60 ÷ 2,5 ≈ 0,41 Ω. P = R × I² = 0,41 × 400 ≈ 165 W. Esquecer a volta dá 83 W; esquecer o quadrado dá 8 W.'}]
   }},
+ {id:'lanterna',nome:'Pilha e Lanterna',sub:'Fonte CC e polaridade',kind:'bancada',tipo:'build',ic:'pilha',cor:'#b5651d',cc:true,
+  card:{leve:'Pilha tem + e −: em série, o − de uma no + da outra.',moderado:'Pilhas em série somam tensão: 1,5 V + 1,5 V = 3 V.',full:'I = V ÷ R: 3 V numa lâmpada de 10 Ω dão cerca de 0,3 A.'},
+  dados:{
+   leve:{comps:pecasLanterna(2,false),real:LANTERNA_REAL,goal:LANTERNA_GOAL.leve,check:lanternaCheck,sucesso:lanternaSucesso},
+   moderado:{comps:pecasLanterna(2,true),real:LANTERNA_REAL,goal:LANTERNA_GOAL.moderado,check:lanternaCheck,sucesso:lanternaSucesso},
+   full:{comps:pecasLanterna(3,true),real:LANTERNA_REAL,goal:LANTERNA_GOAL.full,check:lanternaCheck,sucesso:lanternaSucesso}}},
  {id:'entrada',nome:'Do Poste à Tomada',sub:'Transformador, medidor e CA',kind:'quiz',tipo:'quiz',ic:'multimetro',cor:'#2b5a4e',
   card:{leve:'Gasto = força do aparelho × tempo ligado.',moderado:'kW é potência; kWh é energia. Minutos viram horas antes de multiplicar.',full:'Em estrela, fase-fase = fase-neutro × √3: 380 V, não 440 V.'},
   dados:{
@@ -399,3 +409,8 @@ function setMode(){document.body.classList.toggle('leve',L());ceu()}
 function ceu(pid){const ch=pid?chapterOf(pid):null;document.body.dataset.cap=(ch&&ch.id)||S.chap||'cap1'}
 function bindHud(){const a=document.getElementById('toAlbum');if(a)a.onclick=showAlbum;const f=document.getElementById('toFicha');if(f)f.onclick=showFicha}
 
+
+/* Cena da fase: lista única de falas ou uma lista por nível ({leve,moderado,full}), quando o texto muda com o nível */
+function cenaDe(id){const s=SCENES[id];return !s?null:Array.isArray(s)?s:(s[S.mode]||s.moderado||s.leve)}
+/* Todas as falas de uma cena (todos os níveis), para conferir personagens */
+function todasFalas(id){const s=SCENES[id];return !s?[]:Array.isArray(s)?s:Object.values(s).flat()}

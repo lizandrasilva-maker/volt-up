@@ -3,14 +3,15 @@
 <body><div id="app"></div><pre id="out">rodando</pre>
 <script>try{localStorage.clear();sessionStorage.clear()}catch(e){}</script>
 <script src="../js/estado.js"></script><script src="../js/motor.js"></script><script src="../js/bancada-real.js"></script><script src="../js/multifilar.js"></script><script src="../js/planta.js"></script>
-<script src="../js/conteudo.js"></script><script src="../js/imagens.js"></script><script src="../js/historia.js"></script>
+<script src="../js/conteudo.js"></script><script src="../js/cc.js"></script><script src="../js/lanterna.js"></script><script src="../js/imagens.js"></script><script src="../js/historia.js"></script>
 <script src="../js/telas.js"></script><script src="../js/fases.js"></script><script src="../js/carreira.js"></script><script src="../js/calculo.js"></script><script src="../js/calculadora.js"></script><script src="../js/teste.js"></script>
 <script>
 /* Testes das fases: gabaritos, erros comuns, previsões, quizzes, cenas e trava de capítulos.
    Rode com: node tests/rodar.js */
 const R={};S.char='aprendiz';S.name='Teste';
 const W2=(l)=>l.map(([a,b,cor])=>Object.assign(W(a,b),{cor}));
-const verifica=(pid,md,wires)=>{S.mode=md;const t=phaseById(pid).dados[md];const st={comps:clone(t.comps),wires};return t.check(st)||normCheck(st)||colorCheck(st)||'OK'};
+/* bancada CC (pilhas) confere só pela missão; a rede de 220 V também pela norma e pelas cores */
+const verifica=(pid,md,wires)=>{S.mode=md;const p=phaseById(pid),t=p.dados[md];const st={comps:clone(t.comps),wires};return (p.cc?t.check(st,1):t.check(st)||normCheck(st)||colorCheck(st))||'OK'};
 try{
   // 1) todos os gabaritos de bancada passam, em todos os níveis
   const g={};for(const p of PHASES.filter(p=>p.tipo==='build'))for(const md of ['leve','moderado','full']){S.mode=md;const sol=testeSol(p.id);g[p.id+':'+md]=sol?verifica(p.id,md,sol):'SEM GABARITO'}
@@ -56,7 +57,7 @@ try{
     const v=x.o.map(num);if(v.every(z=>z!==null)){numQ++;const s=[...v].sort((a,b)=>a-b);if(s[1]===v[0])meio++}}
   R.pistas={perguntas:n,certaMaisLonga:longa,absolutaSoNasErradas:absErr,absolutaNaCerta:absCerta,ecoDoEnunciado:eco,soCertaJustifica:justif,numericas:numQ,certaNoMeio:meio};
   // 6) cenas e personagens existem
-  const falta=[];CHAPTERS.filter(c=>!c.soon).forEach(c=>{[...(c.intro||[]),...(c.fim||[])].forEach(([w])=>{if(w!=='eu'&&!NPC[w])falta.push(c.id+':'+w)});c.fases.forEach(id=>{if(!phaseById(id))falta.push('fase '+id);(SCENES[id]||[]).forEach(([w])=>{if(w!=='eu'&&!NPC[w])falta.push(id+':'+w)});if(!ICONS[phaseById(id).ic])falta.push('icone '+id)})});
+  const falta=[];CHAPTERS.filter(c=>!c.soon).forEach(c=>{[...(c.intro||[]),...(c.fim||[])].forEach(([w])=>{if(w!=='eu'&&!NPC[w])falta.push(c.id+':'+w)});c.fases.forEach(id=>{if(!phaseById(id))falta.push('fase '+id);todasFalas(id).forEach(([w])=>{if(w!=='eu'&&!NPC[w])falta.push(id+':'+w)});if(!ICONS[phaseById(id).ic])falta.push('icone '+id)})});
   R.faltando=falta;
   // 6a) fonte e aterramento
   {const F=n=>Object.assign(BAT(),{fases:n}),fo={};
@@ -145,6 +146,29 @@ try{
     const z0=zb('-').disabled;zb('+').click();const z1=!zb('-').disabled&&vbx()!=='0 0 340 250';zb('-').click();
     cu.zoom=z0&&z1&&vbx()==='0 0 340 250'&&zb('-').disabled;
     R.curto=cu;}
+  // 8d) Pilha e Lanterna: simulador CC com valores conferidos à mão (pilha 1,5 V e r = 0,2 Ω; lâmpada 10 Ω)
+  {const k={};const pc=(n,sw)=>pecasLanterna(n,sw);
+    const W2c=l=>l.map(([a,b])=>W(a,b));
+    const r2=CC.resolver(pc(2,false),W2c([['P1.0','L1.0'],['L1.1','P2.1'],['P1.1','P2.0']])).lampadas.L1;      /* 3 V ÷ 10,4 Ω */
+    k.serie=[Math.round(r2.V*100)/100,Math.round(r2.I*1000)/1000];
+    const r1=CC.resolver(pc(2,false),W2c([['P1.0','L1.0'],['L1.1','P1.1']]));                                 /* 1,5 V ÷ 10,2 Ω */
+    k.umaPilha=[Math.round(r1.lampadas.L1.V*100)/100,r1.eventos.includes('fraca')];
+    const rp=CC.resolver(pc(2,false),W2c([['P1.0','P2.0'],['P1.1','P2.1'],['P1.0','L1.0'],['L1.1','P1.1']]));  /* paralelo: continua ~1,5 V */
+    k.paralelo=[Math.round(rp.lampadas.L1.V*100)/100,rp.eventos.includes('fraca')];
+    const inv=W2c([['P1.0','L1.0'],['L1.1','P2.0'],['P1.1','P2.1']]);                                         /* P2 ao contrário */
+    k.invertida=[CC.resolver(pc(2,false),inv).eventos.includes('aberto'),CC.pilhaInvertida(pc(2,false),inv)];
+    const r3=CC.resolver(pc(3,true),W2c([['P1.0','L1.0'],['L1.1','P3.1'],['P1.1','P2.0'],['P2.1','P3.0']]));   /* 4,5 V: queima */
+    k.tres=[Math.round(r3.lampadas.L1.V*100)/100,r3.eventos.includes('queima')];
+    const rc=CC.resolver(pc(2,false),W2c([['P1.0','P1.1']]));k.curto=[rc.eventos.includes('curto'),Math.round(rc.pilhas.P1.I*10)/10];
+    /* retorno em etapas e por nível: mesma causa física, linguagem diferente */
+    const stInv={comps:pc(2,false),wires:inv};S.mode='leve';const l1=lanternaCheck(stInv,1),l3=lanternaCheck(stInv,3);S.mode='full';const f3=lanternaCheck(stInv,3);
+    k.etapas=[/^💡 Pista/.test(l1),/^📘 Explicação/.test(l3),/Kirchhoff/.test(f3),l3!==f3];
+    /* lâmpada queimada troca com um toque */
+    const lq=C('L9','lamp',0,0,0,{broken:true,show:true,queima:true});acionarPeca(lq,0);k.troca=!lq.broken&&!lq.queima;
+    /* bancada CC sem a faixa do poste, com valores na tela no Técnico */
+    S.mode='moderado';const pl=phaseById('lanterna');runBuild(pl,pl.dados.moderado);
+    k.tela=!document.querySelector('.benchwrap .entrada')&&/corrente contínua/i.test((document.querySelector('.benchwrap .modelo summary')||{}).textContent||'')&&!!document.querySelector('[data-cor="pos"]');
+    k.ordemCap1=CHAPTERS[0].fases.join(',');R.cc=k;}
   // 8c) Caça-Defeito com multímetro e ponteiras: sem letras nos parafusos; arrastar a vermelha, tocar para a preta, o visor mede
   {const mm={};S.mode='moderado';const pd=phaseById('defeito');runDiag(pd,pd.dados.moderado);
     const svg=()=>document.querySelector('.bench svg'),lcd=()=>(document.querySelector('.mm-lcd b')||{}).textContent;

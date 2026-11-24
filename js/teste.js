@@ -72,6 +72,9 @@ const TESTE_SOL={
   'paralelo:full':[['B.0','S0.0','fase'],['S0.1','L1.0','retorno'],['S0.1','S2.0','retorno'],['S2.1','L2.0','retorno'],['L1.1','B.1','neutro'],['L2.1','B.1','neutro']]
 };
 TESTE_SOL['primeiro:full']=TESTE_SOL['primeiro:moderado'];
+/* Pilha e Lanterna (bancada CC): pilhas em série (− de P1 no + de P2) e a lâmpada nas pontas; com o S1 no + */
+TESTE_SOL['lanterna:leve']=[['P1.0','L1.0','pos'],['L1.1','P2.1','neg'],['P1.1','P2.0','neg']];
+TESTE_SOL['lanterna:moderado']=TESTE_SOL['lanterna:full']=[['P1.0','S1.0','pos'],['S1.1','L1.0','pos'],['L1.1','P2.1','neg'],['P1.1','P2.0','neg']];
 /* capítulo 2 */
 Object.assign(TESTE_SOL,{
   'quadronovo:leve':[['B.0','DG.0','fase'],['DG.1','DR.0','fase'],['B.1','DR.1','neutro'],['DR.2','L1.0','fase'],['L1.1','DR.3','neutro']],
@@ -106,7 +109,7 @@ function showRoteiro(){
     body+='<section class="rot-cap"><span class="eyebrow">Capítulo '+(ci+1)+' · '+ch.tema+'</span><h2>'+ch.nome+'</h2>';
     if(ch.soon){body+='<p class="muted">Em construção: ainda sem roteiro.</p></section>';return}
     if(ch.intro)body+='<div class="rot-item"><div class="rot-h"><b>Abertura</b><button class="btn sm" data-cena="intro:'+ch.id+'">▶ Ver cena</button></div>'+falasHTML(ch.intro)+'</div>';
-    ch.fases.forEach((id,i)=>{const p=phaseById(id),sc=SCENES[id];
+    ch.fases.forEach((id,i)=>{const p=phaseById(id),sc=cenaDe(id);
       body+='<div class="rot-item"><div class="rot-h"><b>'+(i+1)+'. '+p.nome+'</b><span class="chip">'+TIPO_NOME[p.tipo]+'</span></div>'+
         '<p class="help">'+p.sub+'</p>'+(sc?falasHTML(sc):'<p class="help">Sem cena antes da fase.</p>')+
         '<p class="rot-card">🃏 '+p.card[S.mode]+'</p>'+
@@ -120,6 +123,6 @@ function showRoteiro(){
   document.getElementById('bk').onclick=showMap;document.getElementById('bk2').onclick=showMap;
   app.querySelectorAll('[data-lv]').forEach(b=>b.onclick=()=>{S.mode=b.dataset.lv;save();showRoteiro()});
   app.querySelectorAll('[data-cena]').forEach(b=>b.onclick=()=>{const [k,id]=b.dataset.cena.split(':');
-    const lines=k==='fase'?SCENES[id]:CHAPTERS.find(c=>c.id===id)[k];showScene(lines,showRoteiro)});
+    const lines=k==='fase'?cenaDe(id):CHAPTERS.find(c=>c.id===id)[k];showScene(lines,showRoteiro)});
   app.querySelectorAll('[data-jogar]').forEach(b=>b.onclick=()=>playPhase(+b.dataset.jogar));
 }

@@ -48,9 +48,20 @@ function missao(goal,real,nota,rotulo){return '<div class="goal"><span class="gi
 /* Bancada com a cadeia de energia (poste → medidor → quadro) colada em cima e, por cima da bancada,
    os botões pequenos de vista (Real/Diagrama) e de zoom, como num mapa de celular.
    O estado da faixa (energia passando ou curto) vem da classe que board() põe no <svg>. */
-function benchWrap(svg,id,zm){const m=/^<svg[^>]*class="(\w*)/.exec(svg),est=m?(m[1]==='curto'?'short':m[1]):'',R=vistaReal();
+/* cc = bancada de corrente contínua (pilhas): sem a faixa do poste e com o aviso do modelo CC */
+function benchWrap(svg,id,zm,cc){const m=/^<svg[^>]*class="(\w*)/.exec(svg),est=m?(m[1]==='curto'?'short':m[1]):'',R=vistaReal();
   const ctl=zm?'<div class="bctl">'+'<button class="btn vbtn" data-vista="'+(R?'simb':'real')+'" aria-label="'+(R?'Ver o diagrama multifilar':'Ver as peças reais')+'">'+(R?'📐 Multifilar':'🔌 Real')+'</button>'+zm.ui()+'</div>':'';
-  return '<div class="benchwrap">'+entrada(est)+'<div class="bench"'+(id?' id="'+id+'"':'')+'>'+svg+ctl+'</div>'+avisoModelo()+'</div>'}
+  return '<div class="benchwrap">'+(cc?'':entrada(est))+'<div class="bench"'+(id?' id="'+id+'"':'')+'>'+svg+ctl+'</div>'+(cc?avisoCC():avisoModelo())+'</div>'}
+/* Aviso da bancada CC: aqui os valores são calculados, com as premissas do modelo (js/cc.js) */
+function avisoCC(){return '<details class="modelo"><summary>ⓘ Modelo de corrente contínua: valores calculados</summary>'+
+  '<p>Tensões e correntes são <b>calculadas</b> pela lei de Ohm e pelas leis de Kirchhoff. Premissas: pilha de 1,5 V com resistência interna de 0,2 Ω; '+
+  'lâmpada de lanterna de 3 V e 0,3 A tratada como resistor fixo de 10 Ω (no filamento real a resistência sobe com o calor); '+
+  'a lâmpada queima acima de 1,35 vez a tensão nominal; regime permanente, sem transitórios.</p></details>'}
+/* valores calculados nas lâmpadas da bancada CC: brilho no Leve; tensão e corrente no Técnico e no Profissional */
+function chipsCC(st,res){const cc=res.cc;
+  return '<div class="status">'+st.comps.filter(c=>c.type==='lamp').map(c=>{const l=cc.lampadas[c.id]||{V:0,I:0,brilho:0};
+    if(c.queima)return '<span class="chip">'+c.id+': queimada</span>';
+    return '<span class="chip'+(l.brilho>0.04?' lit':'')+'">'+c.id+': '+(L()?bright(l.brilho):ccN(l.V)+' V · '+ccN(l.I)+' A'+(S.mode==='full'?' · '+ccN(l.V*l.I)+' W':''))+'</span>'}).join('')+'</div>'}
 /* Aviso fixo em toda bancada: o motor do jogo é qualitativo (Etapa 2 da revisão).
    Não apresentar a bancada como simulador quantitativo enquanto o motor V2 não existir. */
 function avisoModelo(){return '<details class="modelo"><summary>ⓘ Modelo didático qualitativo: sem valores reais</summary>'+
@@ -74,6 +85,8 @@ function acionarPeca(c,lx,depois){
      Fonte: só religa a proteção depois de um curto. */
   if(c.type==='fuse'){c.trip=!c.trip;SW_FLIP=c.id;return}
   if(c.type==='src'&&c.trip){c.trip=false;return}
+  /* lâmpada queimada (bancada CC): o toque troca por uma nova */
+  if(c.type==='lamp'&&c.queima){c.queima=false;c.broken=false;c.show=false;return}
   if(c.type==='sw')flipSwitch(c);
   else if(c.type==='sw2'){const k=lx<0?'a':'b';c[k]=!c[k];SW_FLIP=c.id+'.'+k}
   else if(c.type==='sw3'||c.type==='sw4'){c.pos=c.pos?0:1;SW_FLIP=c.id}
@@ -86,25 +99,33 @@ function acionarPeca(c,lx,depois){
 
 /* ---------- Bancada: montar ---------- */
 function runBuild(p,task){
-  const st={comps:clone(task.comps),wires:[]};let sel=null,tries=0,msg=null,won=false,cor='fase',curto=null;
-  /* depois de ligar um fio ou acionar uma peça: se fechou um curto, a proteção desarma e a bancada anima */
-  const checa=onde=>{const ev=protegeCurto(st,onde);if(ev){curto=ev;msg=msgCurto(ev)}};
+  /* cc = fase de corrente contínua (pilhas): usa o simulador CC (js/cc.js) e a conferência da própria missão */
+  const cc=!!p.cc,resolve=cc?(cs,ws)=>CC.paraBancada(CC.resolver(cs,ws)):solve;
+  const st={comps:clone(task.comps),wires:[]};let sel=null,tries=0,msg=null,won=false,cor=cc?'pos':'fase',curto=null;
+  /* depois de ligar um fio ou acionar uma peça: se fechou um curto, a proteção desarma e a bancada anima.
+     Na bancada CC não há disjuntor: o curto esquenta a pilha e a sobretensão queima a lâmpada (calculados). */
+  const checa=onde=>{
+    if(!cc){const ev=protegeCurto(st,onde);if(ev){curto=ev;msg=msgCurto(ev)}return}
+    const res=CC.resolver(st.comps,st.wires);
+    const q=Object.entries(res.lampadas).find(([,l])=>l.queima);
+    if(q){st.__vQueima=q[1].V;const c=st.comps.find(x=>x.id===q[0]);Object.assign(c,{broken:true,show:true,queima:true});msg=task.check(st,Math.max(1,tries))}
+    else if(res.eventos.includes('curto')){curto={fios:CC.fiosDoCurto(st,res),onde,quem:null,nome:''};msg=task.check(st,Math.max(1,tries))}};
   const zm=benchZoom();let drawn=false,verPlanta=false;BANCADA_ID++;
   const render=()=>{
-    const r=solve(st.comps,st.wires),R=vistaReal();
+    const r=resolve(st.comps,st.wires),R=vistaReal();
     const help='Toque em dois '+(R?'parafusos':'pontos ⚪')+' para ligar um fio.'+(L()?' Toque no fio para tirar.':'');
     const pl=typeof PLANTAS!=='undefined'&&PLANTAS[p.id];
     frame(p,missao(task.goal,task.real)+
       /* fases com projeto: a planta de fiação abre e fecha acima da bancada */
       (pl?'<button class="btn planta-btn" id="vplanta" aria-expanded="'+verPlanta+'">📄 '+(verPlanta?'Fechar a planta':'Ver a planta do projeto')+'</button>'+(verPlanta?plantaHTML(pl):''):'')+
-      (won?'':palette(cor))+benchWrap(board(st,{res:r,sel,pickTerm:!won,pickWire:!won,toggle:true,real:R,vb:zm.vb(),curto}),'',zm)+statusChips(st,r)+
-      (msg?'<div class="fb '+(won?'good':'bad')+'">'+(won?pick(PRAISE[S.mode])+' ':'')+msg+(won&&L()?'<br><small>Na vida real, só eletricista mexe na rede, e com tudo desligado.</small>':'')+'</div>':st.wires.length?'':'<p class="help">'+help+'</p>')+
+      (won?'':palette(cor,cc?['pos','neg']:null))+benchWrap(board(st,{res:r,sel,pickTerm:!won,pickWire:!won,toggle:true,real:R,vb:zm.vb(),curto}),'',zm,cc)+(cc?chipsCC(st,r):statusChips(st,r))+
+      (msg?'<div class="fb '+(won?'good':'bad')+'">'+(won?pick(PRAISE[S.mode])+' ':'')+msg+(won&&L()&&!cc?'<br><small>Na vida real, só eletricista mexe na rede, e com tudo desligado.</small>':'')+'</div>':st.wires.length?'':'<p class="help">'+help+'</p>')+
       (won?'<button class="btn main" id="end">Concluir ⚡</button>':'<div class="row"><button class="btn ghost" id="clr">Limpar fios</button><button class="btn main" id="chk">Verificar</button></div>'));
     keepScroll(drawn);drawn=true;curto=null;/* a animação do curto roda uma vez só */
     const svg=app.querySelector('.bench svg');
     zm.bind(app.querySelector('.bench'),app);
     /* modo teste: "Montar pra mim" monta o gabarito e já aprova (não sobra nada para verificar) */
-    const ts=document.getElementById('tSol');if(ts)ts.onclick=()=>{st.wires=testeSol(p.id);st.comps.forEach(c=>{if(c.type==='fuse'||c.type==='src')c.trip=false});sel=null;msg=null;verificar()};
+    const ts=document.getElementById('tSol');if(ts)ts.onclick=()=>{st.wires=testeSol(p.id);st.comps.forEach(c=>{if(c.type==='fuse'||c.type==='src')c.trip=false;if(c.queima)Object.assign(c,{queima:false,broken:false,show:false})});sel=null;msg=null;verificar()};
     const vp=document.getElementById('vplanta');if(vp)vp.onclick=()=>{verPlanta=!verPlanta;render()};
     app.querySelectorAll('[data-vista]').forEach(b=>b.onclick=()=>{setVista(b.dataset.vista==='real');render()});
     app.querySelectorAll('[data-cor]').forEach(b=>b.onclick=()=>{cor=b.dataset.cor;render()});
@@ -126,10 +147,10 @@ function runBuild(p,task){
   };
   const verificar=()=>{const desl=st.comps.find(c=>(c.type==='fuse'||c.type==='src')&&c.trip);
     if(desl){msg=desarmadoMsg(desl);render();return}
-    tries++;const m=task.check(st)||normCheck(st)||colorCheck(st);if(m){msg=m}else{won=true;st.comps.forEach(c=>{if(c.type==='sw')c.closed=true});/* liga tudo: a luz acende como recompensa */
+    tries++;const m=cc?task.check(st,tries):task.check(st)||normCheck(st)||colorCheck(st);if(m){msg=m}else{won=true;st.comps.forEach(c=>{if(c.type==='sw')c.closed=true});/* liga tudo: a luz acende como recompensa */
     /* comandos: um toque no LIGA / pulsador e a caixa vazia, para o motor girar e a luz do relé acender */
     st.comps.forEach(c=>{if(c.type==='ft'||c.type==='dr')c.trip=false;if(c.type==='boia')c.vazia=true;if(c.type==='foto')c.noite=true});
-    st.comps.filter(c=>c.type==='btn'&&!c.nf).slice(0,1).forEach(c=>{c.pressed=true;solve(st.comps,st.wires);c.pressed=false;solve(st.comps,st.wires)});msg='Testei todas as posições dos interruptores e conferi as cores: aprovado!';S.xp+=tries===1?30:15;save()}render()};
+    st.comps.filter(c=>c.type==='btn'&&!c.nf).slice(0,1).forEach(c=>{c.pressed=true;solve(st.comps,st.wires);c.pressed=false;solve(st.comps,st.wires)});msg=cc&&task.sucesso?task.sucesso(st):'Testei todas as posições dos interruptores e conferi as cores: aprovado!';S.xp+=tries===1?30:15;save()}render()};
   const addWire=(a,b)=>{sel=null;msg=null;if(!st.wires.some(w=>(w.a===a&&w.b===b)||(w.a===b&&w.b===a))){st.wires.push(Object.assign(W(a,b),{cor}));checa(b)}render()};
   render();
 }

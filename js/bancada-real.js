@@ -11,6 +11,8 @@ const REAL_TERMS={
   /* fonte: régua de bornes embaixo, da esquerda para a direita L1, L2, L3, N (marcação impressa).
      A posição depende de quantas fases a fonte tem (realTerms calcula). Índices do motor: .0 L1, .1 N, .2 L2, .3 L3. */
   src:[{p:[0,25],d:[0,1],n:'L1'},{p:[0,25],d:[0,1],n:'N'},{p:[0,25],d:[0,1],n:'L2'},{p:[0,25],d:[0,1],n:'L3'}],
+  /* pilha no suporte com régua de bornes: + à esquerda, − à direita */
+  pilha:[{p:[-12,26],d:[0,1],n:'+'},{p:[12,26],d:[0,1],n:'−'}],
   /* haste: conector no topo, por onde chega o condutor de aterramento */
   haste:[{p:[0,-20],d:[0,-1],n:''}],
   /* BEP: barra de cobre com 4 parafusos; os condutores saem por baixo, pela canaleta */
@@ -33,7 +35,7 @@ const REAL_TERMS={
   ri:[{p:[-10,-26],d:[0,-1],n:'A1'},{p:[-10,26],d:[0,1],n:'A2'},{p:[10,-26],d:[0,-1],n:'1'},{p:[10,26],d:[0,1],n:'2'}]
 };
 /* Retângulo do corpo de cada peça [x0,y0,x1,y1]: usado para o fio desviar e para a área de toque. */
-const REAL_BOX={src:[-30,-30,30,33],haste:[-12,-26,12,30],bep:[-27,-12,27,14],fuse:[-14,-36,14,36],sw:[-17,-29,17,33],lamp:[-14,-28,14,34],
+const REAL_BOX={pilha:[-26,-20,26,33],src:[-30,-30,30,33],haste:[-12,-26,12,30],bep:[-27,-12,27,14],fuse:[-14,-36,14,36],sw:[-17,-29,17,33],lamp:[-14,-28,14,34],
   sw2:[-26,-29,26,33],sw3:[-26,-29,26,33],dr:[-21,-36,21,36],motor:[-41,-30,33,34],kc:[-29,-36,29,36],ft:[-23,-36,23,36],btn:[-17,-29,17,33],
   sw4:[-17,-41,17,33],dps:[-14,-36,14,36],foto:[-26,-29,26,33],ri:[-21,-36,21,36],boia:[-22,-34,22,33]};
 
@@ -72,6 +74,7 @@ function realDefs(){return '<defs>'+
   '<linearGradient id="gPaintE" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2c4563"/><stop offset=".45" stop-color="#58789c"/><stop offset="1" stop-color="#2c4563"/></linearGradient>'+
   '<linearGradient id="gFan" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7f8a96"/><stop offset=".5" stop-color="#4c5560"/><stop offset="1" stop-color="#2a3038"/></linearGradient>'+
   '<linearGradient id="gShaft" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset=".5" stop-color="#aab2bb"/><stop offset="1" stop-color="#6b737c"/></linearGradient>'+
+  '<linearGradient id="gPilha" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5b6a7a"/><stop offset=".35" stop-color="#2f3b48"/><stop offset="1" stop-color="#151b22"/></linearGradient>'+
   '<linearGradient id="gPorc" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#d9d4c8"/><stop offset=".35" stop-color="#fdfcf8"/><stop offset="1" stop-color="#cfc9bb"/></linearGradient>'+
   '</defs>'}
 const realBg=()=>realDefs()+'<rect width="340" height="250" fill="url(#rdots)" pointer-events="none"/>';
@@ -166,6 +169,19 @@ function realComp(c,b,o){
       '<text x="0" y="-1" text-anchor="middle" class="rtxt" style="font-size:6px;fill:#ffffff;letter-spacing:.5px">FONTE</text>'+
       '<text x="0" y="8" text-anchor="middle" class="rtxt" style="font-size:5.5px;fill:#f4c430">'+fonteTxt(c)+'</text>'+
       '<rect x="-29" y="17" width="58" height="16" rx="2" class="janela"/>';
+  }
+  if(c.type==='pilha'){/* pilha AA (genérica) deitada num suporte preto; o polo + (com o "botão") fica à esquerda,
+       em cima do borne +. Embaixo, a régua com os bornes + e −. A pilha em curto fica vermelha (aquecendo). */
+    const quente=!!(o.res&&o.res.cc&&o.res.cc.pilhas[c.id]&&o.res.cc.pilhas[c.id].I>CC.I_CURTO);
+    s=shadow(-26,-20,52,40,5)+'<rect x="-26" y="-20" width="52" height="38" rx="5" style="fill:#2b3036;stroke:#14171b" stroke-width="1"/>'+
+      '<rect x="-23" y="-14" width="5" height="20" rx="1.5" style="fill:#9aa3ad"/><rect x="18" y="-14" width="5" height="20" rx="1.5" style="fill:#9aa3ad"/>'+
+      '<rect x="-17.5" y="-12" width="3.5" height="8" rx="1" style="fill:url(#gMetal)"/>'+
+      '<rect x="-14" y="-15" width="32" height="18" rx="3" style="fill:'+(quente?'#c0392b':'url(#gPilha)')+';stroke:#14171b" stroke-width=".7"/>'+
+      '<rect x="-14" y="-15" width="9" height="18" rx="2" style="fill:#c9a227;opacity:.95"/>'+
+      '<text x="-9.6" y="-3.6" text-anchor="middle" class="ltxt" style="font-size:7px;fill:#1c1f24">+</text>'+
+      '<text x="6.5" y="-3.4" text-anchor="middle" class="ltxt" style="font-size:5px">'+ccN(c.V||1.5)+'V</text>'+
+      (quente?'<path d="M-6 -22 q2 -4 0 -7 M2 -22 q2 -4 0 -7 M10 -22 q2 -4 0 -7" style="fill:none;stroke:#ff8a3d;stroke-width:1.2;stroke-linecap:round"/>':'')+
+      '<rect x="-25" y="18" width="50" height="15" rx="2" class="janela"/>';
   }
   if(c.type==='haste'){/* haste de aterramento cobreada cravada no solo, com o conector (grampo) no topo */
     s='<rect x="-13" y="6" width="26" height="24" rx="2" style="fill:#5a4632"/>'+
@@ -389,7 +405,7 @@ function realComp(c,b,o){
       '<rect x="-21" y="18" width="42" height="15" rx="2" class="janela"/>'}
   /* toque no corpo aciona a peça (o interruptor simples já tem a sua área) */
   /* disjuntor ou fonte desarmados por curto também aceitam um toque (para religar) */
-  if(o.toggle&&typeof ACION!=='undefined'&&(ACION[c.type]||((c.type==='fuse'||c.type==='src')&&c.trip))&&c.type!=='sw'){const r=REAL_BOX[c.type];s+='<rect class="chit" data-sw="'+c.id+'" x="'+r[0]+'" y="'+r[1]+'" width="'+(r[2]-r[0])+'" height="'+(r[3]-r[1]-15)+'"/>'}
+  if(o.toggle&&typeof ACION!=='undefined'&&(ACION[c.type]||((c.type==='fuse'||c.type==='src')&&c.trip)||(c.type==='lamp'&&c.queima))&&c.type!=='sw'){const r=REAL_BOX[c.type];s+='<rect class="chit" data-sw="'+c.id+'" x="'+r[0]+'" y="'+r[1]+'" width="'+(r[2]-r[0])+'" height="'+(r[3]-r[1]-15)+'"/>'}
   if(o.pickComp&&c.type!=='src'){const r=REAL_BOX[c.type];s+='<rect class="chit" data-c="'+c.id+'" x="'+(r[0]-6)+'" y="'+(r[1]-4)+'" width="'+(r[2]-r[0]+12)+'" height="'+(r[3]-r[1]+8)+'"/>'}
   const [X,Y]=RP(c);return '<g transform="translate('+X+' '+Y+')">'+s+'</g>';
 }
@@ -409,7 +425,7 @@ function realBorneLab(c,k,text){
   if(c.type==='motor')return '<text class="lab bn" x="'+x+'" y="'+(y-11)+'" text-anchor="middle">'+n+'</text>';
   if(c.type==='dr'||c.type==='kc'||c.type==='ft'||c.type==='ri')/* módulo DIN de vários polos: marcação impressa no corpo, junto do borne */
     return '<text class="lab bn bnd" x="'+x+'" y="'+(RP(c)[1]+(d[1]<0?-11:15))+'" text-anchor="middle">'+n+'</text>';
-  if(c.type==='sw'||c.type==='lamp'||c.type==='btn'||c.type==='sw4'||c.type==='boia')/* pares de bornes: nome por fora de cada parafuso */
+  if(c.type==='sw'||c.type==='lamp'||c.type==='btn'||c.type==='sw4'||c.type==='boia'||c.type==='pilha')/* pares de bornes: nome por fora de cada parafuso */
     return '<text class="lab bn"'+st+' x="'+(k%2===0?x-9:x+9)+'" y="'+(y+3)+'" text-anchor="'+(k%2===0?'end':'start')+'">'+n+'</text>';
   if(d[0])return '<text class="lab bn"'+st+' x="'+x+'" y="'+(y+(y>200?-10:16))+'" text-anchor="middle">'+n+'</text>';
   /* borne em cima/embaixo: nome do lado de fora do corpo (no disjuntor o corpo é largo) */

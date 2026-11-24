@@ -46,9 +46,11 @@ function tableCheck(st,rows,strong){
 }
 
 /* Cores de condutor (NBR 5410): neutro azul-claro; proteção (PE) verde-amarelo ou verde; fase e retorno em qualquer outra cor (no jogo: fase vermelha, retorno branco). */
-const CORES={fase:{n:'Fase',c:'var(--fase)'},neutro:{n:'Neutro',c:'var(--neutro)'},retorno:{n:'Retorno',c:'#d9dde3'},terra:{n:'Terra',c:'linear-gradient(90deg,var(--terra) 50%,#f2d22e 50%)'}};
+/* Na bancada de corrente contínua (pilhas), a convenção é vermelho no positivo e preto no negativo. */
+const CORES={fase:{n:'Fase',c:'var(--fase)'},neutro:{n:'Neutro',c:'var(--neutro)'},retorno:{n:'Retorno',c:'#d9dde3'},terra:{n:'Terra',c:'linear-gradient(90deg,var(--terra) 50%,#f2d22e 50%)'},
+  pos:{n:'Positivo (+)',c:'#d33a2c'},neg:{n:'Negativo (−)',c:'#1c1f24'}};
 const coresDoNivel=()=>['fase','neutro','retorno','terra'];
-function palette(cur){return '<div class="pal" role="group" aria-label="Cor do fio">'+coresDoNivel().map(k=>'<button class="btn" data-cor="'+k+'" aria-pressed="'+(cur===k)+'"><span class="sw8" style="background:'+CORES[k].c+'"></span>'+CORES[k].n+'</button>').join('')+'</div>'}
+function palette(cur,lista){return '<div class="pal" role="group" aria-label="Cor do fio">'+(lista||coresDoNivel()).map(k=>'<button class="btn" data-cor="'+k+'" aria-pressed="'+(cur===k)+'"><span class="sw8" style="background:'+CORES[k].c+'"></span>'+CORES[k].n+'</button>').join('')+'</div>'}
 function colorCheck(st){
   const r=solve(st.comps.map(c=>c.type==='sw'?Object.assign({},c,{closed:false}):c),st.wires);
   for(const w of st.wires){

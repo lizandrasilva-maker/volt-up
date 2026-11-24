@@ -566,3 +566,7 @@ svg.curto{animation:shake .32s 2}
 .ponta{cursor:grab}.ponta:active{cursor:grabbing}
 .ponta-hit{fill:transparent}
 .ponta-ok{fill:none;stroke:#7dff9e;stroke-width:1.6;opacity:.9}
+
+/* fios da bancada CC: vermelho no positivo, preto (com contorno claro) no negativo */
+.w.pos,.mw.pos{stroke:#d33a2c}.w.neg,.mw.neg{stroke:#2a2e35;filter:drop-shadow(0 0 .8px #c9d1db)}
+.pal .btn[data-cor="neg"] .sw8{outline:1.5px solid #c9d1db}
