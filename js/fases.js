@@ -61,7 +61,7 @@ function missao(goal,real,nota,rotulo){return '<div class="goal"><span class="gi
 function benchWrap(svg,id,zm,cc,v3,p3){const m=/^<svg[^>]*class="(\w*)/.exec(svg),est=m?(m[1]==='curto'?'short':m[1]):'',R=vistaReal();
   const b3=p3?'<button class="btn vbtn" data-3d="'+(v3?'0':'1')+'" aria-label="'+(v3?'Voltar à bancada 2D':'Ver a bancada em 3D')+'">'+(v3?'🔌 2D':'🧊 3D')+'</button>':'';
   const ctl=!zm?'':v3?'<div class="bctl">'+b3+'</div>':'<div class="bctl"><span class="bctl-esq"><button class="btn vbtn" data-vista="'+(R?'simb':'real')+'" aria-label="'+(R?'Ver o diagrama multifilar':'Ver as peças reais')+'">'+(R?'📐 Multifilar':'🔌 Real')+'</button>'+b3+'</span>'+zm.ui()+'</div>';
-  return '<div class="benchwrap">'+(cc?'':entrada(est))+'<div class="bench'+(v3?' bench3d':'')+'"'+(id?' id="'+id+'"':'')+'>'+(v3?'<div class="vaga3d" data-vaga3d></div>':svg)+ctl+'</div>'+(cc?avisoCC():avisoModelo())+'</div>'}
+  return '<div class="benchwrap">'+(cc||v3?'':entrada(est))+'<div class="bench'+(v3?' bench3d':'')+'"'+(id?' id="'+id+'"':'')+'>'+(v3?'<div class="vaga3d" data-vaga3d></div>':svg)+ctl+'</div>'+(cc?avisoCC():avisoModelo())+'</div>'}
 
 /* ---------- Vista 3D persistente ----------
    A tela é redesenhada com innerHTML a cada ação; o <canvas> WebGL não pode nascer de novo a cada toque.

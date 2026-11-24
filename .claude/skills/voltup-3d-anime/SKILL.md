@@ -26,6 +26,7 @@ Padroniza o visual e a construção das peças 3D da bancada (`js/bancada3d.js`)
 **Peças já implementadas:** fonte 1F+N, disjuntor (`fuse`), DR bipolar (`dr`, Quadro Novo), botoeiras (`btn`, BL e BD), contatora (`kc`), relé térmico (`ft`) e lâmpada sem PE. Laboratórios (menu, com `?3d=1`): "Laboratório 3D", "Botoeiras 3D" e "Contatora 3D".
 
 7. **Botão 🧊 3D sem flag.** Aparece em toda bancada cujas peças estão em `VISTA3D.suporta`; o Three.js só é baixado no primeiro toque. `?3d=1` apenas abre direto em 3D e mostra os laboratórios.
+9. **Caminho da energia em 3D (`montaFaixa()`).** Na vista 3D, a faixa poste → transformador → ramal → medidor → quadro → circuito é desenhada no alto do MESMO canvas (viewport de cima, cena e câmera próprias; nunca um segundo contexto WebGL). Estado: `on` (alguma carga em `res.lamp` > 0,04: pontos de luz correm pelos cabos, LED do medidor pisca, lâmpada acende), `short` (`ctx.curto`: cabos com `matCurto`) ou parado. Legendas iguais às de `entrada()` no SVG, com a rede escolhida. Toque, raycast e projeção usam só a área da bancada (`areaBancada()`). No 2D a faixa continua em SVG.
 8. **Modo 360°.** O botão `↻ 360°` (dentro da cena) solta a câmera (sem limite de giro, giro automático até o primeiro toque). Enquanto ativo, nenhum toque chega ao `ctl`: o circuito não muda. `✋ Montar` volta aos limites de trabalho (`limites()`) e reenquadra. Ao incluir uma peça, acrescente o tipo em `VISTA3D.suporta` (`js/fases.js`).
 
 ---
