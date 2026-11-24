@@ -115,6 +115,12 @@ let pistas={};
      confere('Corrente contínua (Pilha e Lanterna)',J(k.etapas)==='[true,true,true,true]','retorno em etapas (pista → explicação) e com linguagem diferente por nível',J(k.etapas));
      confere('Corrente contínua (Pilha e Lanterna)',k.troca===true&&k.tela===true,'lâmpada queimada troca com um toque; bancada CC sem a faixa do poste, com aviso do modelo e fios + e −');
      confere('Corrente contínua (Pilha e Lanterna)',k.ordemCap1==='energia,renovavel,carga,macaneta,condutor,continuidade,grandezas,lanterna','Capítulo 1 só de CC, alternando aula e prática (Ato 1)',k.ordemCap1);}
+    {const c=t.contrato||{};
+     confere('Contrato da bancada (2D/3D)',c.svgLiga===1&&c.svgTira===0,'SVG: toque-toque liga o fio e tocar no fio tira (pelas intenções)');
+     confere('Contrato da bancada (2D/3D)',c.semSvg===true,'com a vista 3D ligada, o centro da bancada vira a vaga do canvas (sem SVG)');
+     confere('Contrato da bancada (2D/3D)',c.fios3d==='B.0-F.0:fase,F.1-S1.0:fase'&&c.djDesligou===true&&c.tirou===1,'as intenções da vista 3D mudam o st igual ao SVG (ligar, arrastar, acionar, tirar)',c.fios3d);
+     confere('Contrato da bancada (2D/3D)',c.mesmoCanvas===true&&c.montagens===1&&c.atualizacoes>=5,'o canvas nasce uma vez e é reencaixado a cada redesenho',c.montagens+' montagem, '+c.atualizacoes+' atualizações');
+     confere('Contrato da bancada (2D/3D)',c.saiu===true&&c.destruiu===1&&c.liberou===true,'ao sair da bancada, a cena 3D é destruída uma vez');}
     {const r=t.rede||{};
      confere('Rede elétrica',r.chuveiro127===true,'em 127 V a conta do chuveiro de 5500 W dá 43 A, e o erro comum vira 25 A');
      confere('Rede elétrica',r.fonte127===true,'fonte da bancada mostra 127 V (127/220 V com 3 fases)');

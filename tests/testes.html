@@ -219,6 +219,26 @@ try{
    const certo=document.querySelector('.bin[data-r="'+(/Chave|Moeda|Grafite/.test(document.querySelector('#it b').textContent)?1:0)+'"]');certo.click();
    au.sortReage=/LED (acende|apagado)/.test(document.querySelector('#ilu').textContent);
    R.aula=au;}
+  // Contrato de intenções e vista 3D persistente (vista falsa, sem WebGL: só a mecânica do encaixe)
+  {const ci={};S.mode='moderado';const pp=phaseById('primeiro'),task=comARede(pp.dados.moderado);
+   const tap=t=>{document.querySelector('.bench [data-t="'+t+'"]').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));window.dispatchEvent(new PointerEvent('pointerup'))};
+   const fios=()=>document.querySelectorAll('.bench svg [data-w]').length;
+   VISTA3D.ligada=false;runBuild(pp,task);tap('B.0');tap('F.0');ci.svgLiga=fios();
+   document.querySelector('.bench svg [data-w="0"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));ci.svgTira=fios();
+   const falsa={aceita:()=>true,montou:0,atualizou:0,destruiu:0,ctx:null,
+     montar(no){this.montou++;const cv=document.createElement('canvas');cv.id='cv3d';no.appendChild(cv)},
+     atualizar(ctx){this.atualizou++;this.ctx=ctx},destruir(){this.destruiu++}};
+   VISTA3D.vista=falsa;VISTA3D.ligada=true;
+   runBuild(pp,task);const cv1=document.getElementById('cv3d');
+   ci.semSvg=!document.querySelector('.bench svg')&&!!cv1&&!!document.querySelector('.bench.bench3d');
+   falsa.ctx.ctl.tocouBorne('B.0');falsa.ctx.ctl.tocouBorne('F.0');falsa.ctx.ctl.arrastouFio('F.1','S1.0');
+   ci.fios3d=falsa.ctx.st.wires.map(w=>w.a+'-'+w.b+':'+w.cor).join(',');
+   falsa.ctx.ctl.acionou('F',0);ci.djDesligou=falsa.ctx.st.comps.find(c=>c.id==='F').trip===true;
+   falsa.ctx.ctl.tirouFio(0);ci.tirou=falsa.ctx.st.wires.length;
+   ci.mesmoCanvas=document.getElementById('cv3d')===cv1&&cv1.isConnected;ci.montagens=falsa.montou;ci.atualizacoes=falsa.atualizou;
+   showMap();ci.saiu=!cv1.isConnected;R.contrato=ci;
+   /* a cena é liberada logo depois do redesenho (MutationObserver): confere no próximo ciclo e reescreve o resultado */
+   setTimeout(()=>{R.contrato.destruiu=falsa.destruiu;R.contrato.liberou=VISTA3D.no===null;VISTA3D.vista=null;VISTA3D.ligada=false;document.getElementById('out').textContent=JSON.stringify(R,null,1)},0);}
 }catch(e){R.ERRO=e.message+' '+e.stack}
 document.getElementById('out').textContent=JSON.stringify(R,null,1);
 </script></body></html>

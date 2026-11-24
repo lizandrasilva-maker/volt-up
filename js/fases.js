@@ -56,9 +56,54 @@ function missao(goal,real,nota,rotulo){return '<div class="goal"><span class="gi
    os botões pequenos de vista (Real/Diagrama) e de zoom, como num mapa de celular.
    O estado da faixa (energia passando ou curto) vem da classe que board() põe no <svg>. */
 /* cc = bancada de corrente contínua (pilhas): sem a faixa do poste e com o aviso do modelo CC */
-function benchWrap(svg,id,zm,cc){const m=/^<svg[^>]*class="(\w*)/.exec(svg),est=m?(m[1]==='curto'?'short':m[1]):'',R=vistaReal();
-  const ctl=zm?'<div class="bctl">'+'<button class="btn vbtn" data-vista="'+(R?'simb':'real')+'" aria-label="'+(R?'Ver o diagrama multifilar':'Ver as peças reais')+'">'+(R?'📐 Multifilar':'🔌 Real')+'</button>'+zm.ui()+'</div>':'';
-  return '<div class="benchwrap">'+(cc?'':entrada(est))+'<div class="bench"'+(id?' id="'+id+'"':'')+'>'+svg+ctl+'</div>'+(cc?avisoCC():avisoModelo())+'</div>'}
+/* v3 = a vista 3D vai ocupar o centro da bancada: no lugar do SVG fica só a vaga onde o <canvas> é reencaixado */
+function benchWrap(svg,id,zm,cc,v3){const m=/^<svg[^>]*class="(\w*)/.exec(svg),est=m?(m[1]==='curto'?'short':m[1]):'',R=vistaReal();
+  const ctl=zm&&!v3?'<div class="bctl">'+'<button class="btn vbtn" data-vista="'+(R?'simb':'real')+'" aria-label="'+(R?'Ver o diagrama multifilar':'Ver as peças reais')+'">'+(R?'📐 Multifilar':'🔌 Real')+'</button>'+zm.ui()+'</div>':'';
+  return '<div class="benchwrap">'+(cc?'':entrada(est))+'<div class="bench'+(v3?' bench3d':'')+'"'+(id?' id="'+id+'"':'')+'>'+(v3?'<div class="vaga3d" data-vaga3d></div>':svg)+ctl+'</div>'+(cc?avisoCC():avisoModelo())+'</div>'}
+
+/* ---------- Vista 3D persistente ----------
+   A tela é redesenhada com innerHTML a cada ação; o <canvas> WebGL não pode nascer de novo a cada toque.
+   O nó da cena é criado uma vez (montar), fica guardado aqui e é reencaixado na vaga a cada redesenho
+   (atualizar). Quando a tela deixa de ter bancada 3D, ele é destruído (destruir).
+   VISTA3D.vista é registrada por js/bancada3d.js: {aceita(st), montar(no,ctx), atualizar(ctx), destruir()}.
+   ctx = {st, res, sel, curto, cor, editavel, ctl}; ctl é o contrato de intenções (abaixo). */
+const VISTA3D={vista:null,ligada:false,no:null,montagens:0};
+function quer3D(st){return !!(VISTA3D.ligada&&VISTA3D.vista&&VISTA3D.vista.aceita(st))}
+function encaixa3D(ctx){
+  const vaga=app.querySelector('[data-vaga3d]');if(!vaga||!VISTA3D.vista)return false;
+  if(!VISTA3D.no){VISTA3D.no=document.createElement('div');VISTA3D.no.className='cena3d';VISTA3D.vista.montar(VISTA3D.no,ctx);VISTA3D.montagens++}
+  vaga.replaceWith(VISTA3D.no);VISTA3D.vista.atualizar(ctx);return true;
+}
+function solta3D(){if(!VISTA3D.no)return;try{VISTA3D.vista.destruir()}catch(e){}VISTA3D.no=null}
+/* saiu da bancada 3D (outra tela foi desenhada): libera o contexto WebGL. Roda depois do redesenho síncrono,
+   quando a cena já foi reencaixada se a tela nova também for de bancada 3D. */
+new MutationObserver(()=>{if(VISTA3D.no&&!VISTA3D.no.isConnected&&!app.querySelector('[data-vaga3d]'))solta3D()}).observe(app,{childList:true});
+
+/* ---------- Contrato de intenções da bancada ----------
+   As vistas (SVG ou 3D) só relatam o gesto do aluno; a regra de negócio fica em quem monta o ctl:
+     tocouBorne(idBorne)        toque simples num borne (1º toque seleciona, 2º liga o fio)
+     arrastouFio(idBorne, alvo) arrastou um fio de um borne até outro (alvo null = soltou fora)
+     acionou(idPeca, lado)      tocou no corpo da peça (lado = posição do toque em relação ao centro)
+     tirouFio(indice)           tocou num fio para tirar
+   Este ligador é a parte exclusiva do SVG: traduz cliques e arrastos em intenções.
+   o = {zm, pos(idBorne)→[x,y], centroX(idPeca), getSvg?, semArrasto?()→bool, ocupadoNoInicio?} */
+function ligaSVGBancada(svg,ctl,o){
+  const zm=o.zm,getSvg=o.getSvg||(()=>svg);
+  svg.querySelectorAll('[data-sw]').forEach(h=>h.addEventListener('click',ev=>{if(zm.busy())return;ctl.acionou(h.dataset.sw,svgPoint(svg,ev).x-o.centroX(h.dataset.sw))}));
+  svg.querySelectorAll('[data-w]').forEach(h=>h.addEventListener('click',()=>{if(zm.busy())return;ctl.tirouFio(+h.dataset.w)}));
+  svg.querySelectorAll('[data-t]').forEach(h=>h.addEventListener('pointerdown',e=>{
+    e.preventDefault();const a=h.dataset.t;
+    if(o.ocupadoNoInicio&&zm.busy())return;
+    if(o.semArrasto&&o.semArrasto()){ctl.tocouBorne(a);return}
+    const p0=o.pos(a);let line=null;
+    const move=ev=>{if(zm.busy()){if(line){line.remove();line=null}return}const s2=getSvg(),q=svgPoint(s2,ev);if(!line&&Math.hypot(q.x-p0[0],q.y-p0[1])>12){line=document.createElementNS('http://www.w3.org/2000/svg','line');line.setAttribute('class','w tmp');line.setAttribute('x1',p0[0]);line.setAttribute('y1',p0[1]);s2.appendChild(line)}if(line){line.setAttribute('x2',q.x);line.setAttribute('y2',q.y)}};
+    const up=ev=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',up);
+      if(zm.busy()){if(line)line.remove();return}
+      if(line){line.remove();const el=document.elementFromPoint(ev.clientX,ev.clientY);ctl.arrastouFio(a,(el&&el.getAttribute&&el.getAttribute('data-t'))||null)}
+      else ctl.tocouBorne(a)};
+    window.addEventListener('pointermove',move);window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up);
+  }));
+}
 /* Aviso da bancada CC: aqui os valores são calculados, com as premissas do modelo (js/cc.js) */
 function avisoCC(){return '<details class="modelo"><summary>ⓘ Modelo de corrente contínua: valores calculados</summary>'+
   '<p>Tensões e correntes são <b>calculadas</b> pela lei de Ohm e pelas leis de Kirchhoff. Premissas: pilha de 1,5 V com resistência interna de 0,2 Ω; '+
@@ -118,36 +163,33 @@ function runBuild(p,task){
     if(q){st.__vQueima=q[1].V;const c=st.comps.find(x=>x.id===q[0]);Object.assign(c,{broken:true,show:true,queima:true});msg=task.check(st,Math.max(1,tries))}
     else if(res.eventos.includes('curto')){curto={fios:CC.fiosDoCurto(st,res),onde,quem:null,nome:''};msg=task.check(st,Math.max(1,tries))}};
   const zm=benchZoom();let drawn=false,verPlanta=false;BANCADA_ID++;
+  /* contrato de intenções: o que cada gesto faz nesta fase (vale igual para o SVG e para a vista 3D) */
+  const ctl={
+    tocouBorne:a=>{if(won)return;if(sel===null)sel=a;else if(sel===a)sel=null;else{addWire(sel,a);return}render()},
+    arrastouFio:(a,b)=>{if(won)return;if(b&&b!==a)addWire(a,b);else render()},
+    acionou:(id,lado)=>{const c=st.comps.find(x=>x.id===id);if(!c)return;acionarPeca(c,lado,render);msg=null;checa(c.id);render()},
+    tirouFio:i=>{if(won||!st.wires[i])return;st.wires.splice(i,1);msg=null;render()}
+  };
   const render=()=>{
-    const r=resolve(st.comps,st.wires),R=vistaReal();
+    const r=resolve(st.comps,st.wires),R=vistaReal(),v3=!cc&&quer3D(st);
     const help='Toque em dois '+(R?'parafusos':'pontos ⚪')+' para ligar um fio.'+(L()?' Toque no fio para tirar.':'');
     const pl=typeof PLANTAS!=='undefined'&&PLANTAS[p.id];
     frame(p,missao(task.goal,task.real)+
       /* fases com projeto: a planta de fiação abre e fecha acima da bancada */
       (pl?'<button class="btn planta-btn" id="vplanta" aria-expanded="'+verPlanta+'">📄 '+(verPlanta?'Fechar a planta':'Ver a planta do projeto')+'</button>'+(verPlanta?plantaHTML(pl):''):'')+
-      (won?'':palette(cor,cc?['pos','neg']:null))+benchWrap(board(st,{res:r,sel,pickTerm:!won,pickWire:!won,toggle:true,real:R,vb:zm.vb(),curto}),'',zm,cc)+(cc?chipsCC(st,r):statusChips(st,r))+
+      (won?'':palette(cor,cc?['pos','neg']:null))+benchWrap(v3?'':board(st,{res:r,sel,pickTerm:!won,pickWire:!won,toggle:true,real:R,vb:zm.vb(),curto}),'',zm,cc,v3)+(cc?chipsCC(st,r):statusChips(st,r))+
       (msg?'<div class="fb '+(won?'good':'bad')+'">'+(won?pick(PRAISE[S.mode])+' ':'')+msg+(won&&L()&&!cc?'<br><small>Na vida real, só eletricista mexe na rede, e com tudo desligado.</small>':'')+'</div>':st.wires.length?'':'<p class="help">'+help+'</p>')+
       (won?'<button class="btn main" id="end">Concluir ⚡</button>':'<div class="row"><button class="btn ghost" id="clr">Limpar fios</button><button class="btn main" id="chk">Verificar</button></div>'));
-    keepScroll(drawn);drawn=true;curto=null;/* a animação do curto roda uma vez só */
-    const svg=app.querySelector('.bench svg');
-    zm.bind(app.querySelector('.bench'),app);
+    const curtoAgora=curto;keepScroll(drawn);drawn=true;curto=null;/* a animação do curto roda uma vez só */
+    if(!v3)zm.bind(app.querySelector('.bench'),app);
     /* modo teste: "Montar pra mim" monta o gabarito e já aprova (não sobra nada para verificar) */
     const ts=document.getElementById('tSol');if(ts)ts.onclick=()=>{st.wires=testeSol(p.id);st.comps.forEach(c=>{if(c.type==='fuse'||c.type==='src')c.trip=false;if(c.queima)Object.assign(c,{queima:false,broken:false,show:false})});sel=null;msg=null;verificar()};
     const vp=document.getElementById('vplanta');if(vp)vp.onclick=()=>{verPlanta=!verPlanta;render()};
     app.querySelectorAll('[data-vista]').forEach(b=>b.onclick=()=>{setVista(b.dataset.vista==='real');render()});
     app.querySelectorAll('[data-cor]').forEach(b=>b.onclick=()=>{cor=b.dataset.cor;render()});
-    svg.querySelectorAll('[data-sw]').forEach(h=>h.addEventListener('click',ev=>{if(zm.busy())return;const c=st.comps.find(x=>x.id===h.dataset.sw);
-      acionarPeca(c,svgPoint(svg,ev).x-(R?RP(c)[0]:c.x),render);msg=null;checa(c.id);render()}));
-    svg.querySelectorAll('[data-w]').forEach(h=>h.addEventListener('click',()=>{if(zm.busy())return;st.wires.splice(+h.dataset.w,1);msg=null;render()}));
-    svg.querySelectorAll('[data-t]').forEach(h=>h.addEventListener('pointerdown',e=>{
-      e.preventDefault();const a=h.dataset.t,p0=tpos(st.comps,a);let line=null;
-      const move=ev=>{if(zm.busy()){if(line){line.remove();line=null}return}const q=svgPoint(svg,ev);if(!line&&Math.hypot(q.x-p0[0],q.y-p0[1])>12){line=document.createElementNS('http://www.w3.org/2000/svg','line');line.setAttribute('class','w tmp');line.setAttribute('x1',p0[0]);line.setAttribute('y1',p0[1]);svg.appendChild(line)}if(line){line.setAttribute('x2',q.x);line.setAttribute('y2',q.y)}};
-      const up=ev=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',up);
-        if(zm.busy()){if(line)line.remove();return}
-        if(line){line.remove();const el=document.elementFromPoint(ev.clientX,ev.clientY);const b=el&&el.getAttribute&&el.getAttribute('data-t');if(b&&b!==a)addWire(a,b);else render()}
-        else{if(sel===null)sel=a;else if(sel===a)sel=null;else{addWire(sel,a);return}render()}};
-      window.addEventListener('pointermove',move);window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up);
-    }));
+    /* centro da bancada: a vista 3D (se ligada) ou o SVG; as duas falam com o mesmo ctl */
+    if(!(v3&&encaixa3D({st,res:r,sel,curto:curtoAgora,cor,editavel:!won,ctl})))
+      ligaSVGBancada(app.querySelector('.bench svg'),ctl,{zm,pos:t=>tpos(st.comps,t),centroX:id=>{const c=st.comps.find(x=>x.id===id);return R?RP(c)[0]:c.x}});
     const c=document.getElementById('clr');if(c)c.onclick=()=>{st.wires=[];sel=null;msg=null;render()};
     const k=document.getElementById('chk');if(k)k.onclick=verificar;
     const e=document.getElementById('end');if(e)e.onclick=()=>finish(p,Math.max(1,4-tries),3);
@@ -303,6 +345,14 @@ function runSandbox(){
     const spot=(key==='haste'?[[45,205],[130,215],[200,215]]:key==='bep'?[[95,192],[100,150]]:[]).concat(SPOTS).find(livre)||[185,112];
     sb.comps.push(C(pre+n,type,spot[0],spot[1],0,ex));selC=pre+n;msg=null;persist();render()};
   const addWire=(a,b)=>{sel=null;msg=null;if(!sb.wires.some(w=>(w.a===a&&w.b===b)||(w.a===b&&w.b===a))){sb.wires.push(Object.assign(W(a,b),{cor}));checa(b)}persist();render()};
+  /* contrato de intenções da Oficina (mesmo formato do runBuild). No modo Medir, tocar num borne encaixa a ponteira. */
+  const ctl={
+    tocouBorne:a=>{if(tool==='meter'){ultima=tocaPonteira(sb.comps,pt,a,ultima);render();return}
+      if(sel===null)sel=a;else if(sel===a)sel=null;else{addWire(sel,a);return}render()},
+    arrastouFio:(a,b)=>{if(b&&b!==a)addWire(a,b);else render()},
+    acionou:(id,lado)=>{const c=sb.comps.find(x=>x.id===id);if(!c)return;msg=null;selC=c.id;acionar(c,lado);checa(c.id);persist();render()},
+    tirouFio:i=>{if(!sb.wires[i])return;sb.wires.splice(i,1);persist();render()}
+  };
   const render=()=>{
     const c=sc();
     /* botões de ação da peça selecionada */
@@ -355,25 +405,17 @@ function runSandbox(){
     const svg=getSvg();
     zm.bind(document.getElementById('bench'),app);
     if(tool==='meter')ligaPonteiras(svg,sb.comps,pt,id=>{ultima=id;render()},zm);
-    svg.querySelectorAll('[data-w]').forEach(h=>h.addEventListener('click',()=>{if(zm.busy())return;sb.wires.splice(+h.dataset.w,1);persist();render()}));
+    /* fios, bornes e acionamento: as mesmas intenções do runBuild */
+    ligaSVGBancada(svg,ctl,{zm,getSvg,pos:t=>tpos(sb.comps,t),centroX:id=>{const c=sb.comps.find(x=>x.id===id);return vistaReal()?RP(c)[0]:c.x},
+      semArrasto:()=>tool==='meter',ocupadoNoInicio:true});
+    /* arrastar peça é só da Oficina (arruma a bancada); um toque sem arrastar aciona a peça */
     svg.querySelectorAll('[data-mv]').forEach(h=>h.addEventListener('pointerdown',e=>{
       e.preventDefault();const c=sb.comps.find(x=>x.id===h.dataset.mv),q0=svgPoint(svg,e),ox=c.x,oy=c.y;let moved=false;
       const move=ev=>{if(zm.busy())return;const q=svgPoint(getSvg(),ev),dx=q.x-q0.x,dy=q.y-q0.y;if(!moved&&Math.hypot(dx,dy)<6)return;moved=true;
         c.x=Math.max(34,Math.min(306,Math.round((ox+dx)/5)*5));c.y=vistaReal()?Math.max(REAL_Y[0],Math.min(REAL_Y[1],Math.round((oy+dy)/5)*5)):Math.max(34,Math.min(216,Math.round((oy+dy)/5)*5));redrawBench()};
       const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',up);
         if(zm.busy()){c.x=ox;c.y=oy;render();return}
-        msg=null;if(!moved){selC=c.id;acionar(c,q0.x-(vistaReal()?RP(c)[0]:c.x));checa(c.id)}persist();render()};
-      window.addEventListener('pointermove',move);window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up)}));
-    svg.querySelectorAll('[data-t]').forEach(h=>h.addEventListener('pointerdown',e=>{
-      e.preventDefault();const a=h.dataset.t;
-      if(zm.busy())return;
-      if(tool==='meter'){ultima=tocaPonteira(sb.comps,pt,a,ultima);render();return}
-      const p0=tpos(sb.comps,a);let line=null;
-      const move=ev=>{if(zm.busy()){if(line){line.remove();line=null}return}const s2=getSvg(),q=svgPoint(s2,ev);if(!line&&Math.hypot(q.x-p0[0],q.y-p0[1])>12){line=document.createElementNS('http://www.w3.org/2000/svg','line');line.setAttribute('class','w tmp');line.setAttribute('x1',p0[0]);line.setAttribute('y1',p0[1]);s2.appendChild(line)}if(line){line.setAttribute('x2',q.x);line.setAttribute('y2',q.y)}};
-      const up=ev=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',up);
-        if(zm.busy()){if(line)line.remove();return}
-        if(line){line.remove();const el=document.elementFromPoint(ev.clientX,ev.clientY);const b=el&&el.getAttribute&&el.getAttribute('data-t');if(b&&b!==a)addWire(a,b);else render()}
-        else{if(sel===null)sel=a;else if(sel===a)sel=null;else{addWire(sel,a);return}render()}};
+        if(!moved)ctl.acionou(c.id,q0.x-(vistaReal()?RP(c)[0]:c.x));else{msg=null;persist();render()}};
       window.addEventListener('pointermove',move);window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up)}));
   };
   render();
