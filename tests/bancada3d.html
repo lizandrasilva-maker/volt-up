@@ -252,6 +252,11 @@ const coresDoFioCSS=k=>(CORES[k].c.match(/var\(--[\w-]+\)|#[0-9a-f]{3,8}\b/gi)).
    const bg=document.querySelector('[data-girar]');g.botao=!!bg;if(bg)bg.click();g.ligou=VISTA3D.girar===true&&document.querySelector('[data-girar]').getAttribute('aria-pressed')==='true';
    const n=BANCADA.st.wires.length,t1=dj().trip;toque('B.0');toque('DJ.0');toque('DJ');g.semMontar=BANCADA.st.wires.length===n&&dj().trip===t1;
    document.querySelector('[data-girar]').click();toque('B.0');toque('DJ.0');g.voltaMontar=VISTA3D.girar===false&&BANCADA.st.wires.length===n+1;}
+  /* ---- Rolagem: tocar no disjuntor com a bancada no fim da página não puxa a tela para cima ---- */
+  {S.mode='moderado';VISTA3D.ligada=true;VISTA3D.girar=false;runBuild(LAB3D,comARede(LAB3D.dados.moderado));
+   window.scrollTo(0,1e6);await new Promise(r=>setTimeout(r,50));const y0=window.scrollY;
+   toque('DJ');await new Promise(r=>setTimeout(r,50));const y1=window.scrollY;toque('DJ');await new Promise(r=>setTimeout(r,50));
+   R.rolagem={y0,y1,y2:window.scrollY,ok:y0>0&&Math.abs(y1-y0)<=1&&Math.abs(window.scrollY-y0)<=1};}
   /* ---- Pontos de conexão: anel e contador ligados/esperados em cada borne do circuito ---- */
   {const pc=R.pontos={},p=phaseById('escada');S.mode='leve';S.seen['leve:escada:cena']=1;VISTA3D.ligada=true;VISTA3D.girar=false;runBuild(p,comARede(p.dados.leve));
    const sol=testeSol('escada'),esp={};sol.forEach(w=>[w.a,w.b].forEach(t=>{esp[t]=(esp[t]||0)+1}));

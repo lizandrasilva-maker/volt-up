@@ -223,6 +223,7 @@ let pistas={};
      {const g=b.girar||{};
       confere(C,g.arrastoGira===true&&g.toqueAciona===true,'arrastar começando em cima de uma peça gira a vista (não aciona); o toque parado continua acionando');
       confere(C,g.botao===true&&g.ligou===true&&g.semMontar===true&&g.voltaMontar===true,'botão 🔄 Girar: com ele ligado nenhum toque monta nem aciona; desligado, a montagem volta');}
+     confere(C,(b.rolagem||{}).ok===true,'tocar numa peça com a bancada no fim da página não faz a tela subir (a rolagem fica onde estava)',JSON.stringify(b.rolagem));
      {const pc=b.pontos||{};
       confere(C,pc.inicio===true&&pc.completo===true&&pc.sobra===true,'pontos de conexão: cada borne do circuito tem anel e contador ligados/esperados (0/1 → verde ao completar, laranja com fio a mais)');
       confere(C,pc.fullSoAnel===true,'no nível full os pontos aparecem só com o anel, sem o número de condutores');}
