@@ -191,8 +191,9 @@ const coresDoFioCSS=k=>(CORES[k].c.match(/var\(--[\w-]+\)|#[0-9a-f]{3,8}\b/gi)).
    m.plaquetas=J(D.plaquetas('M').map(p=>p.t))==='["1","2","⏚"]';
    let ca='';GAB.forEach(w=>{if(w.cor!==ca){cor(w.cor);ca=w.cor}toque(w.a);toque(w.b)});
    m.fios=BANCADA.st.wires.length===GAB.length&&D.motorGira('M')<0.05;
-   toque('BL');m.gira=peca('K').on===true&&D.motorGira('M')>0.5;await espera(800);m.selo=peca('K').on===true&&D.motorGira('M')>0.5;
-   toque('BD');m.para=peca('K').on===false&&D.motorGira('M')<0.05;await espera(800);
+   const e0=D.motorEstado('M');m.paradoAntes=/PARADO/.test(e0.placa)&&!e0.girando;
+   toque('BL');m.gira=peca('K').on===true&&D.motorGira('M')>0.5;const e1=D.motorEstado('M');m.sinalGira=/GIRANDO/.test(e1.placa)&&e1.girando;await espera(800);m.selo=peca('K').on===true&&D.motorGira('M')>0.5;
+   toque('BD');m.para=peca('K').on===false&&D.motorGira('M')<0.05;const e2=D.motorEstado('M');m.sinalPara=/PARADO/.test(e2.placa)&&!e2.girando;await espera(800);
    m.aprovou3d=/aprovado/i.test(verificar());m.giraAprovado=D.motorGira('M')>0.5;const s3=sig(BANCADA.st);
    VISTA3D.ligada=false;runBuild(pp,tp());
    const tap=t=>{svg().querySelector('[data-t="'+t+'"]').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));window.dispatchEvent(new PointerEvent('pointerup'))};
