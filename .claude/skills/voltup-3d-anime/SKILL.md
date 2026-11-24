@@ -23,7 +23,10 @@ Padroniza o visual e a construção das peças 3D da bancada (`js/bancada3d.js`)
 5. **Canvas persistente.** A cena nasce uma vez por bancada (`montar`), é reencaixada a cada redesenho (`atualizar`) e liberada em `destruir` (contrato de `VISTA3D` em `js/fases.js`). Abrir outra bancada 3D (`ctx.bancada` diferente) monta uma cena nova. Desenho sob demanda: só há laço de quadros enquanto houver animação.
 6. **Câmera enquadra a bancada.** `enquadra()` calcula a caixa das peças da fase e põe a câmera em 3/4 frontal-superior com folga; não fixe posição de câmera por fase.
 
-**Peças já implementadas:** fonte 1F+N, disjuntor (`fuse`), DR bipolar (`dr`, Quadro Novo), botoeiras (`btn`, BL e BD; Laboratório "Botoeiras 3D") e lâmpada sem PE. Ao incluir uma peça, acrescente o tipo em `VISTA3D.suporta` (`js/fases.js`).
+**Peças já implementadas:** fonte 1F+N, disjuntor (`fuse`), DR bipolar (`dr`, Quadro Novo), botoeiras (`btn`, BL e BD), contatora (`kc`), relé térmico (`ft`) e lâmpada sem PE. Laboratórios (menu, com `?3d=1`): "Laboratório 3D", "Botoeiras 3D" e "Contatora 3D".
+
+7. **Botão 🧊 3D sem flag.** Aparece em toda bancada cujas peças estão em `VISTA3D.suporta`; o Three.js só é baixado no primeiro toque. `?3d=1` apenas abre direto em 3D e mostra os laboratórios.
+8. **Modo 360°.** O botão `↻ 360°` (dentro da cena) solta a câmera (sem limite de giro, giro automático até o primeiro toque). Enquanto ativo, nenhum toque chega ao `ctl`: o circuito não muda. `✋ Montar` volta aos limites de trabalho (`limites()`) e reenquadra. Ao incluir uma peça, acrescente o tipo em `VISTA3D.suporta` (`js/fases.js`).
 
 ---
 
@@ -105,9 +108,14 @@ Os três polos de potência da contatora (`1/L1`, `3/L2`, `5/L3`) e o motor trif
 - **Visor de estado:** verde `#38A169` armado, vermelho `#E53E3E` desarmado (`c.trip`).
 - Rótulo `DR 30mA`.
 
-### B. Contatora
+### B. Contatora — implementada
 - 3 módulos (7,2), mais profunda, com **dois níveis de bornes**: frente = contato de potência 1-2 (`.2/.3`) e auxiliar 13-14 (`.4/.5`); nível recuado = bobina A1/A2 (`.0/.1`) com etiqueta da tensão da bobina (`{V} V~`, da rede escolhida).
-- **Êmbolo central:** janela com pino indicador. Com `c.on`, o êmbolo recua 0,08 e o indicador fica laranja/vermelho.
+- **Êmbolo central:** janela com pino indicador. Com `c.on` (calculado pelo solver, com o selo), o êmbolo recua **0,2** (0,08 × 2,4 da escala do MVP) e fica laranja `#F97316`; desligado, cinza `#94A3B8`.
+- Não é acionável à mão: só a bobina liga a contatora (`kc` não está em `ACION`).
+
+### B2. Relé térmico — implementado
+- 2 módulos (4,8), dial de ajuste, botão de rearme azul `#3182CE` e visor verde (armado) / vermelho (disparado, `c.trip`); o rearme salta quando disparado.
+- Bornes `.0/.1` = 1-2 (força) e `.2/.3` = 95-96 (NF de comando). O toque no corpo relata `acionou(id)`; em `acionarPeca` isso simula a sobrecarga ou rearma.
 
 ### C. Botoeiras (`BL` liga, NA; `BD` desliga, NF) — implementadas
 - Base cinza-escuro `#334155`, 4 parafusos nos cantos e anel de retenção metálico (`CylinderGeometry`).

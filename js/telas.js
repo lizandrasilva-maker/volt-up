@@ -40,7 +40,7 @@ function showHome(){
     card('mCalc','🧮','Calculadora','Caderno de contas do Mestre Chico','" style="--i:4')+
     card('mPlano',pl.ic,'Meu plano',pl.t+' · '+pl.s,(pl.warn?' warn':'')+'" style="--i:5')+
     card('mConfig','⚙️','Configurações','Nível, personagem, conta','" style="--i:6')+
-    (typeof VISTA3D!=='undefined'&&VISTA3D.flag?card('mLab3d','🧊','Laboratório 3D','Bancada 3D em teste','" style="--i:7')+card('mLab3dBot','🟢','Botoeiras 3D','Liga e desliga em 3D','" style="--i:8'):'')+
+    (typeof VISTA3D!=='undefined'&&VISTA3D.flag?card('mLab3d','🧊','Laboratório 3D','Bancada 3D em teste','" style="--i:7')+card('mLab3dBot','🟢','Botoeiras 3D','Liga e desliga em 3D','" style="--i:8')+card('mLab3dKc','🧲','Contatora 3D','Comando com selo e relé térmico','" style="--i:9'):'')+
   '</div>'+
   plantaoHTML()+
   (c&&(c.papel==='admin'||c.papel==='professor')?'<a class="btn ghost" href="admin.html" style="display:grid;place-items:center;text-decoration:none">Abrir o painel Adm</a>':'')+
@@ -48,7 +48,7 @@ function showHome(){
   bindHud();if(tb)bindTesteBar();
   const on=(id,f)=>{const b=document.getElementById(id);if(b)b.onclick=f};
   on('mHist',showMap);on('mPerfil',showFicha);on('mConq',showConquistas);on('mOfi',runSandbox);on('mCalc',()=>showCalc());on('mPlano',showPlano);on('mConfig',showConfig);
-  on('mLab3d',()=>runBuild(LAB3D,comARede(LAB3D.dados[S.mode])));on('mLab3dBot',()=>runBuild(LAB3D_BOT,comARede(LAB3D_BOT.dados[S.mode])));
+  on('mLab3d',()=>runBuild(LAB3D,comARede(LAB3D.dados[S.mode])));on('mLab3dBot',()=>runBuild(LAB3D_BOT,comARede(LAB3D_BOT.dados[S.mode])));on('mLab3dKc',()=>runBuild(LAB3D_KC,comARede(LAB3D_KC.dados[S.mode])));
 }
 function showPlano(){
   setMode();const pl=planoResumo(),c=conta();

@@ -188,6 +188,14 @@ let pistas={};
       confere(C,t.apagada===true&&t.apertouBL===true&&t.soltouBL===true,'apertar BL: c.pressed afunda o êmbolo e acende L1; depois dos 700 ms ele volta e L1 apaga');
       confere(C,t.bdCorta===true&&t.soltaram===true,'BL e BD apertados juntos: o NF corta e L1 fica apagada');
       confere(C,t.aprovou3d===true&&t.aprovouSvg===true&&t.svgApertou===true&&t.equivalente===true,'Botoeiras: mesmos gestos na 3D e no SVG, mesmo estado e aprovação',t.s3+' / '+t.ss);}
+     {const v=b.v360||{};
+      confere(C,v.botaoSemFlag===true&&v.abriu===true,'botão 🧊 3D aparece sem ?3d=1 nas bancadas compatíveis e abre a mesma instalação em 3D');
+      confere(C,v.livre===true&&v.naoMexe===true&&v.voltou===true&&v.montaDeNovo===true,'modo 360°: câmera livre e nenhum toque muda o circuito; "Montar" volta à câmera de trabalho e a montar');}
+     {const k=b.contatora||{};
+      confere(C,k.em3d===true&&k.term3d===true&&k.plaquetas===true,'contatora (A1 A2 1 2 13 14) e relé térmico (1 2 95 96) em 3D com os bornes e nomes do motor.js e do 2D');
+      confere(C,k.fios===true&&k.liga===true&&k.selo===true&&k.desliga===true,'comando: LIGA energiza a bobina (êmbolo recua laranja), o selo 13-14 segura, DESLIGA derruba');
+      confere(C,k.termico===true&&k.rearme===true,'relé térmico: tocar simula a sobrecarga (95-96 abre, visor vermelho, bobina cai); tocar de novo rearma');
+      confere(C,k.aprovou3d===true&&k.aprovouSvg===true&&k.equivalente===true,'Contatora 3D: mesmos gestos na 3D e no SVG, mesmo estado e aprovação',k.s3+' / '+k.ss);}
      confere(C,b.liberou===true,'ao sair da bancada, o WebGL é liberado');}
     /* Fonte e aterramento: a fonte não tem PE; o terra vem da haste pelo BEP */
     const fa=t.fonte||{};

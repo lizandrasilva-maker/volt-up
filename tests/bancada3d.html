@@ -119,6 +119,36 @@ const coresDoFioCSS=k=>(CORES[k].c.match(/var\(--[\w-]+\)|#[0-9a-f]{3,8}\b/gi)).
    cor('fase');tap('B.0');tap('DJ.0');tap('DJ.1');tap('BD.0');tap('BD.1');tap('BL.0');tap('BL.1');tap('L1.0');cor('neutro');tap('L1.1');tap('B.1');
    aciona('BL');bt.svgApertou=peca('BL').pressed===true;await espera(800);aciona('BL');aciona('BD');await espera(800);
    bt.aprovouSvg=/aprovado/i.test(verificar());bt.equivalente=s3===sig(BANCADA.st);bt.s3=s3;bt.ss=sig(BANCADA.st);}
+  /* ---- Botão 3D sem ?3d=1 e modo 360° (Quadro Novo, nível Leve) ---- */
+  {const v=R.v360={};S.mode='leve';const pq=phaseById('quadronovo');VISTA3D.flag=false;VISTA3D.ligada=false;
+   runBuild(pq,comARede(pq.dados.leve));const b=document.querySelector('[data-3d="1"]');v.botaoSemFlag=!!b&&!!document.querySelector('.bench svg');
+   b.click();v.abriu=!!document.querySelector('.bench3d canvas');
+   const b3=D.botao360();b3.click();v.livre=D.livre()&&D.azimute()[0]===-Infinity&&/Montar/.test(b3.textContent);
+   const antes=BANCADA.st.wires.length;toque('B.0');toque('DG.0');v.naoMexe=BANCADA.st.wires.length===antes&&!D.badge().visivel;
+   b3.click();v.voltou=!D.livre()&&D.azimute()[0]===-.65&&D.azimute()[1]===.65;
+   toque('B.0');toque('DG.0');v.montaDeNovo=BANCADA.st.wires.length===antes+1;VISTA3D.flag=true;}
+  /* ---- Contatora e relé térmico: comando com selo (lâmpada no lugar do motor) ---- */
+  {S.mode='moderado';const k=R.contatora={},tk=()=>comARede(LAB3D_KC.dados.moderado),espera=ms=>new Promise(r=>setTimeout(r,ms));
+   const peca=id=>BANCADA.st.comps.find(c=>c.id===id);
+   const sig=st=>J({fios:st.wires.map(w=>w.a+'-'+w.b+':'+w.cor),k:!!st.comps.find(c=>c.id==='K').on,ft:!!st.comps.find(c=>c.id==='FT').trip,bot:st.comps.filter(c=>c.type==='btn').map(c=>!!c.pressed)});
+   const FIOS=[['fase','B.0','DJ.0'],['fase','DJ.1','K.2'],['fase','K.3','FT.0'],['fase','FT.1','L1.0'],['fase','DJ.1','FT.2'],['fase','FT.3','BD.0'],['fase','BD.1','BL.0'],['fase','BL.1','K.0'],['fase','BD.1','K.4'],['fase','K.5','K.0'],['neutro','K.1','B.1'],['neutro','L1.1','B.1']];
+   VISTA3D.ligada=true;runBuild(LAB3D_KC,tk());
+   k.em3d=!!document.querySelector('.bench3d canvas');k.term3d=BANCADA.st.comps.every(c=>D.bornesTERM3D(c)===terms(c).length);
+   k.plaquetas=J(D.plaquetas('K').map(p=>p.t))==='["A1","A2","1","2","13","14"]'&&J(D.plaquetas('FT').map(p=>p.t))==='["1","2","95","96"]';
+   let corAtual='';FIOS.forEach(([c,a,b])=>{if(c!==corAtual){cor(c);corAtual=c}toque(a);toque(b)});
+   k.fios=BANCADA.st.wires.length===12&&D.brilho('L1')<0.05&&!D.emboloKC('K').on;
+   toque('BL');k.liga=peca('K').on===true&&D.brilho('L1')>0.5&&D.emboloKC('K').on&&D.emboloKC('K').cor==='f97316';
+   await espera(800);k.selo=peca('K').on===true&&D.brilho('L1')>0.5;
+   toque('BD');k.desliga=peca('K').on===false&&D.brilho('L1')<0.05&&!D.emboloKC('K').on;await espera(800);
+   toque('BL');await espera(800);toque('FT');k.termico=peca('FT').trip===true&&peca('K').on===false&&D.brilho('L1')<0.05&&D.visorFT('FT')==='disparado';
+   toque('FT');k.rearme=peca('FT').trip===false&&D.visorFT('FT')==='armado'&&peca('K').on===false;
+   k.aprovou3d=/aprovado/i.test(verificar());const s3=sig(BANCADA.st);
+   VISTA3D.ligada=false;runBuild(LAB3D_KC,tk());
+   const tap=t=>{svg().querySelector('[data-t="'+t+'"]').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));window.dispatchEvent(new PointerEvent('pointerup'))};
+   const aciona=id=>svg().querySelector('[data-sw="'+id+'"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));
+   corAtual='';FIOS.forEach(([c,a,b])=>{if(c!==corAtual){cor(c);corAtual=c}tap(a);tap(b)});
+   aciona('BL');await espera(800);aciona('BD');await espera(800);aciona('BL');await espera(800);aciona('FT');aciona('FT');
+   k.aprovouSvg=/aprovado/i.test(verificar());k.equivalente=s3===sig(BANCADA.st);k.s3=s3;k.ss=sig(BANCADA.st);}
   /* sair da bancada libera o WebGL */
   showMap();await new Promise(r=>setTimeout(r,0));R.liberou=VISTA3D.no===null;
 }catch(e){R.ERRO=e.message+' '+(e.stack||'')}
