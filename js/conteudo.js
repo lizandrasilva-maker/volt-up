@@ -1,6 +1,6 @@
 /* ================= CONTEÚDO ================= */
-/* Fonte da bancada: L1 e N (1 fase + neutro, 220 V). Não tem PE: o terra vem da haste, pelo BEP. */
-const BAT=()=>C('B','src',45,125,0,{V:220,fases:1});
+/* Fonte da bancada: L1 e N (1 fase + neutro, na tensão da rede escolhida em Configurações). Não tem PE: o terra vem da haste, pelo BEP. */
+const BAT=()=>C('B','src',45,125,0,{fases:1});
 /* Aterramento das missões com massa metálica: haste cravada no solo e BEP (barramento de equipotencialização principal). */
 const ATERRA=()=>[C('BEP','bep',95,192,0),C('H','haste',45,205,0)];
 /* Liga o PE nas luminárias que têm borne de terra (pe:true, ex.: luminária metálica). O bocal simples não tem PE. */

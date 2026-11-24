@@ -1,5 +1,5 @@
 const STORE='neuro-eletricista-v2';
-const FRESH=()=>({mode:null,char:null,name:'',xp:0,cards:[],done:{},seen:{},chap:'cap1',sandbox:null,attr:{},days:[],daily:null,ach:[],flags:{},start:null,vista:{}});
+const FRESH=()=>({mode:null,char:null,name:'',xp:0,cards:[],done:{},seen:{},chap:'cap1',sandbox:null,attr:{},days:[],daily:null,ach:[],flags:{},start:null,vista:{},rede:{V:220,Hz:60}});
 let S=FRESH();
 try{const r=localStorage.getItem(STORE)||localStorage.getItem('neuro-eletricista-v1');if(r){const o=JSON.parse(r);S=Object.assign(S,o);if(!localStorage.getItem(STORE)){S.cards=[];S.done={}}}}catch(e){}
 ensure();
@@ -39,6 +39,10 @@ const ICONS={
   disjuntor:'<rect x="14" y="6" width="32" height="48" rx="5" fill="#e9edf3"/><rect x="24" y="14" width="12" height="20" rx="3" fill="#2f4a6e"/><rect x="26" y="16" width="8" height="8" rx="2" fill="#e24c3f"/><text x="30" y="48" font-size="9" font-weight="900" fill="#2f4a6e" text-anchor="middle" font-family="Nunito,sans-serif">C10</text>',
   sol:'<circle cx="30" cy="30" r="11" fill="#f4c430"/><g stroke="#f4c430" stroke-width="3" stroke-linecap="round"><line x1="30" y1="5" x2="30" y2="12"/><line x1="30" y1="48" x2="30" y2="55"/><line x1="5" y1="30" x2="12" y2="30"/><line x1="48" y1="30" x2="55" y2="30"/><line x1="12" y1="12" x2="17" y2="17"/><line x1="43" y1="43" x2="48" y2="48"/><line x1="12" y1="48" x2="17" y2="43"/><line x1="43" y1="17" x2="48" y2="12"/></g>',
   ohm:'<text x="30" y="45" font-size="40" font-weight="800" fill="#d9894a" text-anchor="middle" font-family="Georgia,serif">Ω</text>',
+  /* aula (teoria) e Cap. 1 */
+  livro:'<path d="M30 14 Q20 8 6 10 V48 Q20 46 30 52 Q40 46 54 48 V10 Q40 8 30 14z" fill="#eef2f7"/><path d="M30 14 V52" stroke="#2f4a6e" stroke-width="2.5"/><path d="M11 18 Q19 17 25 20 M11 25 Q19 24 25 27 M11 32 Q19 31 25 34 M35 20 Q41 17 49 18 M35 27 Q41 24 49 25" stroke="#6bb9e8" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M40 33 l-4 7 h4 l-3 7 l8 -10 h-4 l3 -4z" fill="#f4c430"/>',
+  macaneta:'<rect x="34" y="4" width="18" height="52" rx="2" fill="#7a4a1f"/><circle cx="26" cy="31" r="9" fill="#d7dce1" stroke="#7c858f" stroke-width="2"/><rect x="26" y="27" width="10" height="8" fill="#c9cfd8"/><path d="M4 22 l8 4 l-3 2 l9 3" fill="none" stroke="#f4c430" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>',
+  testador:'<rect x="6" y="30" width="22" height="14" rx="3" fill="#2f3b48" stroke="#eef2f7" stroke-width="1.5"/><rect x="6" y="30" width="7" height="14" rx="2" fill="#c9a227"/><circle cx="44" cy="14" r="8" fill="#f4c430"/><path d="M28 37 H44 V22 M17 30 V10 H34" fill="none" stroke="#d9894a" stroke-width="3"/><path d="M40 50 l6 6 M52 50 l-6 6" stroke="#e24c3f" stroke-width="3" stroke-linecap="round"/>',
   /* capítulos 2 e 3 */
   quadro:'<rect x="12" y="6" width="36" height="48" rx="4" fill="#e9edf3"/><rect x="16" y="14" width="28" height="4" fill="#93a6bf"/><rect x="18" y="22" width="6" height="14" rx="1" fill="#2f4a6e"/><rect x="27" y="22" width="6" height="14" rx="1" fill="#2f6fb0"/><rect x="36" y="22" width="6" height="14" rx="1" fill="#2f4a6e"/><rect x="16" y="42" width="28" height="4" fill="#43b05c"/>',
   escada:'<path d="M8 52 H20 V40 H32 V28 H44 V16 H54" fill="none" stroke="#d9894a" stroke-width="4" stroke-linejoin="round"/><circle cx="46" cy="10" r="6" fill="#f4c430"/>',

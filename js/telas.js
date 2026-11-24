@@ -65,6 +65,7 @@ function showConfig(){
   app.innerHTML=hud()+'<p class="big"><em>Configurações</em></p>'+
   '<div class="mais-in">'+
     '<button class="btn" id="cMode">🎚 Nível: '+MODES[S.mode].nome+' <small class="muted">· trocar</small></button>'+
+    '<button class="btn" id="cRede">⚡ Rede: '+redeTxt()+' <small class="muted">· trocar</small></button>'+
     '<button class="btn" id="cChar">🧑‍🔧 Personagem e nome <small class="muted">· trocar</small></button>'+
     '<button class="btn pausa" id="resp"><span>🌬 Pausa para respirar</span><small>1 minuto para acalmar antes de voltar à bancada</small></button>'+
     '<a class="btn ghost" href="politica-privacidade.html" style="display:grid;place-items:center;text-decoration:none">🔒 Política de privacidade</a>'+
@@ -73,7 +74,7 @@ function showConfig(){
   '</div>'+
   '<button class="btn main" id="bk">Voltar ao menu</button>';
   bindHud();window.scrollTo(0,0);
-  document.getElementById('bk').onclick=showHome;document.getElementById('cMode').onclick=showStart;document.getElementById('cChar').onclick=showChar;
+  document.getElementById('bk').onclick=showHome;document.getElementById('cMode').onclick=showStart;document.getElementById('cChar').onclick=showChar;document.getElementById('cRede').onclick=showRede;
   document.getElementById('resp').onclick=()=>showBreath(showConfig);
   const sa=document.getElementById('sair');
   if(sa)sa.onclick=async()=>{sa.disabled=true;try{await nuvem.auth.signOut()}catch(e){}
@@ -150,11 +151,11 @@ function showAlbum(){
   '<button class="btn main" id="bk">Voltar</button>';
   bindHud();window.scrollTo(0,0);document.getElementById('bk').onclick=showConquistas;
 }
-function cardHTML(p,md,extra){return '<div class="card '+(extra||'')+'" style="--c:'+p.cor+'"><div class="art">'+icon(p.ic)+'</div><b>'+p.nome+'</b><p>'+p.card[md]+'</p></div>'}
+function cardHTML(p,md,extra){return '<div class="card '+(extra||'')+'" style="--c:'+p.cor+'"><div class="art">'+icon(p.ic)+'</div><b>'+p.nome+'</b><p>'+rd(p.card[md])+'</p></div>'}
 
 function playPhase(i){
-  const p=PHASES[i],d=p.dados[S.mode];
-  const go=()=>({quiz:runQuiz,sort:runSort,build:runBuild,predict:runPredict,diag:runDiag})[p.tipo](p,d);
+  const p=PHASES[i],d=comARede(p.dados[S.mode]);
+  const go=()=>({quiz:runQuiz,sort:runSort,build:runBuild,predict:runPredict,diag:runDiag,aula:runAula})[p.tipo](p,d);
   const k=S.mode+':'+p.id+':cena';
   /* no modo teste a cena aparece sempre, para revisar a história */
   const cena=cenaDe(p.id);

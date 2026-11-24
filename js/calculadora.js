@@ -7,18 +7,18 @@ const CALC_ABAS=[
   {id:'queda',nome:'Queda de tensão',dica:'Fio comprido e fino perde tensão no caminho. A norma limita essa perda.'},
   {id:'disjuntor',nome:'Disjuntor',dica:'O disjuntor protege o cabo: aguenta a carga e desarma antes de o cabo esquentar.'}
 ];
-const CALC_VAL={P:5500,U:220,horas:0.5,dias:30,tarifa:0.85,I:10,L:30,S:4,Uq:220,Ib:18,Iz:24};
+const CALC_VAL={P:5500,U:null,horas:0.5,dias:30,tarifa:0.85,I:10,L:30,S:4,Uq:null,Ib:18,Iz:24};
 
 function showCalc(aba){
-  setMode();aba=aba||'corrente';const a=CALC_ABAS.find(x=>x.id===aba)||CALC_ABAS[0];
+  setMode();aba=aba||'corrente';if(CALC_VAL.U==null)CALC_VAL.U=rede().V;if(CALC_VAL.Uq==null)CALC_VAL.Uq=rede().V;const a=CALC_ABAS.find(x=>x.id===aba)||CALC_ABAS[0];
   S.flags.calc=1;save();
   const chico=typeof IMG!=='undefined'&&IMG.chico?picSVG(IMG.chico):NPC.chico.svg;
   const campo=(k,rot,un,ex)=>'<label class="cfield"><span>'+rot+'</span><span class="cin"><input type="number" inputmode="decimal" step="any" min="0" data-k="'+k+'" value="'+CALC_VAL[k]+'"'+(ex||'')+'><b>'+un+'</b></span></label>';
   const opcoes=(k,rot,un,vals)=>'<label class="cfield"><span>'+rot+'</span><span class="cin"><select data-k="'+k+'">'+vals.map(v=>'<option value="'+v+'"'+(+CALC_VAL[k]===v?' selected':'')+'>'+fmtN(v)+'</option>').join('')+'</select><b>'+un+'</b></span></label>';
   const form={
-    corrente:campo('P','Potência da carga','W')+opcoes('U','Tensão','V',[127,220]),
+    corrente:campo('P','Potência da carga','W')+opcoes('U','Tensão','V',[110,127,220]),
     consumo:campo('P','Potência','W')+campo('horas','Uso por dia','h',' max="24"')+campo('dias','Dias no mês','dias')+campo('tarifa','Tarifa (veja na sua conta)','R$/kWh'),
-    queda:campo('I','Corrente do circuito','A')+campo('L','Comprimento (da origem até a carga)','m')+opcoes('S','Seção do cabo','mm²',[1.5,2.5,4,6,10,16])+opcoes('Uq','Tensão','V',[127,220]),
+    queda:campo('I','Corrente do circuito','A')+campo('L','Comprimento (da origem até a carga)','m')+opcoes('S','Seção do cabo','mm²',[1.5,2.5,4,6,10,16])+opcoes('Uq','Tensão','V',[110,127,220]),
     disjuntor:campo('Ib','Corrente de projeto (Ib)','A')+campo('Iz','Capacidade do cabo (Iz)','A')+
       '<p class="cdica">Iz vem da tabela 36 da NBR 5410. Exemplos (método B1, 2 condutores carregados): '+IZ_EXEMPLOS.map(e=>fmtN(e.s)+' mm² → '+fmtN(e.iz)+' A').join('; ')+'.</p>'
   }[a.id];

@@ -63,7 +63,7 @@ let pistas={};
     for(const[k,v]of Object.entries(t.previsao||{}))confere('Previsões',v==='girando → parado',k,v);
     for(const[k,v]of Object.entries(t.quizzes||{}))confere('Estrutura dos quizzes',v==='3q/333',k,v);
     const p=pistas=t.pistas||{};
-    confere('Pistas nos quizzes',p.perguntas===72,'72 perguntas de quiz',p.perguntas+' encontradas');
+    confere('Pistas nos quizzes',p.perguntas===117,'117 perguntas (quizzes e fim das aulas)',p.perguntas+' encontradas');
     confere('Pistas nos quizzes',p.certaMaisLonga/p.perguntas<=1/3,'certa não é a mais longa além do acaso (≤ 33 %)',p.certaMaisLonga+' de '+p.perguntas);
     confere('Pistas nos quizzes',p.absolutaSoNasErradas<=Math.max(4,p.absolutaNaCerta+3),'palavras absolutas não denunciam as erradas',p.absolutaSoNasErradas+' só nas erradas, '+p.absolutaNaCerta+' na certa');
     confere('Pistas nos quizzes',p.ecoDoEnunciado/p.perguntas<=0.10,'certa não é a única a repetir o enunciado (≤ 10 %)',p.ecoDoEnunciado+' de '+p.perguntas);
@@ -114,7 +114,18 @@ let pistas={};
      confere('Corrente contínua (Pilha e Lanterna)',J(k.curto)==='[true,7.5]','fio direto na pilha: curto de 7,5 A (1,5 V ÷ 0,2 Ω)',J(k.curto));
      confere('Corrente contínua (Pilha e Lanterna)',J(k.etapas)==='[true,true,true,true]','retorno em etapas (pista → explicação) e com linguagem diferente por nível',J(k.etapas));
      confere('Corrente contínua (Pilha e Lanterna)',k.troca===true&&k.tela===true,'lâmpada queimada troca com um toque; bancada CC sem a faixa do poste, com aviso do modelo e fios + e −');
-     confere('Corrente contínua (Pilha e Lanterna)',k.ordemCap1==='faisca,lanterna,entrada,seguranca,primeiro,previsao,paralelo,defeito,ohm,renovavel','Capítulo 1 na ordem dos 3 atos (segurança antes do 220 V; Guardião Verde no fim)',k.ordemCap1);}
+     confere('Corrente contínua (Pilha e Lanterna)',k.ordemCap1==='energia,renovavel,carga,macaneta,condutor,continuidade,grandezas,lanterna','Capítulo 1 só de CC, alternando aula e prática (Ato 1)',k.ordemCap1);}
+    {const r=t.rede||{};
+     confere('Rede elétrica',r.chuveiro127===true,'em 127 V a conta do chuveiro de 5500 W dá 43 A, e o erro comum vira 25 A');
+     confere('Rede elétrica',r.fonte127===true,'fonte da bancada mostra 127 V (127/220 V com 3 fases)');
+     confere('Rede elétrica',r.dps127===true,'DPS em 127 V: Uc mínimo ≈ 140 V, modelo comercial de 175 V');
+     confere('Rede elétrica',r.cena127===true,'as falas usam a tensão escolhida');
+     confere('Rede elétrica',r.hz50===true&&r.trafo===true,'em 50 Hz a corrente troca de sentido 100 vezes por segundo; trafo em 220 V mede 380 V entre fases');
+     confere('Rede elétrica',r.telaRede===true&&r.trocou===true,'tela de rede com 3 tensões e 2 frequências; tocar troca a escolha');}
+    {const a=t.aula||{};
+     confere('Aulas',a.lousa===true&&a.ultimo===true&&a.quiz===true,'aula mostra ilustração e fala, avança até "Testar o que aprendi" e abre as perguntas');
+     confere('Aulas',Array.isArray(a.figsFaltando)&&a.figsFaltando.length===0,'toda ilustração usada nas aulas existe',(a.figsFaltando||[]).join(', '));
+     confere('Aulas',a.sortFig===true&&a.sortReage===true,'Testador de Continuidade: ilustração do testador e LED reage à resposta');}
     {const m=t.multimetro||{};
      confere('Multímetro',m.temAparelho===true&&m.semLetras===true,'Caça-Defeito mostra o multímetro com as duas pontas e nenhuma letra nos parafusos');
      confere('Multímetro',m.antes==='– – –'&&m.umaPonta==='– – –','sem as duas pontas nos parafusos, o visor não mede',m.antes+' / '+m.umaPonta);

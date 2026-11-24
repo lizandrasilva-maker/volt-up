@@ -2,9 +2,9 @@
 <html lang="pt-BR"><head><meta charset="utf-8"><title>Testes do Volt Up</title></head>
 <body><div id="app"></div><pre id="out">rodando</pre>
 <script>try{localStorage.clear();sessionStorage.clear()}catch(e){}</script>
-<script src="../js/estado.js"></script><script src="../js/motor.js"></script><script src="../js/bancada-real.js"></script><script src="../js/multifilar.js"></script><script src="../js/planta.js"></script>
-<script src="../js/conteudo.js"></script><script src="../js/cc.js"></script><script src="../js/lanterna.js"></script><script src="../js/imagens.js"></script><script src="../js/historia.js"></script>
-<script src="../js/telas.js"></script><script src="../js/fases.js"></script><script src="../js/carreira.js"></script><script src="../js/calculo.js"></script><script src="../js/calculadora.js"></script><script src="../js/teste.js"></script>
+<script src="../js/estado.js"></script><script src="../js/rede.js"></script><script src="../js/motor.js"></script><script src="../js/bancada-real.js"></script><script src="../js/multifilar.js"></script><script src="../js/planta.js"></script>
+<script src="../js/conteudo.js"></script><script src="../js/cc.js"></script><script src="../js/lanterna.js"></script><script src="../js/cap1.js"></script><script src="../js/imagens.js"></script><script src="../js/historia.js"></script>
+<script src="../js/telas.js"></script><script src="../js/fases.js"></script><script src="../js/aula.js"></script><script src="../js/carreira.js"></script><script src="../js/calculo.js"></script><script src="../js/calculadora.js"></script><script src="../js/teste.js"></script>
 <script>
 /* Testes das fases: gabaritos, erros comuns, previsões, quizzes, cenas e trava de capítulos.
    Rode com: node tests/rodar.js */
@@ -34,14 +34,16 @@ try{
   // 3) previsões: a resposta certa (opção 0) bate com o que acontece
   const pv={};for(const md of ['leve','moderado','full']){S.mode=md;phaseById('sobrecarga').dados[md].forEach((it,i)=>{const st=it.sc(),antes=solve(st.comps,st.wires).lamp.M>0.04;it.act(st);const depois=solve(st.comps,st.wires).lamp.M>0.04;pv[md+':'+i]=(antes?'girando':'parado')+' → '+(depois?'girando':'parado')})}
   R.previsao=pv;
-  // 4) quizzes têm 3 perguntas por nível e 3 opções
-  const qz={};for(const p of PHASES.filter(p=>p.tipo==='quiz'))for(const md of ['leve','moderado','full']){const l=p.dados[md];qz[p.id+':'+md]=l.length+'q/'+l.map(x=>x.o.length).join('')}
+  // 4) quizzes (e as perguntas que fecham as aulas) têm 3 perguntas por nível e 3 opções; a rede escolhida já aplicada
+  const COM_PERGUNTAS=PHASES.filter(p=>p.tipo==='quiz'||p.tipo==='aula');
+  const perguntasDe=(p,md)=>{const d=comARede(p.dados[md]);return p.tipo==='aula'?d.checa:d};
+  const qz={};for(const p of COM_PERGUNTAS)for(const md of ['leve','moderado','full']){const l=perguntasDe(p,md);qz[p.id+':'+md]=l.length+'q/'+l.map(x=>x.o.length).join('')}
   R.quizzes=qz;
   // 5) pistas que entregam a resposta: a certa (opção 0) não pode ser a mais longa com frequência,
   //    nem as erradas concentrarem palavras absolutas ("qualquer", "nunca"...)
   const abs=/(^|[^\wÀ-ú])(qualquer|sempre|nunca|tudo|todo|toda|todos|todas|só|nada|nenhum)([^\wÀ-ú]|$)/i;
   let n=0,longa=0,absErr=0,absCerta=0;
-  for(const p of PHASES.filter(p=>p.tipo==='quiz'))for(const md of ['leve','moderado','full'])for(const x of p.dados[md]){n++;
+  for(const p of COM_PERGUNTAS)for(const md of ['leve','moderado','full'])for(const x of perguntasDe(p,md)){n++;
     const L=x.o.map(t=>t.length);if(L[0]>Math.max(...L.slice(1)))longa++;
     if(abs.test(x.o[0]))absCerta++;if(x.o.slice(1).some(t=>abs.test(t))&&!abs.test(x.o[0]))absErr++}
   // Outras pistas: a certa ser a única que repete palavra do enunciado ("eco"), a única que traz justificativa
@@ -51,7 +53,7 @@ try{
   const ESC={k:1e3,M:1e6,m:1e-3,'µ':1e-6};
   const num=t=>{const m=t.replace(/^[≈~]\s*/,'').replace(/^R\$\s*/,'').match(/^(-?\d+(?:[.,]\d+)?)\s*([kMmµ]?)[A-Za-zΩ%]/);return m?parseFloat(m[1].replace(',','.'))*(ESC[m[2]]||1):null};
   let eco=0,justif=0,numQ=0,meio=0;
-  for(const p of PHASES.filter(p=>p.tipo==='quiz'))for(const md of ['leve','moderado','full'])for(const x of p.dados[md]){
+  for(const p of COM_PERGUNTAS)for(const md of ['leve','moderado','full'])for(const x of perguntasDe(p,md)){
     const S=pal(x.q),ov=x.o.map(o=>[...pal(o)].filter(w=>S.has(w)).length);if(ov[0]>ov[1]&&ov[0]>ov[2])eco++;
     const J=x.o.map(o=>/:|porque/i.test(o));if(J[0]&&!J[1]&&!J[2])justif++;
     const v=x.o.map(num);if(v.every(z=>z!==null)){numQ++;const s=[...v].sort((a,b)=>a-b);if(s[1]===v[0])meio++}}
@@ -188,6 +190,35 @@ try{
       runBuild(p,p.dados[md]);const ts=document.getElementById('tSol');if(!ts){mt[md+':'+p.id]='sem botão';continue}
       ts.click();mt[md+':'+p.id]=document.getElementById('end')?'aprovou':(document.querySelector('.fb')||{}).textContent||'não aprovou'}
     R.montar=mt;VOLT_TESTE=false;S=lerPerfil(STORE);ensure();}
+  // Rede elétrica escolhida pelo jogador: falas, perguntas com conta, fonte e Caça-Defeito seguem a configuração
+  {const rr={},J=JSON.stringify;S.mode='moderado';
+   S.rede={V:127,Hz:60};
+   const ohm=comARede(phaseById('ohm').dados.moderado).find(x=>/Chuveiro de 5500/.test(x.q));
+   rr.chuveiro127=ohm.q.includes('127 V')&&ohm.o[0]==='43 A'&&ohm.o[1]==='25 A';
+   rr.fonte127=/127 V/.test(fonteTxt(BAT()))&&/127\/220 V/.test(fonteTxt(Object.assign(BAT(),{fases:3})));
+   rr.dps127=comARede(phaseById('surto').dados.full).some(x=>/≈ 140 V/.test(x.o[0])&&/175 V/.test(x.w));
+   rr.cena127=rd(SCENES.seguranca[0][1]).includes('127 V');
+   S.rede={V:220,Hz:50};
+   const ent=comARede(phaseById('entrada').dados.leve).find(x=>/\+/.test(x.q));
+   rr.hz50=!!ent&&/100 vezes por segundo \(50 Hz\)/.test(ent.w);
+   rr.trafo=comARede(phaseById('entrada').dados.full)[0].o.join('|')==='380 V|220 V|440 V';
+   S.rede={V:220,Hz:60};
+   showRede();rr.telaRede=app.querySelectorAll('[data-v]').length===3&&app.querySelectorAll('[data-hz]').length===2;
+   app.querySelector('[data-v="127"]').click();rr.trocou=S.rede.V===127&&/127 V/.test(app.querySelector('[data-v="127"]').outerHTML)&&app.querySelector('[data-v="127"]').getAttribute('aria-pressed')==='true';
+   S.rede={V:220,Hz:60};
+   R.rede=rr;}
+  // Aula: quadros com ilustração, voltar/avançar e perguntas no fim; classificar com ilustração que reage
+  {const au={};S.mode='leve';const pa=phaseById('energia');runAula(pa,comARede(pa.dados.leve));
+   au.lousa=!!document.querySelector('.lousa svg')&&!!document.querySelector('.aula-fala p');
+   const n=pa.dados.leve.quadros.length;for(let k=1;k<n;k++)document.getElementById('prox').click();
+   au.ultimo=/Testar/.test(document.getElementById('prox').textContent);document.getElementById('prox').click();
+   au.quiz=!!document.querySelector('.qcard')&&document.querySelectorAll('.opt').length===3;
+   const figs=[];for(const p of PHASES.filter(p=>p.tipo==='aula'))for(const md of ['leve','moderado','full'])for(const q of p.dados[md].quadros)if(!FIG[q.fig])figs.push(p.id+':'+q.fig);
+   au.figsFaltando=figs;
+   const pc=phaseById('continuidade');runSort(pc,pc.dados.leve);au.sortFig=!!document.querySelector('#ilu svg');
+   const certo=document.querySelector('.bin[data-r="'+(/Chave|Moeda|Grafite/.test(document.querySelector('#it b').textContent)?1:0)+'"]');certo.click();
+   au.sortReage=/LED (acende|apagado)/.test(document.querySelector('#ilu').textContent);
+   R.aula=au;}
 }catch(e){R.ERRO=e.message+' '+e.stack}
 document.getElementById('out').textContent=JSON.stringify(R,null,1);
 </script></body></html>

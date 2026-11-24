@@ -41,19 +41,23 @@ Object.assign(NPC,{
 /* personagens com arte própria (img/<id>.webp e img/<id>_body.webp); os outros seguem com o desenho simples */
 ['chico','fatima','lia','socorro','damiao','rayane','raimundo'].forEach(k=>{if(IMG[k]&&IMG[k+'_body']){NPC[k].body=IMG[k+'_body'];NPC[k].svg=picSVG(IMG[k])}});
 const CHAPTERS=[
- {id:'cap1',nome:'A Casa Acesa',tema:'Fundamentos e circuitos',fases:['faisca','lanterna','entrada','seguranca','primeiro','previsao','paralelo','defeito','ohm','renovavel'],
-  intro:[['chico','Gente nova na oficina! Boas-vindas, {nome}.'],['eu','Bom dia, Mestre! Pronto pra começar o serviço!'],['chico','Calma. Primeiro a gente treina aqui na bancada da oficina. Depois vamos atender clientes de verdade.'],['chico','Começamos pelo básico: de onde vem a energia e como ela chega até uma lâmpada.']],
-  fim:[['fatima','Mestre Chico! Agora a casa inteira apagou! Nenhuma luz e nenhuma tomada funcionam!'],['chico','Quando a casa toda apaga, o problema não é uma lâmpada. Precisamos olhar o quadro de distribuição.'],['eu','Então vamos ver o quadro da casa dela?'],['chico','Esse é o próximo capítulo, {nome}. Lá você vai aprender disjuntor geral e DR.']]},
+ {id:'cap1',nome:'A Oficina do Mestre Chico',tema:'Corrente contínua e fundamentos',
+  fases:['energia','renovavel','carga','macaneta','condutor','continuidade','grandezas','lanterna'],
+  breve:['📘 Como se mede · 🔧 Medir de Verdade','📘 Lei de Ohm e potência · 🔧 Mestre Ohm na bancada','📘 Série e paralelo · 🔧 Série ou Paralelo na bancada CC','🔧 Previsão na bancada CC',
+    '📘 Kirchhoff · 🔧 Kirchhoff na bancada','🔧 Caça-Defeito da lanterna de emergência','📘 Capacitor · 🔧 Capacitor na bancada','📘 Ímã e bobina · 🔧 Eletroímã','📘 CC × CA · 🔧 CC ou CA?'],
+  intro:[['chico','Gente nova na oficina! Boas-vindas, {nome}.'],['eu','Bom dia, Mestre! Pronto pra começar o serviço!'],
+    ['chico','Calma. Antes de atender cliente, você aprende o básico aqui na bancada: pilha, bateria, fio e lâmpada pequena.'],
+    ['chico','É corrente contínua: a mais simples de entender e segura para treinar. A energia da tomada fica para depois.'],
+    ['chico','Cada assunto tem uma aula e depois uma prática para você provar que entendeu.']]},
 
  /* Cada capítulo é uma história própria, com personagens e biblioteca de peças (BIBLIOTECAS em fases.js).
     Um capítulo só abre quando o anterior estiver completo (no modo teste, tudo abre). */
- {id:'cap2',nome:'Do Quadro ao Condomínio',tema:'Instalação predial',fases:['quadro','quadronovo','escada','corredor','garagem','impulso','surto'],
-  intro:[['fatima','Que alívio ver vocês! Desde ontem a casa toda está apagada.'],
-    ['chico','Hoje eu trouxe reforço, Dona Fátima. {nome}, este serviço você faz com a Engenheira Lia.'],
-    ['lia','Bom dia, Dona Fátima. Sou a Engenheira Lia, responsável técnica da obra do condomínio aqui da rua.'],
-    ['lia','O Mestre Chico me falou de você, {nome}. O quadro dela é antigo: não tem DR nem DPS. Hoje montamos o quadro novo com o DR; o DPS a gente estuda com calma depois.'],
-    ['eu','Quadro novo, com DR. Bora!'],
-    ['lia','Depois, a síndica do Condomínio Mandacaru precisa da gente: escada, corredor, garagem e hall.']],
+ {id:'cap2',nome:'A Casa e o Condomínio',tema:'Corrente alternada e instalação predial',
+  fases:['entrada','seguranca','primeiro','previsao','faisca','paralelo','defeito','ohm','quadro','quadronovo','escada','corredor','garagem','impulso','surto'],
+  intro:[['chico','{nome}, até aqui foi pilha e bateria: corrente contínua, sempre no mesmo sentido.'],
+    ['chico','Hoje a gente sai da oficina. Na casa das pessoas a energia vem do poste, e ela é alternada: troca de sentido {2Hz} vezes por segundo.'],
+    ['fatima','Bom dia, Mestre! Sou a Fátima, moro aqui na rua. A casa é antiga e tem muita coisa pra arrumar.'],
+    ['chico','Primeira cliente de verdade, {nome}. Antes de mexer em qualquer coisa, vamos entender como a energia chega até a casa dela.']],
   fim:[['socorro','Escada, corredor, garagem e hall funcionando. O Mandacaru inteiro agradece, {nome}!'],
     ['lia','Você está pronto para coisa maior. Um amigo meu tem uma fábrica de castanha de caju, e a esteira vive parando.'],
     ['eu','Fábrica? Motor, contatora, botoeira... bora!'],
@@ -67,32 +71,37 @@ const CHAPTERS=[
     ['eu','Entendido, Rayane. Segurança primeiro.']],
   fim:[['damiao','Esteira girando e caixa d\'água cheia. A Caju Dourado não para mais!'],
     ['rayane','Os motores trifásicos chegam em breve. Aí vamos fazer reversão e estrela-triângulo de verdade.'],
+    ['damiao','E vem novidade: vamos abrir uma linha nova de castanha. A Engenheira Lia disse que antes precisa revisar a cabine de força da fábrica.'],
     ['eu','Vou estar pronto!']]},
- {id:'cap4',nome:'Sol no Telhado',tema:'Energia solar fotovoltaica',soon:true,
+ {id:'cap4',nome:'Cabine Primária',tema:'Baixa e média tensão',soon:true,
+  enredo:'A Caju Dourado vai crescer. Antes de ligar a linha nova, a Engenheira Lia precisa revisar a subestação de 13,8 kV da fábrica.',
+  previstas:['BT ou MT? Faixas de tensão e cabine primária','Desligar a cabine: desenergização segura (NR-10)','O transformador por dentro: espiras, relação e tap','Megômetro na subestação: resistência de isolamento','TTR: relação de transformação de cada fase','Volta da energia: religar na ordem certa']},
+ {id:'cap5',nome:'Sol no Telhado',tema:'Energia solar fotovoltaica',soon:true,
   enredo:'A Professora Iara quer energia solar na escola rural do Assentamento Boa Esperança.',
   previstas:['Placas, cabo solar e string box (corrente contínua)','Inversor e conexão à rede','Medidor bidirecional e economia na conta']},
- {id:'cap5',nome:'Ventos do Litoral',tema:'Energia eólica',soon:true,
+ {id:'cap6',nome:'Ventos do Litoral',tema:'Energia eólica',soon:true,
   enredo:'Seu Zé Maré quer luz na colônia de pescadores de Icapuí com a força do vento.',
   previstas:['Aerogerador e controlador de carga','Banco de baterias','Inversor off-grid para a colônia']}
 ];
 const SCENES={
-  faisca:[['chico','Antes de mexer em qualquer coisa, me responde umas perguntas. Quero ver como você pensa.']],
+  faisca:[['chico','Olha a casa da Dona Fátima: extensão rachada, carregador esquecido na tomada, aquecedor numa extensão fininha.'],['chico','Antes de consertar, me diz o que é perigoso e por quê.']],
   lanterna:{
    leve:[['chico','Agora a primeira montagem: uma lanterna. Duas pilhas, uma lâmpada e fio.'],['chico','Pilha tem dois lados, o + e o −. A energia sai de um, passa pela lâmpada e volta pelo outro.'],['eu','Então o caminho tem que ser fechado, de ponta a ponta!'],['chico','Isso. E com as duas pilhas certinhas, a lâmpada acende forte. Bora ver?']],
    moderado:[['chico','Primeira montagem, em corrente contínua: duas pilhas de 1,5 V e uma lâmpada de lanterna de 3 V.'],['chico','Na pilha a corrente sai pelo + e volta pelo −. Polaridade importa.'],['eu','Para dar 3 V, as pilhas vão em série: o − de uma no + da outra.'],['chico','Exato. Põe o interruptor no caminho e me mostra a lanterna acesa.']],
    full:[['chico','Lanterna de 3 V: lâmpada de 3 V e 0,3 A. Na caixa tem três pilhas de 1,5 V.'],['chico','Monte com o interruptor e decida quantas pilhas usar. Tensão demais rompe o filamento.'],['eu','Duas em série dão 3 V. Pela lei de Ohm, a lâmpada tem uns 10 Ω e puxa uns 0,3 A.'],['chico','Então prova na bancada.']]},
-  entrada:[['chico','Pilha dá para a lanterna. A energia da casa inteira vem de mais longe: do poste.'],['chico','Olha pela janela da oficina: lá no poste tem o transformador, e na parede tem o medidor.'],['chico','É por esse caminho que a energia chega. {nome}, me mostra que você entendeu.']],
-  primeiro:[['chico','Agora a bancada é de 220 V, igual à rede da casa: fonte, interruptor e lâmpada.'],['chico','Na régua da fonte, L1 é a fase e N é o neutro. O neutro já chega aterrado pela fonte.'],['chico','A fonte não tem terra. Quando precisar, você crava a haste no chão e liga no BEP. E na obra, confira a fase com o instrumento antes de ligar.'],['chico','Ligue do jeito da NBR 5410: fase no interruptor, retorno até a lâmpada e neutro azul-claro direto no bocal.']],
+  entrada:[['chico','Na oficina era pilha. Aqui a energia vem de longe: da usina, pelos fios do poste.'],['chico','Olha ali na rua: no poste tem o transformador, e na parede da Dona Fátima tem o medidor.'],['chico','É por esse caminho que a energia chega. {nome}, me mostra que você entendeu.']],
+  primeiro:[['chico','Antes de mexer na fiação dela, treina na bancada portátil. Ela é de {V} V, igual à rede da casa: fonte, interruptor e lâmpada.'],['chico','Na régua da fonte, L1 é a fase e N é o neutro. O neutro já chega aterrado pela fonte.'],['chico','A fonte não tem terra. Quando precisar, você crava a haste no chão e liga no BEP. E na obra, confira a fase com o instrumento antes de ligar.'],['chico','Ligue do jeito da NBR 5410: fase no interruptor, retorno até a lâmpada e neutro azul-claro direto no bocal.']],
   previsao:[['chico','Ainda na bancada: eletricista bom prevê o que vai acontecer antes de ligar. Topa um desafio?'],['eu','Topo! Vou pensar antes de responder.']],
-  paralelo:[['fatima','Bom dia! Sou a Dona Fátima, moro aqui na rua. Quero colocar duas lâmpadas na minha sala.'],['fatima','E quero as duas bem fortes, viu?'],['chico','Primeira cliente, {nome}! Cuidado: tem um jeito de ligar que deixa as duas fraquinhas.']],
+  paralelo:[['fatima','Agora a minha sala: quero colocar duas lâmpadas lá.'],['fatima','E quero as duas bem fortes, viu?'],['chico','Cuidado, {nome}: tem um jeito de ligar que deixa as duas fraquinhas.']],
   defeito:[['fatima','Mestre, a lâmpada da minha cozinha não acende mais! As outras luzes da casa estão funcionando.'],['chico','Se só a cozinha apagou, o problema está no circuito da cozinha. Vamos testar peça por peça: aqui não se troca nada no chute.']],
-  renovavel:[['fatima','Mestre, com a conta alta desse jeito... Minha vizinha instalou placa solar. Isso é energia que não acaba?'],['chico','Boa pergunta. {nome}, explica pra ela de onde vem cada energia.']],
-  seguranca:[['chico','A rede de 220 V machuca de verdade. Antes de mexer nela, a parte mais importante do ofício.'],['eu','Segurança primeiro!']],
+  seguranca:[['chico','A rede de {V} V machuca de verdade. Antes de mexer nela, a parte mais importante do ofício.'],['eu','Segurança primeiro!']],
   ohm:[['fatima','E por que a minha conta de luz vem tão alta?'],['chico','Hora de fazer conta: potência, tempo e consumo.']],
   /* Cap. 2 */
-  quadro:[['lia','Antes de abrir o quadro, me diga: para que serve cada peça dele?']],
+  quadro:[['fatima','Mestre Chico! Agora a casa inteira apagou! Nenhuma luz e nenhuma tomada funcionam!'],['chico','Quando a casa toda apaga, o problema não é uma lâmpada. Precisamos olhar o quadro de distribuição.'],
+    ['chico','E pra isso eu trouxe reforço. {nome}, este serviço você faz com a Engenheira Lia.'],['lia','Bom dia, Dona Fátima. Sou a Engenheira Lia, responsável técnica da obra do condomínio aqui da rua.'],
+    ['lia','O quadro da senhora é antigo: não tem DR nem DPS. Vamos montar um quadro novo com DR; o DPS a gente estuda com calma depois.'],['lia','Antes de abrir o quadro, {nome}, me diga: para que serve cada peça dele?']],
   quadronovo:[['lia','O quadro novo: disjuntor geral (DG) na entrada, depois o DR, e um disjuntor para cada circuito.'],['lia','Atenção: o neutro dos circuitos volta pelo DR. Se voltar por fora, ele desarma.']],
-  escada:[['socorro','Sou a Socorro, síndica do Mandacaru. O povo sobe a escada no escuro!'],['socorro','Quero acender embaixo e apagar lá em cima. E o contrário também.'],['lia','Isso é o interruptor paralelo, o three-way: um em cada ponta da escada.']],
+  escada:[['lia','Quadro da Dona Fátima pronto. Agora a síndica do Condomínio Mandacaru precisa da gente.'],['socorro','Sou a Socorro, síndica do Mandacaru. O povo sobe a escada no escuro!'],['socorro','Quero acender embaixo e apagar lá em cima. E o contrário também.'],['lia','Isso é o interruptor paralelo, o three-way: um em cada ponta da escada.']],
   corredor:[['socorro','E o corredor comprido? Tem porta nas duas pontas e uma no meio.'],['lia','Três pontos de comando: um paralelo em cada ponta e um intermediário, o four-way, no meio.']],
   garagem:[['raimundo','Boa tarde! Sou o Raimundo, porteiro. Todo dia eu esqueço a luz da garagem acesa.'],['lia','Uma fotocélula resolve: ela acende sozinha quando escurece e apaga de manhã.']],
   impulso:[['socorro','No hall tem dois pulsadores. Cada toque deve acender ou apagar a luz.'],['lia','Isso é o relé de impulso: cada pulso na bobina inverte o contato.']],
@@ -104,12 +113,13 @@ const SCENES={
   caixa:[['damiao','A caixa d\'água da fábrica secou de novo. Alguém esqueceu a bomba desligada.'],['rayane','Com uma boia de nível a bomba liga sozinha quando a caixa esvazia e desliga quando enche.']],
   fimturno:[['rayane','Fim de turno! Logo chegam os motores grandes: reversão e estrela-triângulo.'],['damiao','Me mostra que você já sabe a teoria.']]
 };
+Object.assign(SCENES,CAP1_CENAS);
 const chapterOf=pid=>CHAPTERS.find(c=>c.fases&&c.fases.includes(pid));
 const phaseById=id=>PHASES.find(p=>p.id===id);
 function showScene(lines,done){
   let i=0,typing=null;if(!document.body.dataset.cap)ceu();
   const r=()=>{
-    const [who,t]=lines[i],txt=t.replace(/\{nome\}/g,esc(S.name||charOf().nome));
+    const [who,t]=lines[i],txt=rd(t).replace(/\{nome\}/g,esc(S.name||charOf().nome));
     const me=who==='eu';
     const sp=me?{nome:S.name||charOf().nome,svg:charSVG(S.char),body:(typeof IMG!=='undefined'&&IMG[S.char+'_body'])||null}:NPC[who];
     const fig=sp.body?'<img class="vn-body" src="'+sp.body+'" alt="'+esc(sp.nome)+'">':'<div class="vn-port">'+sp.svg+'</div>';
@@ -134,7 +144,8 @@ function showScene(lines,done){
 }
 
 const PHASES=[
- {id:'faisca',nome:'Faísca',sub:'Energia e materiais',kind:'quiz',tipo:'quiz',ic:'lampada',cor:'#2f4a6e',
+ ...CAP1_FASES,
+ {id:'faisca',nome:'Perigos da Casa',sub:'Água, calor e fio fino',kind:'quiz',tipo:'quiz',ic:'lampada',cor:'#2f4a6e',
   card:{leve:'Água com sais conduz: mão molhada e eletricidade não combinam.',moderado:'Fio mais fino tem mais resistência e esquenta mais: P = R × I².',full:'Rendimento é medido sobre a entrada: perdas = Pentrada − Psaída.'},
   dados:{
    leve:[{q:'A capa da extensão rachou e o chão está molhado. Por que isso é perigoso, mesmo sem tocar no cobre?',o:['A água conduz e leva a eletricidade até você','O plástico rachado passa a conduzir eletricidade também','A umidade aumenta a força da eletricidade na tomada'],w:'O plástico continua isolante, mesmo rachado. O perigo é a água: ela tem sais e conduz, e faz a ponte entre o cobre e você. A tomada continua com a mesma tensão.'},
@@ -143,7 +154,7 @@ const PHASES=[
    moderado:[{q:'Água destilada quase não conduz. Por que a água da torneira é perigosa perto da eletricidade?',o:['Os sais dissolvidos formam íons, que conduzem corrente','O oxigênio da água é condutor, como o cobre','O cloro do tratamento é que conduz a corrente'],w:'A água pura tem pouquíssimas cargas livres. Os sais da água comum se separam em íons, e são eles que levam a corrente. Por isso áreas molhadas pedem DR.'},
          {q:'Um carregador puxa 12 W da tomada e entrega 10 W ao celular. O que acontece com os 2 W?',o:['Viram calor no carregador','Voltam para a rede pelo neutro','Ficam guardados no transformador do carregador'],w:'Energia não some nem fica guardada no carregador: os 2 W são perdas em calor. Rendimento = 10 ÷ 12 ≈ 83 %. Pelo neutro volta corrente, não energia que sobrou.'},
          {q:'Mesma corrente em 1,5 mm² e em 2,5 mm², mesmo comprimento. Qual dissipa mais calor?',o:['O de 1,5 mm²: tem maior resistência','O de 2,5 mm²: tem mais cobre para aquecer','Os dois igual: a corrente é a mesma'],w:'R = ρ × L ÷ S: seção menor, resistência maior. Com a mesma corrente, P = R × I² é maior no fio fino.'}],
-   full:[{q:'Por que a NBR 5410 exige DR ≤ 30 mA em locais com banheira ou chuveiro?',o:['Pele molhada tem resistência menor e passa mais corrente','A umidade eleva a tensão da rede nesses locais','O disjuntor termomagnético não consegue atuar em ambiente úmido'],w:'I = U ÷ R. Pele molhada tem resistência bem menor que seca: com 127 ou 220 V, a corrente no corpo pode passar de 30 mA. O DR atua com fuga até 30 mA; o disjuntor nem percebe correntes tão pequenas (NBR 5410, 5.1.3.2.2).'},
+   full:[{q:'Por que a NBR 5410 exige DR ≤ 30 mA em locais com banheira ou chuveiro?',o:['Pele molhada tem resistência menor e passa mais corrente','A umidade eleva a tensão da rede nesses locais','O disjuntor termomagnético não consegue atuar em ambiente úmido'],w:'I = U ÷ R. Pele molhada tem resistência bem menor que seca: com {V} V, a corrente no corpo pode passar de 30 mA. O DR atua com fuga até 30 mA; o disjuntor nem percebe correntes tão pequenas (NBR 5410, 5.1.3.2.2).'},
          {q:'Uma fonte com rendimento de 80 % entrega 40 W à carga. Quanto ela dissipa em calor?',o:['10 W','32 W','50 W'],w:'Pentrada = 40 ÷ 0,8 = 50 W. Perdas = 50 − 40 = 10 W. 50 W é a potência de entrada, não a perda; 32 W aplica o rendimento sobre a saída (40 × 0,8), o erro mais comum.'},
          {q:'Circuito de 30 m (ida e volta = 60 m) em 2,5 mm², ρ = 0,0172 Ω·mm²/m, com 20 A. Potência perdida no cabo?',o:['≈ 165 W','≈ 83 W','≈ 8 W'],w:'R = 0,0172 × 60 ÷ 2,5 ≈ 0,41 Ω. P = R × I² = 0,41 × 400 ≈ 165 W. Esquecer a volta dá 83 W; esquecer o quadrado dá 8 W.'}]
   }},
@@ -154,15 +165,15 @@ const PHASES=[
    moderado:{comps:pecasLanterna(2,true),real:LANTERNA_REAL,goal:LANTERNA_GOAL.moderado,check:lanternaCheck,sucesso:lanternaSucesso},
    full:{comps:pecasLanterna(3,true),real:LANTERNA_REAL,goal:LANTERNA_GOAL.full,check:lanternaCheck,sucesso:lanternaSucesso}}},
  {id:'entrada',nome:'Do Poste à Tomada',sub:'Transformador, medidor e CA',kind:'quiz',tipo:'quiz',ic:'multimetro',cor:'#2b5a4e',
-  card:{leve:'Gasto = força do aparelho × tempo ligado.',moderado:'kW é potência; kWh é energia. Minutos viram horas antes de multiplicar.',full:'Em estrela, fase-fase = fase-neutro × √3: 380 V, não 440 V.'},
+  card:{leve:'Gasto = força do aparelho × tempo ligado.',moderado:'kW é potência; kWh é energia. Minutos viram horas antes de multiplicar.',full:'Em estrela, fase-fase = fase-neutro × √3: {FF} V, não {2V} V.'},
   dados:{
    leve:[{q:'Qual a diferença entre os fios do alto do poste e os que chegam na sua casa?',o:['Os do alto têm tensão muito maior; o transformador baixa','Os do alto são de telefone e internet','São iguais; o transformador guarda energia para a noite'],w:'No alto do poste passa a média tensão, milhares de volts. O transformador baixa para a tensão das casas. Ele não guarda energia, e os cabos de telefone e internet ficam mais embaixo.'},
          {q:'Lâmpada de 10 W acesa 10 horas, ou secador de 2000 W ligado 5 minutos. Qual pesa mais na conta?',o:['O secador, mesmo ligado pouco tempo','A lâmpada, porque ficou muito mais tempo acesa','Os dois igual: um compensa o outro'],w:'Gasto = força × tempo. Lâmpada: 10 W × 10 h = 100 Wh. Secador: 2000 W × 5 min ≈ 167 Wh. Tempo longo não basta: a potência pesa muito.'},
-         {q:'Por que a tomada não tem "+" e "−", como a pilha?',o:['A corrente da tomada troca de sentido o tempo todo','O "+" da tomada fica escondido em um dos furos','Um furo tem energia e o outro é o terra'],w:'A tomada é corrente alternada: o sentido troca 120 vezes por segundo (60 Hz). Por isso se fala em fase e neutro. O neutro não é o terra: o terra é o terceiro furo.'}],
-   moderado:[{q:'Por que a rede chega ao poste em 13,8 kV, e não em 220 V?',o:['Mais tensão, menos corrente: perde menos nos cabos','Porque 13,8 kV é mais seguro para quem está na rua','Porque a usina gera a energia direto em 13,8 kV'],w:'P = U × I. Subindo a tensão, a corrente cai, e a perda nos cabos (R × I²) cai com o quadrado. Não é mais seguro: por isso fica no alto. E a usina usa transformadores para chegar a esse nível.'},
+         {q:'Por que a tomada não tem "+" e "−", como a pilha?',o:['A corrente da tomada troca de sentido o tempo todo','O "+" da tomada fica escondido em um dos furos','Um furo tem energia e o outro é o terra'],w:'A tomada é corrente alternada: o sentido troca {2Hz} vezes por segundo ({Hz} Hz). Por isso se fala em fase e neutro. O neutro não é o terra: o terra é o terceiro furo.'}],
+   moderado:[{q:'Por que a rede chega ao poste em 13,8 kV, e não em {V} V?',o:['Mais tensão, menos corrente: perde menos nos cabos','Porque 13,8 kV é mais seguro para quem está na rua','Porque a usina gera a energia direto em 13,8 kV'],w:'P = U × I. Subindo a tensão, a corrente cai, e a perda nos cabos (R × I²) cai com o quadrado. Não é mais seguro: por isso fica no alto. E a usina usa transformadores para chegar a esse nível.'},
          {q:'Um aparelho de 2 kW fica ligado 15 minutos. O medidor soma…',o:['0,5 kWh','30 kWh','2 kWh'],w:'15 min = 0,25 h. E = 2 kW × 0,25 h = 0,5 kWh. Multiplicar por 15 esquece de passar minutos para horas; 2 kWh confunde potência com energia.'},
          {q:'Na tomada 2P+T, qual contato tem tensão em relação ao terra?',o:['A fase; o neutro fica perto de 0 V','O neutro, porque a corrente volta por ele','Fase e neutro, cada um com metade'],w:'O neutro leva a corrente de volta, mas é aterrado na entrada e fica perto de 0 V. A tensão em relação ao terra está na fase. Metade em cada um seria uma ligação entre duas fases, não fase e neutro.'}],
-   full:[{q:'Trafo 13,8 kV / 380-220 V, secundário em estrela aterrada. Entre duas fases do secundário você mede…',o:['380 V','220 V','440 V'],w:'Fase-neutro = 220 V. As fases estão defasadas 120°, então a diferença entre duas é 220 × √3 ≈ 380 V, e não a soma 440 V.'},
+   full:[{q:'Trafo 13,8 kV / {FF}-{V} V, secundário em estrela aterrada. Entre duas fases do secundário você mede…',o:['{FF} V','{V} V','{2V} V'],w:'Fase-neutro = {V} V. As fases estão defasadas 120°, então a diferença entre duas é {V} × √3 ≈ {FF} V, e não a soma {2V} V.'},
          {q:'Medidor com constante de 1 pulso por Wh. Com o chuveiro ligado, o LED pisca 90 vezes em 1 minuto. Potência do chuveiro?',o:['5,4 kW','1,5 kW','90 W'],w:'90 pulsos = 90 Wh em 1/60 h. P = 90 Wh ÷ (1/60 h) = 5400 W. Dividir 90 por 60 confunde as unidades; 90 W esquece que a contagem foi de só 1 minuto.'},
          {q:'Por que a distribuidora aterra o neutro no padrão de entrada (TN-C-S)?',o:['Para a falta fase-massa virar curto e a proteção atuar','Para o neutro poder fazer também o papel do PE na casa','Para o neutro deixar de levar corrente de volta'],w:'Com o neutro aterrado e as massas no PE, uma falta fase-massa fecha um caminho de baixa impedância: a corrente sobe e o disjuntor ou o DR atua. Depois da entrada, N e PE seguem separados, e o neutro continua levando a corrente de retorno.'}]
   }},
@@ -178,7 +189,7 @@ const PHASES=[
      goal:'S1 comanda L1 e o disjuntor protege o circuito.',
      check:st=>tableCheck(st,[{sw:{S1:1},want:{L1:1}},{sw:{S1:0},want:{L1:0}}])},
    full:{comps:[BAT(),C('F','fuse',115,45,0,{lab:'DJ 10A'}),C('S1','sw',225,45,0,{closed:false}),C('L1','lamp',290,135,1)],
-     real:[['L1','💡','luminária da bancada'],['S1','🔘','interruptor simples'],['DJ','🎚','disjuntor do circuito'],['Rede','🔌','220 V~ do QD']],
+     real:[['L1','💡','luminária da bancada'],['S1','🔘','interruptor simples'],['DJ','🎚','disjuntor do circuito'],['Rede','🔌','{V} V~ do QD']],
      goal:'Circuito de iluminação conforme NBR 5410: proteção na fase, comando seccionando a fase e cores corretas.',
      check:st=>tableCheck(st,[{sw:{S1:1},want:{L1:1}},{sw:{S1:0},want:{L1:0}}])}
   }},
@@ -214,7 +225,7 @@ const PHASES=[
   }},
  {id:'defeito',nome:'Caça-Defeito',sub:'Cozinha da Dona Fátima',kind:'bancada',tipo:'diag',ic:'multimetro',cor:'#6b5512',
   card:{leve:'Testar antes de trocar economiza peça.',moderado:'Circuito série aberto: a tensão toda aparece no ponto aberto.',full:'Diagnóstico eficiente: divida o circuito ao meio a cada medição.'},
-  dados:{leve:{V:220,cand:['F','S1','L1'],limit:3},moderado:{V:220,cand:['F','S1','L1'],limit:3},full:{V:220,cand:['F','S1','L1','w1','w3'],limit:3}}},
+  dados:{leve:{cand:['F','S1','L1'],limit:3},moderado:{cand:['F','S1','L1'],limit:3},full:{cand:['F','S1','L1','w1','w3'],limit:3}}},
  {id:'renovavel',nome:'Guardião Verde',sub:'Renovável ou não?',kind:'classificar',tipo:'sort',ic:'sol',cor:'#2d6a3a',
   card:{leve:'Lenha pode ser renovável, se replantar!',moderado:'A casca de castanha do Ceará vira energia (biomassa).',full:'Hidrogênio só é verde se a eletricidade da eletrólise for renovável.'},
   dados:{
@@ -235,7 +246,7 @@ const PHASES=[
          {q:'Pela NR-10, logo depois de seccionar o circuito, o próximo passo é…',o:['Constatar a ausência de tensão','Instalar o aterramento temporário','Sinalizar o impedimento'],w:'NR-10 (10.13.1): seccionar → constatar ausência de tensão → impedir reenergização → constatar de novo e aterrar temporariamente → proteger partes vivas próximas → sinalizar o impedimento → delimitar a área.'},
          {q:'DR com IΔn = 30 mA. Há uma fuga de 12 mA para o PE. O DR…',o:['Fica ligado: abaixo de 50 % de IΔn não deve atuar','Tem que atuar: fuga para o PE já caracteriza uma falta','Atua se a fuga durar mais de 5 s'],w:'O DR não deve atuar abaixo de 50 % de IΔn (15 mA) e tem que atuar até IΔn. Com 12 mA, fica ligado. Por isso a NBR 5410 (6.3.3.2.6 e nota) manda dividir os circuitos para que a fuga normal de cada um não passe de 50 % da corrente do DR que o protege.'}]
   }},
- {id:'ohm',nome:'Mestre Ohm',sub:'Contas que acendem',kind:'quiz',tipo:'quiz',ic:'ohm',cor:'#5a3a6e',
+ {id:'ohm',nome:'Chuveiro e Conta',sub:'Potência, consumo e corrente',kind:'quiz',tipo:'quiz',ic:'ohm',cor:'#5a3a6e',
   card:{leve:'Em fila, as lâmpadas dividem a tensão e brilham bem menos.',moderado:'I = P ÷ U, com a tensão do próprio aparelho.',full:'Queda de tensão em circuito terminal: no máximo 4 % (NBR 5410, 6.2.7.2).'},
   dados:{
    leve:[{q:'Duas lâmpadas iguais em fila na mesma tomada. Comparando com uma lâmpada sozinha, cada uma brilha…',o:['Bem menos que a metade','Igual: a tomada é a mesma','Metade, e as duas juntas brilham como uma'],w:'Em fila, cada lâmpada fica com metade da tensão. Com metade da tensão, recebe só um quarto da potência: as duas juntas brilham menos que uma sozinha.'},
@@ -243,10 +254,10 @@ const PHASES=[
          {q:'O chuveiro novo é bem mais forte que o antigo. Basta trocar o chuveiro?',o:['Não: é preciso ver se o fio e o disjuntor aguentam','Sim: o fio que já está na parede aguenta o chuveiro novo','Basta trocar o disjuntor por um maior'],w:'Chuveiro mais forte puxa mais corrente. Fio fino esquenta, e um disjuntor maior sozinho deixa o fio sem proteção. Fio e disjuntor se escolhem juntos.'}],
    moderado:[{q:'Dois resistores de 10 Ω em paralelo, ligados em 12 V. Corrente total?',o:['2,4 A','1,2 A','0,6 A'],w:'Req = 10 ÷ 2 = 5 Ω. I = 12 ÷ 5 = 2,4 A. 1,2 A é a corrente de um resistor só; 0,6 A seria com os dois em série.'},
          {q:'Ferro de passar de 1000 W, 30 min por dia, durante 30 dias. Consumo?',o:['15 kWh','30 kWh','900 kWh'],w:'1 kW × 0,5 h × 30 = 15 kWh. 30 kWh esquece que 30 min é meia hora; 900 kWh usa os minutos como se fossem horas.'},
-         {q:'Chuveiro de 5500 W / 220 V. Corrente de projeto?',o:['25 A','43 A','0,04 A'],w:'I = P ÷ U = 5500 ÷ 220 = 25 A. 43 A sai de dividir por 127 V, que não é a tensão desse chuveiro. 0,04 A inverte a conta (U ÷ P).'}],
-   full:[{q:'Duas cargas de 60 W / 220 V ligadas em série em 220 V. Potência total?',o:['30 W','60 W','120 W'],w:'R de cada = 220² ÷ 60 ≈ 807 Ω. Em série, 1613 Ω: P = 220² ÷ 1613 ≈ 30 W. 120 W só em paralelo. (Considerando R constante; o filamento real muda com a temperatura.)'},
+         comRede(r=>{const I=5500/r.V,I2=5500/r.outra,inv=r.V/5500;return {q:'Chuveiro de 5500 W / '+r.V+' V. Corrente de projeto?',o:[nBR(I)+' A',nBR(I2)+' A',nBR(inv,2)+' A'],w:'I = P ÷ U = 5500 ÷ '+r.V+' ≈ '+nBR(I)+' A. '+nBR(I2)+' A sai de dividir por '+r.outra+' V, que não é a tensão desse chuveiro. '+nBR(inv,2)+' A inverte a conta (U ÷ P).'}})],
+   full:[comRede(r=>{const R1=r.V*r.V/60;return {q:'Duas cargas de 60 W / '+r.V+' V ligadas em série em '+r.V+' V. Potência total?',o:['30 W','60 W','120 W'],w:'R de cada = '+r.V+'² ÷ 60 ≈ '+nBR(R1)+' Ω. Em série, '+nBR(2*R1)+' Ω: P = '+r.V+'² ÷ '+nBR(2*R1)+' ≈ 30 W. 120 W só em paralelo. (Considerando R constante; o filamento real muda com a temperatura.)'}}),
          {q:'Chuveiro de 7500 W, 4 banhos de 8 min por dia, 30 dias, tarifa de R$ 0,80/kWh. Custo no mês?',o:['R$ 96','R$ 24','R$ 3,20'],w:'E = 7,5 kW × (32 ÷ 60) h × 30 = 120 kWh. Custo = 120 × 0,80 = R$ 96. R$ 24 seria um banho por dia; R$ 3,20 é um dia só.'},
-         {q:'10 A em 30 m de cabo 4 mm² (ida e volta = 60 m; ρ = 0,0172 Ω·mm²/m). Queda em 220 V?',o:['≈ 2,6 V (1,2 %)','≈ 1,3 V (0,6 %)','≈ 0,26 V (0,1 %)'],w:'R = 0,0172 × 60 ÷ 4 ≈ 0,26 Ω. ΔV = 10 × 0,26 ≈ 2,6 V: dentro do limite de 4 % dos circuitos terminais (NBR 5410, 6.2.7.2). 1,3 V esquece a volta do cabo (usa 30 m); 0,26 V esquece de multiplicar pela corrente.'}]
+         comRede(r=>{const dv=10*0.0172*60/4,p=x=>nBR(x/r.V*100,1);return {q:'10 A em 30 m de cabo 4 mm² (ida e volta = 60 m; ρ = 0,0172 Ω·mm²/m). Queda em '+r.V+' V?',o:['≈ '+nBR(dv,1)+' V ('+p(dv)+' %)','≈ '+nBR(dv/2,1)+' V ('+p(dv/2)+' %)','≈ '+nBR(dv/10,2)+' V ('+p(dv/10)+' %)'],w:'R = 0,0172 × 60 ÷ 4 ≈ 0,26 Ω. ΔV = 10 × 0,26 ≈ 2,6 V, ou '+p(dv)+' % de '+r.V+' V: dentro do limite de 4 % dos circuitos terminais (NBR 5410, 6.2.7.2). 1,3 V esquece a volta do cabo (usa 30 m); 0,26 V esquece de multiplicar pela corrente.'}})]
   }},
 
  /* ===================== CAPÍTULO 2 · Do Quadro ao Condomínio (predial) ===================== */
@@ -318,10 +329,10 @@ const PHASES=[
          {q:'A janelinha do DPS ficou vermelha, mas a luz da casa funciona. O que fazer?',o:['Trocar o DPS: ele parou de proteger','Deixar como está: se a luz funciona, ele funciona','Desligar e religar o DPS para voltar ao verde'],w:'A casa funciona porque o DPS fica ao lado do circuito, não no caminho. O vermelho indica fim da vida útil: ele não protege mais e não rearma. Tem que trocar.'}],
    moderado:[{q:'O disjuntor protege os aparelhos contra o surto de um raio?',o:['Não: é rápido demais para ele abrir','Sim: o disparo magnético é instantâneo','Sim, se for curva B, que é mais rápida'],w:'O surto dura microssegundos. O disjuntor protege contra sobrecorrente; quem limita a sobretensão é o DPS, desviando o surto para o PE.'},
          {q:'Por que a ligação do DPS ao PE deve ser curta?',o:['Fio longo soma tensão indutiva, que chega aos aparelhos','Fio longo esquenta com o surto e acaba queimando o DPS logo','Fio curto evita que o DR desarme junto com o surto'],w:'No surto a corrente muda muito rápido, e a indutância do fio cria tensão extra, que se soma à do DPS e chega aos aparelhos. A NBR 5410 (6.3.5.2.9) pede ligações o mais curtas possível, sem curvas ou laços, de preferência até 0,5 m no total.'},
-         {q:'Rede de 220 V fase-neutro. Por que não usar um DPS de Uc = 175 V, que "protege mais cedo"?',o:['Ele conduziria com a tensão normal e se destruiria','Ele protegeria melhor os aparelhos, mas custa mais caro','Ele faria o disjuntor geral desarmar no surto'],w:'Uc é a maior tensão que o DPS aguenta continuamente sem conduzir. Com 220 V e as variações da rede, um de 175 V conduziria o tempo todo, aqueceria e falharia.'}],
-   full:[{q:'O DPS tem Up = 1,5 kV. O que isso significa para os equipamentos?',o:['Recebem até 1,5 kV mais a queda nos fios do DPS','Recebem no máximo os 220 V da rede durante o surto','O DPS desliga o circuito acima de 1,5 kV'],w:'Up é o nível de proteção: a tensão que sobra nos bornes do DPS durante o surto. O equipamento recebe Up mais a queda indutiva dos fios de ligação. A NBR 5410 (6.3.5.2.4-a) limita Up a 2,5 kV numa instalação 220/380 V. O DPS não desliga: conduz e depois volta a isolar.'},
+         {q:'Rede de {V} V fase-neutro. Por que não usar um DPS de Uc = {UcB} V, que "protege mais cedo"?',o:['Ele conduziria com a tensão normal e se destruiria','Ele protegeria melhor os aparelhos, mas custa mais caro','Ele faria o disjuntor geral desarmar no surto'],w:'Uc é a maior tensão que o DPS aguenta continuamente sem conduzir. Com {V} V e as variações da rede, um de {UcB} V conduziria o tempo todo, aqueceria e falharia.'}],
+   full:[{q:'O DPS tem Up = 1,5 kV. O que isso significa para os equipamentos?',o:['Recebem até 1,5 kV mais a queda nos fios do DPS','Recebem no máximo os {V} V da rede durante o surto','O DPS desliga o circuito acima de 1,5 kV'],w:'Up é o nível de proteção: a tensão que sobra nos bornes do DPS durante o surto. O equipamento recebe Up mais a queda indutiva dos fios de ligação. A NBR 5410 (6.3.5.2.4-a) limita Up a {Up} kV numa instalação {V}/{FF} V. O DPS não desliga: conduz e depois volta a isolar.'},
          {q:'No surto, a corrente sobe 1 kA por microssegundo, e cada metro de fio tem cerca de 1 µH. Quanto 1 m a mais de fio soma?',o:['≈ 1 kV','≈ 1 V','≈ 1 mV'],w:'U = L × di/dt = 1 µH × 1 kA/µs = 1000 V por metro. Por isso a ligação do DPS deve ser a mais curta possível.'},
-         {q:'Rede 220/380 V em esquema TN-S. Qual o Uc mínimo do DPS entre fase e PE?',o:['≈ 242 V (1,1 × U0)','220 V (igual a U0)','380 V (tensão entre fases)'],w:'Tabela 49 da NBR 5410 (6.3.5.2.4-b): em TN-S, entre fase e PE, Uc ≥ 1,1 × U0 = 1,1 × 220 ≈ 242 V; o modelo comercial de 275 V atende. Sem essa folga, as variações da rede fariam o DPS conduzir. 380 V seria para ligação entre fases.'}]
+         {q:'Rede {V}/{FF} V em esquema TN-S. Qual o Uc mínimo do DPS entre fase e PE?',o:['≈ {Uc11} V (1,1 × U0)','{V} V (igual a U0)','{FF} V (tensão entre fases)'],w:'Tabela 49 da NBR 5410 (6.3.5.2.4-b): em TN-S, entre fase e PE, Uc ≥ 1,1 × U0 = 1,1 × {V} ≈ {Uc11} V; o modelo comercial de {UcC} V atende. Sem essa folga, as variações da rede fariam o DPS conduzir. {FF} V seria para ligação entre fases.'}]
   }},
 
  /* ===================== CAPÍTULO 3 · Chão de Fábrica (industrial) ===================== */
@@ -388,7 +399,7 @@ const PHASES=[
          {q:'Na partida estrela-triângulo, o torque de partida…',o:['Cai para cerca de 1/3 do da partida direta','Aumenta, porque a corrente de partida é menor','Fica igual ao da partida direta'],w:'Em estrela, cada bobina recebe U ÷ √3. Corrente de linha e torque caem para cerca de 1/3. Por isso Y-Δ é para máquinas que partem leves, como bombas e ventiladores.'}],
    full:[{q:'Com L1-L2-L3 em U-V-W, o motor gira no sentido horário. Ligando L2-L3-L1 em U-V-W, ele…',o:['Gira no mesmo sentido: a sequência só foi deslocada','Gira no sentido anti-horário: as três fases mudaram','Não parte: perdeu a referência de fase'],w:'O sentido depende da sequência de fases. L2-L3-L1 é a mesma sequência L1-L2-L3 começando em outro ponto. Para inverter, trocam-se só duas.'},
          {q:'Por que muitos painéis de reversão têm intertravamento mecânico além do elétrico?',o:['Se um auxiliar falhar, o mecânico ainda impede as duas','Porque o elétrico falha com o motor em movimento','Porque a NBR 5410 proíbe usar só o elétrico'],w:'O intertravamento elétrico depende de o contato auxiliar NF abrir de fato. Se ele falhar, ou as duas bobinas receberem tensão por erro de fiação, o mecânico ainda bloqueia fisicamente uma das contatoras.'},
-         {q:'Motor 380/660 V numa rede de 380 V pode partir em estrela-triângulo?',o:['Sim: em triângulo ele trabalha em 380 V','Não: precisaria de rede de 660 V','Sim, mas fica em estrela no regime'],w:'Para Y-Δ, a tensão da rede tem que ser a de triângulo do motor. Em 380 V ele parte em estrela (cada bobina com 220 V) e trabalha em triângulo, com 380 V em cada bobina.'}]
+         {q:'Motor {FF}/{FF3} V numa rede de {FF} V pode partir em estrela-triângulo?',o:['Sim: em triângulo ele trabalha em {FF} V','Não: precisaria de rede de {FF3} V','Sim, mas fica em estrela no regime'],w:'Para Y-Δ, a tensão da rede tem que ser a de triângulo do motor. Em {FF} V ele parte em estrela (cada bobina com {V} V) e trabalha em triângulo, com {FF} V em cada bobina.'}]
   }}
 ];
 const CHEER={leve:['Você consegue!','Pensa com calma.','Sem pressa.'],moderado:['Bora energizar!','Foco no circuito!','Partiu bancada!'],full:['Modo profissional ativado.','Confere a norma!','Cálculo na ponta.']};

@@ -6,7 +6,7 @@ const ATTR={
   seguranca:{n:'Segurança',i:'🦺',c:'var(--terra)'},
   calculo:{n:'Cálculo',i:'Ω',c:'var(--fase)'}
 };
-const PH_ATTR={lanterna:'montagem',entrada:'conceito',faisca:'conceito',renovavel:'conceito',primeiro:'montagem',paralelo:'montagem',previsao:'diagnostico',defeito:'diagnostico',seguranca:'seguranca',ohm:'calculo',
+const PH_ATTR={energia:'conceito',carga:'conceito',macaneta:'conceito',condutor:'conceito',continuidade:'diagnostico',grandezas:'conceito',lanterna:'montagem',entrada:'conceito',faisca:'conceito',renovavel:'conceito',primeiro:'montagem',paralelo:'montagem',previsao:'diagnostico',defeito:'diagnostico',seguranca:'seguranca',ohm:'calculo',
   quadro:'conceito',quadronovo:'montagem',escada:'montagem',corredor:'montagem',garagem:'montagem',impulso:'montagem',surto:'seguranca',
   turno:'seguranca',partida:'montagem',sobrecarga:'diagnostico',caixa:'montagem',fimturno:'calculo'};
 const KLASS={conceito:'Mente Teórica',montagem:'Mão na Massa',diagnostico:'Detetive de Falhas',seguranca:'Guardião da Segurança',calculo:'Calculista'};
@@ -29,7 +29,7 @@ const ACH=[
   {id:'a2',e:'💡',n:'Luz acesa',t:()=>Object.keys(S.done).some(k=>k.endsWith(':primeiro'))},
   {id:'a3',e:'🔍',n:'Detetive',t:()=>Object.keys(S.done).some(k=>k.endsWith(':defeito'))},
   {id:'a4',e:'⭐',n:'Três estrelas',t:()=>Object.values(S.done).some(v=>v===3)},
-  {id:'a5',e:'🏠',n:'Casa acesa',t:()=>Object.keys(MODES).some(m=>CHAPTERS[0].fases.every(id=>S.done[m+':'+id]))},
+  {id:'a5',e:'🔋',n:'Oficina concluída',t:()=>Object.keys(MODES).some(m=>CHAPTERS[0].fases.every(id=>S.done[m+':'+id]))},
   {id:'a6',e:'🎚',n:'Três níveis',t:()=>PHASES.some(p=>Object.keys(MODES).every(m=>S.done[m+':'+p.id]))},
   {id:'a7',e:'🛠',n:'Inventor',t:()=>!!S.flags.ofi},
   {id:'a8',e:'🌬',n:'Respiro',t:()=>!!S.flags.resp},
