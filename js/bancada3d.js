@@ -7,6 +7,7 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {OutlineEffect} from 'three/addons/effects/OutlineEffect.js';
+import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';/* chanfro do frontal (mesma versão fixa do three) */
 
 const reduz=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
 const pos2d=c=>new THREE.Vector3((c.x-170)/10,-(c.y-125)/10,0);
@@ -17,7 +18,11 @@ const cssVar=(n,padrao)=>{try{return getComputedStyle(document.documentElement).
    O construtor de cada peça lê esta tabela para pôr os parafusos; nenhuma peça define borne por conta própria. */
 const DIN={W:2.4,H:8,D:4.6,z0:.75};/* módulo DIN estilizado (1 módulo = 2,4) sobre o trilho de 0,75 */
 const LARG_DIN={fuse:DIN.W,dr:2*DIN.W,kc:3*DIN.W,ft:2*DIN.W,ri:2*DIN.W};/* largura de cada peça de trilho: disjuntor 1 módulo, DR e relé térmico 2, contatora 3 */
-const RECUO=.7;/* degrau recuado da bobina da contatora (A1/A2) */
+/* contatora e relé térmico em 3 níveis (skill cadesimu-industrial-panel-builder): base com trava DIN, degraus dos bornes
+   a 65% da profundidade e frontal elevado. São um pouco mais altos que o módulo comum, para caber a serigrafia. */
+const ALT3N=9,DEGRAU=DIN.z0+DIN.D*.65,FAIXA_BORNE=2.4;
+/* peças de trilho: o fio entra pelo topo/base do nicho do borne (atrás do parafuso), com terminal tubular */
+const VERTICAL={fuse:1,dr:1,kc:1,ft:1,ri:1};
 const FRENTE=DIN.z0+DIN.D;/* face frontal dos módulos DIN */
 const TERM3D={
   /* fonte: índices do motor.js .0 = L1, .1 = N, .2 = L2, .3 = L3; na régua, da esquerda para a direita, L1 L2 L3 N (como no 2D) */
@@ -35,9 +40,10 @@ const TERM3D={
   haste:()=>[[0,.45,.85]],
   boia:()=>[[-.85,-4.35,1.0],[.85,-4.35,1.0]],                        /* régua da boia: .0 = 1, .1 = 2 (fecha com a caixa vazia) */                                           /* conector no topo da haste */                           /* .0 = L (entrada da fase), .1 = R (retorno) */                      /* .0/.1 = contato (NA 3-4 na BL, NF 1-2 na BD) */
   /* contatora: .0/.1 = A1/A2 (bobina, no degrau recuado), .2/.3 = 1-2 (potência), .4/.5 = 13-14 (selo) */
-  kc:()=>[[-2.4,3.1,FRENTE-RECUO+.05],[-2.4,-2.6,FRENTE-RECUO+.05],[0,3.1,FRENTE+.05],[0,-2.6,FRENTE+.05],[2.4,3.1,FRENTE+.05],[2.4,-2.6,FRENTE+.05]],
+  /* como na contatora real, da esquerda para a direita: em cima 1L1, 13NO, A1; embaixo 2T1, 14NO, A2 (índices do motor.js) */
+  kc:()=>[[2.4,3,DEGRAU+.05],[2.4,-3,DEGRAU+.05],[-2.4,3,DEGRAU+.05],[-2.4,-3,DEGRAU+.05],[0,3,DEGRAU+.05],[0,-3,DEGRAU+.05]],
   /* relé térmico: .0/.1 = 1-2 (força), .2/.3 = 95-96 (NF de comando) */
-  ft:()=>[[-1.2,3.1,FRENTE+.05],[-1.2,-2.6,FRENTE+.05],[1.2,3.1,FRENTE+.05],[1.2,-2.6,FRENTE+.05]],
+  ft:()=>[[-1.2,3,DEGRAU+.05],[-1.2,-3,DEGRAU+.05],[1.2,3,DEGRAU+.05],[1.2,-3,DEGRAU+.05]],
   /* pilha AA no suporte: régua embaixo, .0 = + (esquerda), .1 = − (direita) */
   pilha:()=>[[-1.2,-2.6,1.0],[1.2,-2.6,1.0]],
   /* fotocélula: régua embaixo, .0 = L (fase), .1 = N, .2 = C (carga) */
@@ -56,6 +62,7 @@ const PAL={corpoDIN:0xE6E9EF,frenteDIN:0xD5DAE2,trilho:0x9AA5B4,cavidade:0x1F293
   ceuDia:0xBFE0F7,ceuNoite:0x1B2740,sol:0xF4C430,lua:0xF2E6A0,estrela:0xFFFFFF,corpoFoto:0x8C96A3,placaFoto:0xD6DBE1,baseFoto:0x59616B,sensor:0xC0392B,
   suportePilha:0x2B3036,pilha:0x3B4252,pilhaQuente:0xC0392B,polo:0xC9A227,
   fioPreto:0x1A1D21,fioBranco:0xEEF1F4,fioVermelho:0xC0392B,riOff:0x94A3B8,riOn:0xF97316,
+  base3n:0x1F2328,poco:0x2B3036,serig:'#111315',tagBorda:'#22252A',ponteira:{fase:0xC92A2A,neutro:0x1C7ED6,retorno:0xE9ECEF,terra:0xFCC419,pos:0xC92A2A,neg:0x1F2328},
   caixaAgua:0x1F4F86,tampa:0x2A66A8,agua:0x5AA9E6,aguaCorte:0x8CC8F2,pera:0xEEF3F7,caboBoia:0x1F2328};
 
 /* ---------- cache compartilhado (materiais e texturas estáticos) ----------
@@ -79,7 +86,10 @@ function pintaTexto(cv,txt,o){const g=cv.getContext('2d');g.clearRect(0,0,cv.wid
   g.fillStyle=o.cor||'#1b1a10';g.font='900 '+Math.round(cv.height*(o.esc||.62))+'px Nunito, system-ui, sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(txt,cv.width/2,cv.height/2+2)}
 function texturaDeCanvas(cv){const t=new THREE.CanvasTexture(cv);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return t}
 /* rótulo técnico: textura e material em cache pelo texto, cor e tamanho */
-function rotulo(txt,larg,alt,o){o=o||{};const C=cache(),k='rot:'+[txt,larg,alt,o.cor,o.fundo,o.esc,o.borda].join('|');
+/* largura que o texto precisa (mede no canvas, com a mesma fonte do rótulo); rótulos nunca cortam o texto */
+let MEDE=null;function precisa(txt,alt,o){if(!MEDE)MEDE=document.createElement('canvas').getContext('2d');MEDE.font='900 '+Math.round(128*alt*((o&&o.esc)||.62))+'px Nunito, system-ui, sans-serif';
+  return Math.ceil((MEDE.measureText(String(txt)).width/128+alt*.55)*20)/20}
+function rotulo(txt,larg,alt,o){o=o||{};larg=Math.max(larg==='auto'?0:larg,precisa(txt,alt,o));const C=cache(),k='rot:'+[txt,larg,alt,o.cor,o.fundo,o.esc,o.borda].join('|');
   if(!C.mat.has(k)){const t=texturaDeCanvas(canvasTexto(larg,alt,txt,o));C.tex.set(k,t);C.mat.set(k,semContorno(new THREE.MeshBasicMaterial({map:t,transparent:true})))}
   return new THREE.Mesh(new THREE.PlaneGeometry(larg,alt),C.mat.get(k))}
 /* rótulo que muda (visor da fonte): canvas próprio, redesenhado só quando o texto muda */
@@ -120,11 +130,31 @@ function plaqueta(g,txt,x,y,z){const larg=Math.max(1.1,.62*txt.length+.5);
 
 /* ---------- peças ----------
    Cada construtor devolve {g (grupo), bornes:[Vector3 local], corpo:[malhas tocáveis], extra}. */
-function parafuso(){const g=new THREE.Group();
-  const cav=new THREE.Mesh(new THREE.CylinderGeometry(.58,.58,.12,20),mat(PAL.cavidade));cav.rotation.x=Math.PI/2;cav.position.z=-.1;g.add(cav);
-  const cab=new THREE.Mesh(new THREE.CylinderGeometry(.42,.42,.28,20),mat(PAL.zinco));cab.rotation.x=Math.PI/2;g.add(cab);
-  [0,Math.PI/2].forEach(a=>{const f=new THREE.Mesh(new THREE.BoxGeometry(.58,.1,.06),mat(PAL.fenda));f.rotation.z=a;f.position.z=.16;g.add(f)});/* fenda em cruz */
+/* parafuso Phillips rebaixado: poço escuro, arruela metálica, cabeça abaulada e fenda em cruz girada 25° */
+let GEO_P=null;const geoParafuso=()=>GEO_P||(GEO_P={poco:new THREE.CylinderGeometry(.6,.6,.3,20),arruela:new THREE.TorusGeometry(.44,.07,8,22),
+  cabeca:new THREE.SphereGeometry(.4,18,10,0,Math.PI*2,0,Math.PI/2),fenda:new THREE.BoxGeometry(.58,.09,.07)});
+function parafuso(){const g=new THREE.Group(),G=geoParafuso();
+  const poco=new THREE.Mesh(G.poco,mat(PAL.poco));poco.rotation.x=Math.PI/2;poco.position.z=-.12;g.add(poco);
+  const arr=new THREE.Mesh(G.arruela,mat(PAL.zinco));arr.position.z=.04;g.add(arr);
+  const cab=new THREE.Mesh(G.cabeca,mat(PAL.zinco));cab.scale.set(1,.5,1);cab.rotation.x=Math.PI/2;cab.position.z=.04;g.add(cab);
+  [0,Math.PI/2].forEach(a=>{const f=new THREE.Mesh(G.fenda,mat(PAL.fenda));f.rotation.z=a+.44;f.position.z=.22;g.add(f)});
   return g}
+/* carcaça em 3 níveis: base antracite com trava DIN, degraus dos bornes (com divisórias entre eles) e frontal elevado
+   com chanfro. Devolve as malhas tocáveis. */
+function carcaca3(g,W,bornes){const H=ALT3N,{z0,D}=DIN,mal=[],fb=FAIXA_BORNE,hf=H-2*fb;
+  const base=new THREE.Mesh(new THREE.BoxGeometry(W,H,.8),mat(PAL.base3n));base.position.z=z0+.4;g.add(base);mal.push(base);
+  [1,-1].forEach(s=>{const t=new THREE.Mesh(new THREE.BoxGeometry(W*.34,.45,.55),mat(PAL.base3n));t.position.set(0,s*(H/2+.18),z0+.28);g.add(t)});/* travas do trilho */
+  [1,-1].forEach(s=>{const d=new THREE.Mesh(new THREE.BoxGeometry(W,fb,DEGRAU-z0-.8),mat(PAL.corpoDIN));d.position.set(0,s*(H/2-fb/2),(z0+.8+DEGRAU)/2);g.add(d);mal.push(d);
+    /* divisórias de isolação entre os bornes da fileira (e nas pontas) */
+    const xs=[...new Set(bornes.filter(b=>Math.sign(b.y)===s).map(b=>b.x))].sort((a,b)=>a-b),meios=[-W/2+.07,...xs.slice(1).map((x,i)=>(x+xs[i])/2),W/2-.07];
+    meios.forEach(x=>{const p=new THREE.Mesh(new THREE.BoxGeometry(.13,fb-.15,.5),mat(PAL.frenteDIN));p.position.set(x,s*(H/2-fb/2),DEGRAU+.25);g.add(p)})});
+  const frente=new THREE.Mesh(new RoundedBoxGeometry(W*.96,hf,D-.8,2,.22),mat(PAL.corpoDIN));frente.position.z=z0+.8+(D-.8)/2;g.add(frente);mal.push(frente);
+  return mal}
+/* serigrafia direto na peça (sem caixinha): marcação do borne no degrau, do lado de fora do parafuso. O fio entra por
+   dentro do nicho (atrás do degrau) e só aparece fora da peça, então não cobre a marcação. */
+function serigrafia(g,txt,nome,x,y){const m=rotulo(txt,'auto',.8,{cor:PAL.serig,esc:.7});m.position.set(x,y,DEGRAU+.03);m.userData.plaqueta=nome;g.add(m);return m}
+/* etiqueta de identificação (tag): branca com borda fina, só o código funcional da peça */
+function tag(g,txt,x,y,z){const m=rotulo(txt,'auto',.85,{fundo:'#ffffff',cor:PAL.serig,borda:PAL.tagBorda,esc:.62});m.position.set(x,y,z);g.add(m);return m}
 function poeParafusos(g,bornes){bornes.forEach(b=>{const p=parafuso();p.position.copy(b);g.add(p)})}
 function fonte(c){const g=new THREE.Group(),bornes=bornesDe(c);
   const caixa=new THREE.Mesh(new THREE.BoxGeometry(6,10,2.4),mat(PAL.fonte));caixa.position.z=1.2;g.add(caixa);
@@ -205,34 +235,37 @@ function botoeira(c){const g=new THREE.Group(),bornes=bornesDe(c),nf=!!c.nf,cor=
   poeParafusos(g,bornes);
   bornes.forEach((b,k)=>plaqueta(g,nomeBorne(c,k),b.x,-3.75,.55));
   return {g,bornes,corpo:[base,colar,...partes],extra:{embolo}}}
-/* Contatora (3 módulos): degrau recuado com a bobina A1/A2 (etiqueta da tensão da rede), frente com o contato de
-   potência 1-2 e o auxiliar 13-14. Janela central com o êmbolo: com c.on (bobina energizada) ele recua e fica laranja.
+/* Contatora (3 módulos, 3 níveis, como a real): em cima 1L1, 13NO e A1; embaixo 2T1, 14NO e A2, com a marcação
+   serigrafada no degrau. Frontal com o indicador I | O: com c.on (bobina energizada) o êmbolo recua e fica laranja.
    Não é acionável à mão (só a bobina liga a contatora): o toque no corpo não muda nada. */
 const EMBOLO={z:FRENTE+.35,recuo:-.2};
-function contatora(c){const g=new THREE.Group(),bornes=bornesDe(c),{H,D,z0}=DIN,W=LARG_DIN.kc,wd=DIN.W;
-  const corpo=new THREE.Mesh(new THREE.BoxGeometry(W-wd,H,D),mat(PAL.corpoDIN));corpo.position.set(wd/2,0,z0+D/2);g.add(corpo);
-  const degrau=new THREE.Mesh(new THREE.BoxGeometry(wd,H,D-RECUO),mat(PAL.frenteDIN));degrau.position.set(-W/2+wd/2,0,z0+(D-RECUO)/2);g.add(degrau);
-  const janela=new THREE.Mesh(new THREE.BoxGeometry(2.2,1.6,.2),mat(PAL.janela));janela.position.set(1.2,.25,FRENTE+.1);g.add(janela);
-  const embolo=new THREE.Mesh(new THREE.BoxGeometry(1.2,.8,.5),mat(PAL.emboloOff));embolo.position.set(1.2,.25,EMBOLO.z);g.add(embolo);
-  const lab=rotulo(c.lab||c.id,1.6,.8,{cor:'#2f4a6e'});lab.position.set(1.2,-1.25,FRENTE+.01);g.add(lab);
-  const bob=rotulo((typeof rede==='function'?rede().V:220)+' V~',2.1,.62,{fundo:'#2f4a6e',cor:'#f8fafc',esc:.62});bob.position.set(-W/2+wd/2,.25,FRENTE-RECUO+.02);g.add(bob);
+function contatora(c){const g=new THREE.Group(),bornes=bornesDe(c),W=LARG_DIN.kc,mal=carcaca3(g,W,bornes);
+  /* frontal: janela do indicador mecânico I | O (o êmbolo recua e fica laranja com a bobina energizada) */
+  const janela=new THREE.Mesh(new THREE.BoxGeometry(2.1,1.5,.2),mat(PAL.janela));janela.position.set(-.9,.45,FRENTE+.1);g.add(janela);
+  const embolo=new THREE.Mesh(new THREE.BoxGeometry(1.1,.8,.5),mat(PAL.emboloOff));embolo.position.set(-.9,.45,EMBOLO.z);g.add(embolo);
+  const io=rotulo('I    O',2.1,.5,{cor:PAL.serig,esc:.8});io.position.set(-.9,1.5,FRENTE+.02);g.add(io);
+  tag(g,c.lab||c.id,1.9,.75,FRENTE+.02);
+  const bob=rotulo('AC-3 · bobina '+(typeof rede==='function'?rede().V:220)+' V~',W*.86,.5,{cor:PAL.serig,esc:.72});bob.position.set(0,-.75,FRENTE+.02);g.add(bob);
+  const norma=rotulo('IEC 60947-4-1',3,.42,{cor:'#4a515a',esc:.72});norma.position.set(0,-1.45,FRENTE+.02);g.add(norma);
   poeParafusos(g,bornes);
-  /* plaquetas acima dos bornes de cima e abaixo dos de baixo, deslocadas para o fio não cobrir o texto */
-  bornes.forEach((b,k)=>plaqueta(g,nomeBorne(c,k),b.x+.75,b.y+(b.y>0?1.05:-1.05),b.z+.3));
-  return {g,bornes,corpo:[corpo,degrau,janela,embolo],extra:{embolo}}}
-/* Relé térmico (2 módulos): dial de ajuste da corrente, botão azul de rearme e visor (verde armado, vermelho disparado).
-   O toque no corpo relata acionou(id): em acionarPeca isso simula a sobrecarga ou rearma (c.trip). */
-function reletermico(c){const g=new THREE.Group(),bornes=bornesDe(c),{H,D,z0}=DIN,W=LARG_DIN.ft;
-  const corpo=new THREE.Mesh(new THREE.BoxGeometry(W,H,D),mat(PAL.corpoDIN));corpo.position.z=z0+D/2;g.add(corpo);
-  const frente=new THREE.Mesh(new THREE.BoxGeometry(W*.9,H*.46,.5),mat(PAL.frenteDIN));frente.position.set(0,.2,FRENTE+.25);g.add(frente);
-  const dial=new THREE.Mesh(new THREE.CylinderGeometry(.7,.7,.3,24),mat(PAL.dial));dial.rotation.x=Math.PI/2;dial.position.set(-.95,.9,FRENTE+.65);g.add(dial);
-  const ponteiro=new THREE.Mesh(new THREE.BoxGeometry(.12,.6,.1),mat(PAL.zinco));ponteiro.position.set(-.95,1.1,FRENTE+.82);ponteiro.rotation.z=-.6;g.add(ponteiro);
-  const rearme=new THREE.Mesh(new THREE.CylinderGeometry(.45,.45,.5,20),mat(PAL.rearme));rearme.rotation.x=Math.PI/2;rearme.position.set(1,.9,FRENTE+.75);g.add(rearme);
-  const visor=new THREE.Mesh(new THREE.BoxGeometry(1.4,.55,.12),matUnico(PAL.armado,{emissive:0x0f4a24}));visor.position.set(0,-.55,FRENTE+.52);g.add(visor);
-  const lab=rotulo((c.lab||c.id)+' · 95-96',3.6,.75,{cor:'#2f4a6e'});lab.position.set(0,-1.5,FRENTE+.51);g.add(lab);
+  const marca=['A1','A2','1L1','2T1','13NO','14NO'];
+  bornes.forEach((b,k)=>serigrafia(g,marca[k],nomeBorne(c,k),b.x,b.y+Math.sign(b.y)*.98));
+  return {g,bornes,corpo:[...mal,janela,embolo],extra:{embolo}}}
+/* Relé térmico (2 módulos, 3 níveis): dial de ajuste com escala, botão azul de rearme, botão vermelho de teste e visor
+   (verde armado, vermelho disparado). O toque no corpo relata acionou(id): em acionarPeca isso simula a sobrecarga ou rearma. */
+const REARME={z:FRENTE+.25,saltado:FRENTE+.6};
+function reletermico(c){const g=new THREE.Group(),bornes=bornesDe(c),W=LARG_DIN.ft,mal=carcaca3(g,W,bornes);
+  const dial=new THREE.Mesh(new THREE.CylinderGeometry(.72,.72,.28,28),mat(PAL.dial));dial.rotation.x=Math.PI/2;dial.position.set(-1.1,.55,FRENTE+.14);g.add(dial);
+  const ponteiro=new THREE.Mesh(new THREE.BoxGeometry(.12,.62,.08),mat(PAL.zinco));ponteiro.position.set(-1.1,.75,FRENTE+.32);ponteiro.rotation.z=-.6;g.add(ponteiro);
+  const escala=rotulo('2,5 · 3 · 4 A',2.3,.42,{cor:PAL.serig,esc:.72});escala.position.set(-1.1,-.42,FRENTE+.02);g.add(escala);
+  const rearme=new THREE.Mesh(new THREE.CylinderGeometry(.42,.42,.5,20),mat(PAL.rearme));rearme.rotation.x=Math.PI/2;rearme.position.set(.75,.75,REARME.z);g.add(rearme);
+  const teste=new THREE.Mesh(new THREE.BoxGeometry(.5,.38,.22),mat(PAL.desarmado));teste.position.set(1.65,.75,FRENTE+.11);g.add(teste);
+  const visor=new THREE.Mesh(new THREE.BoxGeometry(1.2,.45,.1),matUnico(PAL.armado,{emissive:0x0f4a24}));visor.position.set(1.15,-.15,FRENTE+.05);g.add(visor);
+  tag(g,c.lab||c.id,1.15,-1.05,FRENTE+.02);
   poeParafusos(g,bornes);
-  bornes.forEach((b,k)=>plaqueta(g,nomeBorne(c,k),Math.sign(b.x)*(W/2+.7),b.y,b.z+.3));
-  return {g,bornes,corpo:[corpo,frente,dial,rearme,visor],extra:{visor,rearme}}}
+  const marca=['1L1','2T1','95NC','96NC'];
+  bornes.forEach((b,k)=>serigrafia(g,marca[k],nomeBorne(c,k),b.x,b.y+Math.sign(b.y)*.98));
+  return {g,bornes,corpo:[...mal,dial,rearme,teste,visor],extra:{visor,rearme}}}
 /* Interruptor simples de parede: espelho, tecla basculante e bloco de bornes L (fase) e R (retorno).
    A tecla inclina pelo estado c.closed (o toque relata acionou; em acionarPeca, flipSwitch inverte). */
 const TECLA={on:-.3,off:.3,z:.6};
@@ -481,7 +514,8 @@ function poeDicas(ctx){(E.dicas||[]).forEach(m=>{E.scene.remove(m);if(m.userData
     if(ctx.dica==='conta'){txt=k+'/'+q;
       /* contador para dentro da peça (as plaquetas com o nome ficam por fora) */
       const dir=saida(t).dir,r=rotulo(txt,1.35,.72,{fundo:'#'+new THREE.Color(DICA[est]).getHexString(),cor:'#0b1220',esc:.72});
-      r.position.copy(B).add(new THREE.Vector3(1.05,-dir*1.0,.8));r.userData.propria=true;r.renderOrder=2;E.scene.add(r);E.dicas.push(r)}
+      /* nas peças de trilho a serigrafia fica por fora e o frontal por dentro: o contador vai ao lado do parafuso */
+      const vert=VERTICAL[E.pecas[t.split('.')[0]].c.type];r.position.copy(B).add(vert?new THREE.Vector3(1.05,0,.8):new THREE.Vector3(1.05,-dir*1.0,.8));r.userData.propria=true;r.renderOrder=2;E.scene.add(r);E.dicas.push(r)}
     E.estadoDicas[t]=est+(txt?' '+txt:'')})}
 function saida(id){const T=E.bornes[id],p=E.pecas[id.split('.')[0]],cx=p.caixa,c=cx.getCenter(new THREE.Vector3()),dir=T.y>=c.y?1:-1;
   return {T,dir,borda:dir>0?cx.max.y+FIO.margem:cx.min.y-FIO.margem}}
@@ -560,6 +594,14 @@ function comSaltos(r,anteriores){const V=THREE.Vector3,out=[r.mid[0]],R=GR.salto
       out.push(X.clone().addScaledVector(u,-R),X.clone().addScaledVector(n,R).add(new V(0,0,GR.altoSalto)),X.clone().addScaledVector(u,R))});
     out.push(Q)}
   return out}
+/* Entrada vertical (peças de trilho): o fio desce/sobe por dentro do nicho, atrás do parafuso, e sai pela borda de
+   cima/baixo da peça; ali fica o terminal tubular (ponteira) com a cor do fio. Nas outras peças o fio sai pela frente. */
+function entrada(id,o){const p=E.pecas[id.split('.')[0]];if(!p||!VERTICAL[p.c.type])return null;const T=o.T,z=T.z-.35,borda=o.dir>0?p.caixa.max.y:p.caixa.min.y;
+  return {z,dir:o.dir,borda,x:T.x,dentro:new THREE.Vector3(T.x,borda-o.dir*.6,z)}}
+let GEO_PT=null;
+function ponteira(m,e,cor){const G=GEO_PT||(GEO_PT={luva:new THREE.CylinderGeometry(.2,.2,.55,14),ponta:new THREE.CylinderGeometry(.1,.1,.4,10)});
+  const luva=new THREE.Mesh(G.luva,mat(PAL.ponteira[cor]||PAL.ponteira.fase));luva.position.set(e.x,e.borda+e.dir*.32,e.z);m.add(luva);
+  const ponta=new THREE.Mesh(G.ponta,mat(PAL.zinco));ponta.position.set(e.x,e.borda-e.dir*.08,e.z);m.add(ponta)}
 function tubo(cur,raio,lados){return new THREE.TubeGeometry(cur,Math.max(32,Math.round(cur.getLength()*5)),raio,lados,false)}
 function listras(geo,comp){const rep=Math.max(2,Math.round(comp*1.2)),uv=geo.attributes.uv;for(let i=0;i<uv.count;i++)uv.setX(i,uv.getX(i)*rep)}
 /* fio provisório do arraste: reto e fino, do borne até o dedo */
@@ -580,8 +622,12 @@ function desenhaFios(st){
   st.wires.map((w,i)=>i).filter(i=>ok(st.wires[i])).sort((i,j)=>dist(st.wires[i])-dist(st.wires[j])).forEach(i=>{rs[i]=traca(st.wires[i],i,G)});
   const ordem=rs.map((r,i)=>r?i:-1).filter(i=>i>=0).sort((i,j)=>rs[i].n-rs[j].n);
   st.wires.forEach((w,i)=>{const r=rs[i];if(!r)return;const cor=w.cor||'fase',V=THREE.Vector3,antes=ordem.filter(j=>rs[j].n<r.n).map(j=>rs[j]);
-    const cur=caminho([r.A,new V(r.A.x,r.A.y,r.zA),new V(r.A.x,r.a.borda,r.zA),new V(r.A.x,r.a.borda,r.zL),...comSaltos(r,antes),new V(r.B.x,r.b.borda,r.zL),new V(r.B.x,r.b.borda,r.zB),new V(r.B.x,r.B.y,r.zB),r.B]);
+      const eA=entrada(w.a,r.a),eB=entrada(w.b,r.b);
+    const ini=eA?[eA.dentro,new V(r.A.x,r.a.borda,eA.z),new V(r.A.x,r.a.borda,r.zL)]:[r.A,new V(r.A.x,r.A.y,r.zA),new V(r.A.x,r.a.borda,r.zA),new V(r.A.x,r.a.borda,r.zL)];
+    const fim=eB?[new V(r.B.x,r.b.borda,r.zL),new V(r.B.x,r.b.borda,eB.z),eB.dentro]:[new V(r.B.x,r.b.borda,r.zL),new V(r.B.x,r.b.borda,r.zB),new V(r.B.x,r.B.y,r.zB),r.B];
+    const cur=caminho([...ini,...comSaltos(r,antes),...fim]);
     const geo=tubo(cur,FIO.raio,8);listras(geo,cur.getLength());const m=new THREE.Mesh(geo,matFio(cor));m.userData={w:i,cor,a:w.a,rota:r.ultima};
+    [eA,eB].forEach(e=>{if(e)ponteira(m,e,cor)});
     const h=new THREE.Mesh(tubo(cur,FIO.toque,6),E.matToque);h.userData.w=i;m.userData.toque=h;
     E.scene.add(m,h);E.fios.push(m);E.hits.push(h)});
   poeWagos(st);
@@ -593,7 +639,7 @@ function poeWagos(st){(E.wagos||[]).forEach(w=>{E.scene.remove(w);w.traverse(o=>
   Object.entries(conta).filter(([,n])=>n>=2).forEach(([t,n])=>{const s=saida(t),T=s.T,vias=n+1,g=new THREE.Group();
     const corpo=new THREE.Mesh(new THREE.BoxGeometry(.55*vias+.2,.75,.85),mat(PAL.wago));g.add(corpo);
     for(let i=0;i<vias;i++){const al=new THREE.Mesh(new THREE.BoxGeometry(.38,.3,.62),mat(PAL.alavancaWago));al.position.set((i-(vias-1)/2)*.55,.5,0);g.add(al)}
-    g.position.set(T.x,s.borda,T.z+FIO.frente);g.userData={wago:t,vias};E.scene.add(g);E.wagos.push(g)})}
+    const ev=entrada(t,s);g.position.set(T.x,s.borda,ev?ev.z:T.z+FIO.frente);g.userData={wago:t,vias};E.scene.add(g);E.wagos.push(g)})}
 /* curto: os fios do caminho trocam para o material de curto (pulsa) e a faísca estala onde o curto fechou */
 function animaCurto(curto){
   const ms=E.fios.filter(f=>curto.fios.includes(f.userData.w));E.curtoAte=performance.now()+1400;
@@ -617,7 +663,7 @@ function atualizar(ctx){
     /* contatora: o êmbolo recua e fica laranja enquanto a bobina está energizada (c.on, calculado pelo solver) */
     if(c.type==='kc'){const on=!!c.on;if(p.on!==on){p.on=on;const e=p.extra.embolo,de=e.position.z,para=EMBOLO.z+(on?EMBOLO.recuo:0);e.material=mat(on?PAL.emboloOn:PAL.emboloOff);anima(120,k=>{e.position.z=de+(para-de)*k})}}
     /* relé térmico: visor vermelho e botão de rearme saltado quando disparado (c.trip) */
-    if(c.type==='ft'){p.extra.visor.material.color.setHex(c.trip?PAL.desarmado:PAL.armado);p.extra.visor.material.emissive.setHex(c.trip?0x6b1a12:0x0f4a24);p.extra.rearme.position.z=FRENTE+(c.trip?1.05:.75)}
+    if(c.type==='ft'){p.extra.visor.material.color.setHex(c.trip?PAL.desarmado:PAL.armado);p.extra.visor.material.emissive.setHex(c.trip?0x6b1a12:0x0f4a24);p.extra.rearme.position.z=c.trip?REARME.saltado:REARME.z}
     /* interruptor: a tecla inclina para ligado ou desligado (c.closed) */
     /* motor: gira enquanto alimentado (res.lamp[id] de 0 a 1 vira a velocidade do eixo) */
     /* boia: caixa vazia (contato fechado) ou cheia (aberto); a água sobe ou desce e a pera tomba ou flutua */

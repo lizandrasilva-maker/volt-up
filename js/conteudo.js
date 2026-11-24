@@ -175,7 +175,7 @@ function boiaCheck(st){
 /* Cenários da fase Sobrecarga! (prever): partida direta montada, com ou sem selo. */
 function scPartida(semSelo,estado){
   /* mesmo painel da Partida Direta: relé térmico embaixo da contatora; 95-96 logo antes da bobina */
-  const st={comps:[BAT(),C('K','kc',150,85,0),C('FT','ft',150,190,0),C('BD','btn',230,55,0,{nf:true}),C('BL','btn',295,55,0,{nf:false}),C('M','motor',285,190,0),...ATERRA()],
+  const st={comps:[BAT(),C('K','kc',150,76,0),C('FT','ft',150,202,0),C('BD','btn',230,55,0,{nf:true}),C('BL','btn',295,55,0,{nf:false}),C('M','motor',285,190,0),...ATERRA()],
     wires:[W('B.0','BD.0'),W('BD.1','BL.0'),W('BL.1','FT.2'),W('FT.3','K.0'),W('K.1','B.1'),W('B.0','K.2'),W('K.3','FT.0'),W('FT.1','M.0'),W('M.1','B.1'),W('M.2','BEP.1'),W('BEP.0','H.0')]};
   if(!semSelo)st.wires.push(W('BD.1','K.4'),W('K.5','FT.2'));
   autoColor(st);
