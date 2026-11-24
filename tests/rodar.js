@@ -173,6 +173,12 @@ let pistas={};
      confere(C,b.corFase===true&&b.corNeutro===true&&b.terraListrado===true,'cores dos fios vêm da tabela CORES do 2D; o terra é listrado nas duas cores dela');
      confere(C,b.mesmoCanvas===true,'o mesmo canvas é reencaixado a cada redesenho (1 montagem)');
      confere(C,b.aprovou3d===true&&b.aprovouSvg===true&&b.equivalente===true&&b.svgVoltou===true,'mesmos gestos na 3D e no SVG deixam a bancada no mesmo estado',b.st3d+' / '+b.stSvg);
+     {const q=b.quadro||{};
+      confere(C,q.em3d===true&&q.term3d===true,'Quadro Novo (Cap. 2) abre em 3D: DR com os 4 bornes do motor.js');
+      confere(C,q.acesa===true,'DG → DR (fase e neutro) → lâmpada ligados na 3D: lâmpada acesa e DR armado (visor verde)');
+      confere(C,q.teste===true&&q.testeNaoRearma===true&&q.rearmou===true,"botão T do DR: desarma (alavancas acopladas caem, visor vermelho) e não rearma; tocar no DR rearma");
+      confere(C,q.fuga===true&&q.semFuga===true,'neutro voltando por fora do DR: o DR desarma sozinho por fuga; tirar o fio e rearmar resolve');
+      confere(C,q.aprovou3d===true&&q.aprovouSvg===true&&q.equivalente===true,'Quadro Novo: mesmos gestos na 3D e no SVG, mesmo estado e aprovação',q.s3+' / '+q.ss);}
      confere(C,b.liberou===true,'ao sair da bancada, o WebGL é liberado');}
     /* Fonte e aterramento: a fonte não tem PE; o terra vem da haste pelo BEP */
     const fa=t.fonte||{};
