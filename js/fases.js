@@ -77,7 +77,7 @@ try{const q=new URLSearchParams(location.search).get('3d');if(q==='1')localStora
 VISTA3D.ligada=VISTA3D.flag;
 /* peças que a vista 3D já desenha: fonte 1F+N, disjuntor, DR e lâmpada sem PE (Laboratório 3D e Quadro Novo).
    As outras bancadas ficam no SVG. */
-VISTA3D.suporta=st=>st.comps.every(c=>(c.type==='src'&&nFases(c)===1)||c.type==='fuse'||c.type==='dr'||(c.type==='lamp'&&c.pe!==true));
+VISTA3D.suporta=st=>st.comps.every(c=>(c.type==='src'&&nFases(c)===1)||c.type==='fuse'||c.type==='dr'||c.type==='btn'||(c.type==='lamp'&&c.pe!==true));
 function quer3D(st){return !!(VISTA3D.flag&&VISTA3D.ligada&&VISTA3D.vista&&VISTA3D.vista.aceita(st))}
 function pode3D(st){return VISTA3D.flag&&!VISTA3D.erro&&(VISTA3D.vista?VISTA3D.vista.aceita(st):VISTA3D.suporta(st))}
 /* baixa o Three.js e js/bancada3d.js só quando a 3D é pedida (import dinâmico, com o three da importmap do index.html).
@@ -101,6 +101,20 @@ const LAB3D={id:'lab3d',nome:'Laboratório 3D',sub:'Fonte, disjuntor e lâmpada'
     check:st=>{const comps=clone(st.comps).map(c=>c.type==='fuse'?Object.assign(c,{trip:false}):c),r=solve(comps,st.wires);
       if(r.short)return 'Curto-circuito: tem caminho sem carga entre fase e neutro.';
       if(!(r.lamp.L1>0.04))return L()?'Com o disjuntor ligado, a lâmpada deveria acender. Feche o caminho: fase, disjuntor, lâmpada e neutro.':'Com o DJ ligado, L1 deveria acender: fase → DJ → L1 → neutro.';
+      return null}}]))};
+/* Laboratório 3D das botoeiras: a lâmpada acende só enquanto o LIGA (BL, NA) está apertado, e o DESLIGA (BD, NF) corta.
+   A conferência aperta e solta as botoeiras numa cópia do circuito (o estado da bancada não muda). */
+const LAB3D_BOT={id:'lab3dbot',nome:'Botoeiras 3D',sub:'Liga (NA) e desliga (NF)',kind:'bancada',tipo:'build',ic:'motor',cor:'#2b4f6e',
+  card:{leve:'O verde fecha enquanto está apertado; o vermelho abre.',moderado:'LIGA é NA (3-4); DESLIGA é NF (1-2), em série antes do LIGA.',full:'Botoeira NA fecha sob ação; NF abre sob ação: em série, o NF tem prioridade.'},
+  dados:Object.fromEntries(['leve','moderado','full'].map(md=>[md,{
+    comps:[BAT(),C('DJ','fuse',110,60,0,{lab:'DJ 10A'}),C('BD','btn',180,60,0,{nf:true}),C('BL','btn',245,60,0,{nf:false}),C('L1','lamp',275,165,0)],
+    real:[['DJ','🎚','disjuntor'],['BD','🔴','botoeira desliga (NF)'],['BL','🟢','botoeira liga (NA)'],['L1','💡','lâmpada']],
+    goal:'A lâmpada L1 acende só enquanto o LIGA (BL) está apertado, e o DESLIGA (BD) corta. Caminho: fase → DJ → BD → BL → L1 → neutro.',
+    check:st=>{const r=(bl,bd)=>{const comps=clone(st.comps).map(c=>{if(c.type==='fuse')c.trip=false;if(c.id==='BL')c.pressed=bl;if(c.id==='BD')c.pressed=bd;return c});return solve(comps,st.wires)};
+      const a=r(true,false);if(a.short)return 'Curto-circuito: tem caminho sem carga entre fase e neutro.';
+      if(!(a.lamp.L1>0.04))return L()?'Apertei o verde e a lâmpada não acendeu. O caminho é fase, disjuntor, vermelho, verde, lâmpada e neutro.':'Com o LIGA apertado, L1 deveria acender: fase → DJ → BD → BL → L1 → neutro.';
+      if(r(false,false).lamp.L1>0.04)return L()?'Sem apertar nada a lâmpada ficou acesa: o verde só fecha enquanto está apertado.':'Sem acionar, L1 acesa: o LIGA (NA) precisa estar em série no caminho.';
+      if(r(true,true).lamp.L1>0.04)return L()?'Apertando o vermelho junto, a lâmpada deveria apagar. O vermelho vai em série, antes do verde.':'Com o DESLIGA acionado, L1 deveria apagar: o NF em série abre o circuito.';
       return null}}]))};
 function encaixa3D(ctx){
   const vaga=app.querySelector('[data-vaga3d]');if(!vaga||!VISTA3D.vista)return false;

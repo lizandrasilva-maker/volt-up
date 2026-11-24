@@ -23,7 +23,7 @@ Padroniza o visual e a construção das peças 3D da bancada (`js/bancada3d.js`)
 5. **Canvas persistente.** A cena nasce uma vez por bancada (`montar`), é reencaixada a cada redesenho (`atualizar`) e liberada em `destruir` (contrato de `VISTA3D` em `js/fases.js`). Abrir outra bancada 3D (`ctx.bancada` diferente) monta uma cena nova. Desenho sob demanda: só há laço de quadros enquanto houver animação.
 6. **Câmera enquadra a bancada.** `enquadra()` calcula a caixa das peças da fase e põe a câmera em 3/4 frontal-superior com folga; não fixe posição de câmera por fase.
 
-**Peças já implementadas:** fonte 1F+N, disjuntor (`fuse`), DR bipolar (`dr`, Quadro Novo) e lâmpada sem PE. Ao incluir uma peça, acrescente o tipo em `VISTA3D.suporta` (`js/fases.js`).
+**Peças já implementadas:** fonte 1F+N, disjuntor (`fuse`), DR bipolar (`dr`, Quadro Novo), botoeiras (`btn`, BL e BD; Laboratório "Botoeiras 3D") e lâmpada sem PE. Ao incluir uma peça, acrescente o tipo em `VISTA3D.suporta` (`js/fases.js`).
 
 ---
 
@@ -57,6 +57,12 @@ Padroniza o visual e a construção das peças 3D da bancada (`js/bancada3d.js`)
 - Texto técnico (`C10`, `DR 30mA`, `A1`, `A2`, `13`, `14`, `LIGA`, `DESLIGA`, `L1`, `N`, `X1`, `X2`) desenhado num `<canvas>` 2D e convertido em `THREE.CanvasTexture`, com fonte sans-serif bold (Nunito 900), fundo transparente ou adesivo colorido e `texture.anisotropy = 4`.
 - Rótulo de borne legível no celular: altura mínima de `0,8` unidade na cena.
 
+### Plaquetas dos bornes (legibilidade no celular)
+- Todo borne tem uma **plaqueta** criada por `plaqueta(g, nomeBorne(c, k), x, y, z)`: texto bold `#070c16` sobre `#f8fafc`, borda do `--contorno`, altura `1,1`, `anisotropy = 4`, **inclinada** `-0,38` rad em X (olha para a câmera 3/4) e um pouco à frente da peça para não cortar a face.
+- O texto é **o mesmo nome do 2D**: `nomeBorne(c, k)` lê `REAL_TERMS` (`js/bancada-real.js`); botoeira NF usa `1`/`2`. Nunca escreva nome de borne à mão na peça.
+- A plaqueta fica fora do caminho do fio e da alavanca: ao lado do parafuso (disjuntor à direita, DR do lado de fora) ou abaixo (fonte, lâmpada, botoeira).
+- **Badge acima do dedo:** durante o toque num borne e o arraste de fio, um `<div class="badge-borne">` (HTML, `pointer-events: none`) aparece acima do ponto tocado com `Peça · borne` (ex.: `BL · 4`) e, no arraste, `origem → alvo` (ex.: `BL · 4 → L1 · X1`). Some ao soltar (toque simples: fica 0,7 s).
+
 ---
 
 ## 3. Escala e bornes
@@ -74,9 +80,12 @@ Padroniza o visual e a construção das peças 3D da bancada (`js/bancada3d.js`)
 | Disjuntor `fuse` | `.0` = entrada, `.1` = saída |
 | Lâmpada `lamp` | `.0` = X1, `.1` = X2 (`.2` = PE só se `c.pe === true`) |
 | DR `dr` (bipolar) | `.0` = entrada fase, `.1` = entrada neutro, `.2` = saída fase, `.3` = saída neutro |
-| Contatora `kc` | `.0`/`.1` = A1/A2 (bobina), `.2`/`.3` = 13-14 (auxiliar NA, selo), `.4`/`.5` = contato de potência (1 polo) |
-| Botoeira `btn` | `.0`/`.1` (NA se `!c.nf`, NF se `c.nf`) |
+| Contatora `kc` | `.0`/`.1` = A1/A2 (bobina), `.2`/`.3` = 1-2 (contato de potência, 1 polo), `.4`/`.5` = 13-14 (auxiliar NA, selo) |
+| Relé térmico `ft` | `.0`/`.1` = 1-2 (força), `.2`/`.3` = 95-96 (NF de comando) |
+| Botoeira `btn` | `.0`/`.1`: NA 3-4 se `!c.nf` (BL), NF 1-2 se `c.nf` (BD) |
 | Motor `motor` (monofásico) | `.0`/`.1` = força, `.2` = PE (carcaça) |
+
+Confira sempre a tabela contra os gabaritos (`TESTE_SOL` em `js/teste.js`) e os nomes do 2D (`REAL_TERMS`): na partida direta, `K.2`→`K.3` alimenta o motor e `K.4`/`K.5` faz o selo.
 
 Os três polos de potência da contatora (`1/L1`, `3/L2`, `5/L3`) e o motor trifásico (`U1`, `V1`, `W1`) só entram quando o solver trifásico de cargas existir.
 
@@ -84,7 +93,7 @@ Os três polos de potência da contatora (`1/L1`, `3/L2`, `5/L3`) e o motor trif
 
 ## 4. Especificações das próximas peças
 
-### A. DR (diferencial residual), bipolar
+### A. DR (diferencial residual), bipolar — implementado
 - Largura de 2 módulos (4,8). Corpo DIN com recorte frontal em degrau.
 - **Alavanca dupla acoplada:** duas manoplas unidas por uma barra transversal; caem juntas quando `c.trip` fica verdadeiro.
 - **Botão de teste `T`:** retângulo amarelo `#ECC94B` na frente, tocável com `acionou(id, 'test')`. O que o teste faz (desarmar) está em `acionarPeca`.
@@ -92,13 +101,14 @@ Os três polos de potência da contatora (`1/L1`, `3/L2`, `5/L3`) e o motor trif
 - Rótulo `DR 30mA`.
 
 ### B. Contatora
-- 3 módulos (7,2), mais profunda, com **dois níveis de bornes**: frente = contato de potência (`.4/.5`) e auxiliar 13-14 (`.2/.3`); nível recuado = bobina A1/A2 (`.0/.1`) com etiqueta da tensão da bobina (`{V} V~`, da rede escolhida).
+- 3 módulos (7,2), mais profunda, com **dois níveis de bornes**: frente = contato de potência 1-2 (`.2/.3`) e auxiliar 13-14 (`.4/.5`); nível recuado = bobina A1/A2 (`.0/.1`) com etiqueta da tensão da bobina (`{V} V~`, da rede escolhida).
 - **Êmbolo central:** janela com pino indicador. Com `c.on`, o êmbolo recua 0,08 e o indicador fica laranja/vermelho.
 
-### C. Botoeiras (`BL` liga, NA; `BD` desliga, NF)
+### C. Botoeiras (`BL` liga, NA; `BD` desliga, NF) — implementadas
 - Base cinza-escuro `#334155`, 4 parafusos nos cantos e anel de retenção metálico (`CylinderGeometry`).
 - `BL`: êmbolo verde `#2F855A`, saliente, rótulo `I`/`LIGA`. `BD`: êmbolo vermelho `#C53030` (cogumelo ou face plana), rótulo `O`/`DESLIGA`.
-- Afunda 0,12 enquanto `c.pressed` for verdadeiro e volta quando ele cai (dirigido pelo estado, nunca pelo `pointerdown` da cena).
+- Afunda **0,3** (os 0,12 da especificação original × 2,4, a escala do módulo no MVP) enquanto `c.pressed` for verdadeiro e volta quando ele cai (dirigido pelo estado, nunca pelo `pointerdown` da cena).
+- Bornes no bloco de contato abaixo da caixa, com plaquetas `3`/`4` (BL) ou `1`/`2` (BD); adesivo colorido `BL · I LIGA` / `BD · O DESLIGA` acima.
 
 ### D. Motor monofásico
 - Bloco fora do trilho (2,6 de comprimento) sobre base com pés aparafusados.
@@ -111,7 +121,7 @@ Os três polos de potência da contatora (`1/L1`, `3/L2`, `5/L3`) e o motor trif
 ## 5. Checklist antes de concluir qualquer peça 3D
 
 1. **`TERM3D`:** todos os bornes da peça estão mapeados com os mesmos índices do `motor.js` (mesma quantidade de `terms(c)`)?
-2. **Toque no celular:** cada borne tem esfera invisível maior que o parafuso e é alcançável sem girar a câmera?
+2. **Toque no celular:** cada borne tem esfera invisível maior que o parafuso, plaqueta com o nome do 2D e é alcançável sem girar a câmera?
 3. **Fio:** sai perpendicular ao borne e não atravessa a carcaça?
 4. **Estado:** a peça reage a `c.on`, `c.trip`, `c.pressed`, `res.lamp[id]` e `ctx.curto` em `atualizar(ctx)`?
 5. **Cache:** materiais e texturas vêm de `mat()`/`textura()`/`rotulo()`; nenhum `new MeshToonMaterial` solto por peça?

@@ -22,14 +22,16 @@ const TERM3D={
   src:()=>[[-1.25,-3.6,3.3],[1.25,-3.6,3.3]],                         /* .0 = L1, .1 = N */
   fuse:()=>[[0,3.1,DIN.z0+DIN.D+.05],[0,-2.6,DIN.z0+DIN.D+.05]],      /* .0 = entrada (topo), .1 = saída (base) */
   lamp:()=>[[-1.35,-1.35,.7],[1.35,-1.35,.7]],                        /* .0 = X1, .1 = X2 */
-  dr:()=>[[-1.2,3.1,FRENTE+.05],[1.2,3.1,FRENTE+.05],[-1.2,-2.6,FRENTE+.05],[1.2,-2.6,FRENTE+.05]] /* .0 = entrada F, .1 = entrada N, .2 = saída F, .3 = saída N */
+  dr:()=>[[-1.2,3.1,FRENTE+.05],[1.2,3.1,FRENTE+.05],[-1.2,-2.6,FRENTE+.05],[1.2,-2.6,FRENTE+.05]], /* .0 = entrada F, .1 = entrada N, .2 = saída F, .3 = saída N */
+  btn:()=>[[-.85,-2.55,1.05],[.85,-2.55,1.05]]                       /* .0/.1 = contato (NA 3-4 na BL, NF 1-2 na BD) */
 };
 const bornesDe=c=>(TERM3D[c.type]?TERM3D[c.type](c):[]).map(p=>new THREE.Vector3(...p));
 
 /* ---------- paleta (skill voltup-3d-anime) ---------- */
 const PAL={corpoDIN:0xE6E9EF,frenteDIN:0xD5DAE2,trilho:0x9AA5B4,cavidade:0x1F2933,zinco:0xCBD5E1,fenda:0x3A4048,
   fonte:0x7C8A99,fonteFrente:0x5D6B7A,lcd:0xC6D68A,regua:0x2A2F36,alavanca:0x2F4A6E,pontaAlavanca:0xE24C3F,
-  painel:0x1D3550,soquete:0xD9DDE3,base:0xE6E9EF,teste:0xECC94B,armado:0x38A169,desarmado:0xE53E3E};
+  painel:0x1D3550,soquete:0xD9DDE3,base:0xE6E9EF,teste:0xECC94B,armado:0x38A169,desarmado:0xE53E3E,
+  botoeiraBase:0x334155,liga:0x2F855A,desliga:0xC53030};
 
 /* ---------- cache compartilhado (materiais e texturas estáticos) ----------
    Peças iguais usam o mesmo material; só o que muda com o estado (LED, bulbo, visor) tem material próprio.
@@ -46,10 +48,11 @@ function matUnico(cor,extra){const m=new THREE.MeshToonMaterial(Object.assign({c
 const semContorno=m=>{m.userData.outlineParameters=SEM_CONTORNO;return m};
 function canvasTexto(larg,alt,txt,o){const px=128,cv=document.createElement('canvas');cv.width=Math.round(larg*px);cv.height=Math.round(alt*px);pintaTexto(cv,txt,o);return cv}
 function pintaTexto(cv,txt,o){const g=cv.getContext('2d');g.clearRect(0,0,cv.width,cv.height);if(o.fundo){g.fillStyle=o.fundo;g.fillRect(0,0,cv.width,cv.height)}
+  if(o.borda){const lw=Math.round(cv.height*.09);g.lineWidth=lw;g.strokeStyle=o.borda;g.strokeRect(lw/2,lw/2,cv.width-lw,cv.height-lw)}
   g.fillStyle=o.cor||'#1b1a10';g.font='900 '+Math.round(cv.height*(o.esc||.62))+'px Nunito, system-ui, sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(txt,cv.width/2,cv.height/2+2)}
 function texturaDeCanvas(cv){const t=new THREE.CanvasTexture(cv);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return t}
 /* rótulo técnico: textura e material em cache pelo texto, cor e tamanho */
-function rotulo(txt,larg,alt,o){o=o||{};const C=cache(),k='rot:'+[txt,larg,alt,o.cor,o.fundo,o.esc].join('|');
+function rotulo(txt,larg,alt,o){o=o||{};const C=cache(),k='rot:'+[txt,larg,alt,o.cor,o.fundo,o.esc,o.borda].join('|');
   if(!C.mat.has(k)){const t=texturaDeCanvas(canvasTexto(larg,alt,txt,o));C.tex.set(k,t);C.mat.set(k,semContorno(new THREE.MeshBasicMaterial({map:t,transparent:true})))}
   return new THREE.Mesh(new THREE.PlaneGeometry(larg,alt),C.mat.get(k))}
 /* rótulo que muda (visor da fonte): canvas próprio, redesenhado só quando o texto muda */
@@ -75,6 +78,17 @@ function matFio(k){const C=cache(),ch='fio:'+k;if(C.mat.has(ch))return C.mat.get
 /* curto: material vermelho emissivo compartilhado; o pulso muda só a intensidade dele */
 function matCurto(){const C=cache();if(!C.mat.has('curto'))C.mat.set('curto',new THREE.MeshToonMaterial({color:0xff2a2a,emissive:0xff2a2a,emissiveIntensity:1,gradientMap:tons()}));return C.mat.get('curto')}
 
+/* ---------- nomes e plaquetas dos bornes ----------
+   O nome de cada borne é o MESMO da bancada 2D (REAL_TERMS em bancada-real.js; botoeira NF: 1-2), para o aluno
+   reconhecer o borne nas duas vistas. A plaqueta é legível no celular: texto bold #070c16 sobre #f8fafc, borda
+   do --contorno, e inclinada para a câmera 3/4 (gira em X para olhar para cima e para a frente). */
+function nomeBorne(c,k){if(c.type==='btn'&&c.nf)return ['1','2'][k];const T=typeof REAL_TERMS!=='undefined'&&REAL_TERMS[c.type];return (T&&T[k]&&T[k].n)||String(k)}
+const nomePeca=c=>c.type==='src'?'Fonte':c.id;
+const PLAQ={alt:1.1,incl:-.38};
+function plaqueta(g,txt,x,y,z){const larg=Math.max(1.1,.62*txt.length+.5);
+  const m=rotulo(txt,larg,PLAQ.alt,{fundo:'#f8fafc',cor:'#070c16',borda:cssVar('--contorno','#070c16'),esc:.66});
+  m.rotation.x=PLAQ.incl;m.position.set(x,y,z);m.userData.plaqueta=txt;g.add(m);return m}
+
 /* ---------- peças ----------
    Cada construtor devolve {g (grupo), bornes:[Vector3 local], corpo:[malhas tocáveis], extra}. */
 function parafuso(){const g=new THREE.Group();
@@ -94,7 +108,7 @@ function fonte(c){const g=new THREE.Group(),bornes=bornesDe(c);
   poeParafusos(g,bornes);
   const cf=coresDoFio('fase')[0],cn=coresDoFio('neutro')[0];
   [[0,'L1',cf],[1,'N',cn]].forEach(([k,t,cor])=>{const anel=new THREE.Mesh(new THREE.TorusGeometry(.66,.09,8,24),mat(cor));anel.position.copy(bornes[k]).add(new THREE.Vector3(0,0,-.06));g.add(anel);
-    const l=rotulo(t,1.6,.9,{cor});l.position.set(bornes[k].x,-2.05,3.22);g.add(l)});
+    plaqueta(g,nomeBorne(c,k),bornes[k].x,-1.95,3.55)});
   return {g,bornes,corpo:[caixa,frente,visor],extra:{led,visor:tx}}}
 function disjuntor(c){const g=new THREE.Group(),bornes=bornesDe(c),{W,H,D,z0}=DIN;
   const corpo=new THREE.Mesh(new THREE.BoxGeometry(W,H,D),mat(PAL.corpoDIN));corpo.position.z=z0+D/2;g.add(corpo);
@@ -106,6 +120,7 @@ function disjuntor(c){const g=new THREE.Group(),bornes=bornesDe(c),{W,H,D,z0}=DI
   const lab=rotulo(c.lab||c.id,2.2,.8,{cor:'#2f4a6e'});lab.position.set(0,-1.35,z0+D+.71);g.add(lab);
   const curva=rotulo('C10',1.4,.6,{cor:'#2f4a6e'});curva.position.set(0,-3.55,z0+D+.01);g.add(curva);
   poeParafusos(g,bornes);
+  bornes.forEach((b,k)=>plaqueta(g,nomeBorne(c,k),W/2+.75,b.y,b.z+.3));
   return {g,bornes,corpo:[corpo,frente,alav,ponta],extra:{pino}}}
 /* DR bipolar (2 módulos): alavanca dupla acoplada (as duas caem juntas), botão T de teste e visor armado/desarmado.
    O botão T relata acionou(id, 'test'); o que o teste faz (desarmar) está em acionarPeca. */
@@ -120,8 +135,8 @@ function dr(c){const g=new THREE.Group(),bornes=bornesDe(c),{H,D,z0}=DIN,W=LARG_
   const lt=rotulo('T',.6,.6,{cor:'#1b1a10'});lt.position.set(1.35,-1.25,FRENTE+1.07);g.add(lt);
   const visor=new THREE.Mesh(new THREE.BoxGeometry(1.1,.6,.12),matUnico(PAL.armado,{emissive:0x0f4a24}));visor.position.set(-1.2,-1.25,FRENTE+.75);g.add(visor);
   const lab=rotulo((c.lab||c.id)+' 30mA',3.6,.8,{cor:'#2f4a6e'});lab.position.set(0,-3.5,FRENTE+.01);g.add(lab);
-  [['L',-1.2,4.2],['N',1.2,4.2],['L',-1.2,-1.7],['N',1.2,-1.7]].forEach(([t,x,y])=>{const l=rotulo(t,.8,.8,{cor:t==='N'?'#3a7fb8':'#c0392b'});l.position.set(x,y,FRENTE+.01);g.add(l)});
   poeParafusos(g,bornes);
+  bornes.forEach((b,k)=>plaqueta(g,nomeBorne(c,k),Math.sign(b.x)*(W/2+.65),b.y,b.z+.3));
   return {g,bornes,corpo:[corpo,frente,...alavancas,barra,teste,visor],extra:{pino,visor,teste}}}
 /* trilho DIN 35 mm (perfil "chapéu"), extrudado ao longo de X */
 function trilho(x0,x1,y){const s=new THREE.Shape(),P=[[-1.35,0],[1.35,0],[1.35,.65],[1.75,.65],[1.75,.75],[1.25,.75],[1.25,.1],[-1.25,.1],[-1.25,.75],[-1.75,.75],[-1.75,.65],[-1.35,.65]];
@@ -138,9 +153,27 @@ function lampada(c){const g=new THREE.Group(),bornes=bornesDe(c);
   const brilho=sprite(texturaBrilho('brilho',['rgba(255,246,200,1)','rgba(255,216,77,.55)']),9);brilho.position.copy(bulbo.position);brilho.visible=false;g.add(brilho);
   const lab=rotulo(c.lab||c.id,2,.9,{cor:'#eef2f7'});lab.position.set(0,2.75,.62);g.add(lab);
   poeParafusos(g,bornes);
-  [['X1',0],['X2',1]].forEach(([t,k])=>{const l=rotulo(t,1.4,.8,{cor:'#eef2f7'});l.position.set(bornes[k].x,-2.6,.62);g.add(l)});
+  bornes.forEach((b,k)=>plaqueta(g,nomeBorne(c,k),b.x,-2.75,.95));
   return {g,bornes,corpo:[base,soq,bulbo],extra:{bulbo,brilho}}}
-const CONSTRUTOR={src:fonte,fuse:disjuntor,lamp:lampada,dr};
+/* Botoeira em caixa: BL liga (NA, êmbolo verde saliente) e BD desliga (NF, cogumelo vermelho).
+   O êmbolo afunda pelo ESTADO c.pressed (os 700 ms de acionarPeca), nunca pelo toque local: 2D e 3D iguais.
+   Afunda 0,3 (os 0,12 da especificação original × 2,4, a escala do módulo no MVP). */
+const BOTAO={afunda:-.3,z:1.45};
+function botoeira(c){const g=new THREE.Group(),bornes=bornesDe(c),nf=!!c.nf,cor=nf?PAL.desliga:PAL.liga;
+  const base=new THREE.Mesh(new THREE.BoxGeometry(3.4,3.4,1.2),mat(PAL.botoeiraBase));base.position.set(0,.6,.6);g.add(base);
+  [[-1.35,-.75],[1.35,-.75],[-1.35,1.95],[1.35,1.95]].forEach(([x,y])=>{const p=new THREE.Mesh(new THREE.CylinderGeometry(.2,.2,.12,12),mat(PAL.zinco));p.rotation.x=Math.PI/2;p.position.set(x,y,1.24);g.add(p)});
+  const anel=new THREE.Mesh(new THREE.TorusGeometry(1.12,.2,10,32),mat(PAL.zinco));anel.position.set(0,.6,1.32);g.add(anel);/* anel de retenção */
+  const colar=new THREE.Mesh(new THREE.CylinderGeometry(.98,.98,.5,24),mat(PAL.cavidade));colar.rotation.x=Math.PI/2;colar.position.set(0,.6,1.45);g.add(colar);
+  const embolo=new THREE.Group();embolo.position.set(0,.6,BOTAO.z);g.add(embolo);const partes=[];
+  if(nf){const haste=new THREE.Mesh(new THREE.CylinderGeometry(.62,.62,.7,20),mat(cor));haste.rotation.x=Math.PI/2;haste.position.z=.35;embolo.add(haste);
+    const cog=new THREE.Mesh(new THREE.SphereGeometry(1.2,24,12,0,Math.PI*2,0,Math.PI/2),mat(cor));cog.scale.y=.5;cog.rotation.x=Math.PI/2;cog.position.z=.65;embolo.add(cog);partes.push(haste,cog)}
+  else{const bot=new THREE.Mesh(new THREE.CylinderGeometry(.85,.85,1,24),mat(cor));bot.rotation.x=Math.PI/2;bot.position.z=.5;embolo.add(bot);partes.push(bot)}
+  const adesivo=rotulo((c.lab||c.id)+(nf?' · O DESLIGA':' · I LIGA'),3.8,.85,{fundo:nf?'#C53030':'#2F855A',cor:'#f8fafc',esc:.6});adesivo.position.set(0,2.85,.62);g.add(adesivo);
+  const bloco=new THREE.Mesh(new THREE.BoxGeometry(3,1.3,1),mat(PAL.cavidade));bloco.position.set(0,-2.55,.5);g.add(bloco);/* bloco de contato */
+  poeParafusos(g,bornes);
+  bornes.forEach((b,k)=>plaqueta(g,nomeBorne(c,k),b.x,-3.75,.55));
+  return {g,bornes,corpo:[base,colar,...partes],extra:{embolo}}}
+const CONSTRUTOR={src:fonte,fuse:disjuntor,lamp:lampada,dr,btn:botoeira};
 
 /* ---------- estado da cena (uma bancada 3D por vez) ---------- */
 let E=null;
@@ -167,6 +200,8 @@ function montar(no,ctx){
   const anel=semContorno(new THREE.MeshBasicMaterial({color:0xf4c430}));cache().unicos.push(anel);
   E.sel=new THREE.Mesh(new THREE.TorusGeometry(.85,.14,10,32),anel);E.sel.visible=false;scene.add(E.sel);
   E.faisca=sprite(texturaBrilho('faisca',['rgba(255,255,255,1)','rgba(255,160,60,.8)']),6);E.faisca.visible=false;scene.add(E.faisca);
+  /* badge do borne: aparece acima do dedo durante o toque e o arraste (o polegar cobre a plaqueta) */
+  E.badge=document.createElement('div');E.badge.className='badge-borne';E.badge.hidden=true;E.badge.setAttribute('aria-live','polite');no.appendChild(E.badge);
   construir(ctx.st);
   /* caixa que envolve as peças desta bancada: a câmera enquadra o que existe (cada fase tem um arranjo) */
   E.caixa=new THREE.Box3();Object.values(E.pecas).forEach(p=>E.caixa.expandByObject(p.g));
@@ -232,6 +267,8 @@ function atualizar(ctx){
   st.comps.forEach(c=>{const p=E.pecas[c.id];if(!p)return;
     /* disjuntor e DR: a alavanca (no DR, as duas acopladas) cai quando c.trip */
     if(c.type==='fuse'||c.type==='dr'){const alvo=c.trip?.5:-.5;if(p.ang!==alvo){const de=p.extra.pino.rotation.x;p.ang=alvo;anima(180,k=>{p.extra.pino.rotation.x=de+(alvo-de)*k})}else p.extra.pino.rotation.x=alvo}
+    /* botoeira: o êmbolo afunda enquanto c.pressed (estado do acionarPeca) e volta quando ele cai */
+    if(c.type==='btn'){const alvo=c.pressed?BOTAO.afunda:0;if(p.emb!==alvo){const de=p.extra.embolo.position.z,para=BOTAO.z+alvo;p.emb=alvo;anima(90,k=>{p.extra.embolo.position.z=de+(para-de)*k})}}
     if(c.type==='dr'){p.extra.visor.material.color.setHex(c.trip?PAL.desarmado:PAL.armado);p.extra.visor.material.emissive.setHex(c.trip?0x6b1a12:0x0f4a24)}
     if(c.type==='src'){p.extra.led.material.color.setHex(c.trip?0xe24c3f:0x43b05c);p.extra.led.material.emissive.setHex(c.trip?0x7a1d12:0x1f7a36);
       trocaTexto(p.extra.visor,c.trip?'PROT':(typeof rede==='function'?rede().V:220)+' V~')}
@@ -243,6 +280,11 @@ function atualizar(ctx){
   if(ctx.curto&&ctx.curto.fios)animaCurto(ctx.curto);
   dimensiona();pede();
 }
+
+/* ---------- badge do borne (HTML, pointer-events: none) ---------- */
+function textoBorne(id){const [pid,k]=id.split('.'),p=E.pecas[pid];return p?nomePeca(p.c)+' · '+nomeBorne(p.c,+k):id}
+function mostraBadge(x,y,txt){const r=E.no.getBoundingClientRect(),b=E.badge;clearTimeout(E.badgeT);b.textContent=txt;b.style.left=(x-r.left)+'px';b.style.top=(y-r.top)+'px';b.hidden=false}
+function escondeBadge(ms){clearTimeout(E.badgeT);if(ms)E.badgeT=setTimeout(()=>{if(E)E.badge.hidden=true},ms);else E.badge.hidden=true}
 
 /* ---------- toque: raycast nos bornes, peças e fios; o resto vai para o OrbitControls ---------- */
 function alvoEm(x,y){const r=E.cv.getBoundingClientRect();if(!r.width)return null;
@@ -259,10 +301,13 @@ function aoTocar(e){
   const alvo=alvoEm(e.clientX,e.clientY);if(!alvo)return;/* espaço vazio: girar, aproximar e arrastar a câmera */
   e.stopPropagation();e.preventDefault();
   const ctl=E.ctx.ctl,ed=E.ctx.editavel!==false,x0=e.clientX,y0=e.clientY;let arrastando=false;
+  if(alvo.t)mostraBadge(x0,y0,textoBorne(alvo.t));
   const move=ev=>{if(!alvo.t||!ed)return;if(!arrastando&&Math.hypot(ev.clientX-x0,ev.clientY-y0)<10)return;arrastando=true;
+    const sob=alvoEm(ev.clientX,ev.clientY);mostraBadge(ev.clientX,ev.clientY,textoBorne(alvo.t)+' → '+(sob&&sob.t&&sob.t!==alvo.t?textoBorne(sob.t):'…'));
     const q=pontoNoPlano(ev.clientX,ev.clientY);if(!q)return;if(E.fioTmp)tiraMalha(E.fioTmp);E.fioTmp=malhaFio(E.bornes[alvo.t],q,E.ctx.cor||'fase');E.scene.add(E.fioTmp);pede()};
   const up=ev=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',up);
     if(E&&E.fioTmp){tiraMalha(E.fioTmp);E.fioTmp=null;pede()}
+    if(E)escondeBadge(arrastando||ev.type==='pointercancel'?0:700);/* toque simples: o nome fica um instante */
     if(ev.type==='pointercancel')return;
     if(arrastando){const fim=alvoEm(ev.clientX,ev.clientY);ctl.arrastouFio(alvo.t,fim&&fim.t||null);return}
     if(alvo.t){if(ed)ctl.tocouBorne(alvo.t)}
@@ -276,6 +321,7 @@ function destruir(){if(!E)return;
   if(E.pedido)cancelAnimationFrame(E.pedido);E.ro.disconnect();E.no.removeEventListener('pointerdown',aoTocar,true);E.controls.dispose();
   E.scene.traverse(o=>{if(o.geometry)o.geometry.dispose()});
   if(CACHE){CACHE.mat.forEach(m=>m.dispose());CACHE.tex.forEach(t=>t.dispose());CACHE.unicos.forEach(m=>{if(m.map)m.map.dispose();m.dispose()});CACHE=null}
+  clearTimeout(E.badgeT);E.badge.remove();
   E.renderer.dispose();try{E.renderer.forceContextLoss()}catch(e){}E.cv.remove();E=null}
 
 /* ---------- inspeção para os testes ---------- */
@@ -292,6 +338,10 @@ const debug={
   telaFio:i=>{const f=E.fios.find(m=>m.userData.w===i);return naTela(f.geometry.parameters.path.getPoint(.5))},
   telaTeste:id=>naTela(E.pecas[id].extra.teste.getWorldPosition(new THREE.Vector3())),
   visorDR:id=>E.pecas[id].extra.visor.material.color.getHex()===PAL.desarmado?'desarmado':'armado',
+  emboloAlvo:id=>E.pecas[id].emb||0,
+  badge:()=>({visivel:!E.badge.hidden,texto:E.badge.textContent}),
+  plaquetas:pid=>{const o=[];E.pecas[pid].g.traverse(m=>{if(m.userData.plaqueta)o.push({t:m.userData.plaqueta,incl:m.rotation.x,alt:m.geometry.parameters.height})});return o},
+  nomeBorne:(pid,k)=>nomeBorne(E.pecas[pid].c,k),
   brilho:id=>E.pecas[id].brilho||0,
   alavanca:id=>E.pecas[id].ang,
   fios:()=>E.fios.length,

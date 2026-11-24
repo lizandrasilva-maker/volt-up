@@ -179,6 +179,13 @@ let pistas={};
       confere(C,q.teste===true&&q.testeNaoRearma===true&&q.rearmou===true,"botão T do DR: desarma (alavancas acopladas caem, visor vermelho) e não rearma; tocar no DR rearma");
       confere(C,q.fuga===true&&q.semFuga===true,'neutro voltando por fora do DR: o DR desarma sozinho por fuga; tirar o fio e rearmar resolve');
       confere(C,q.aprovou3d===true&&q.aprovouSvg===true&&q.equivalente===true,'Quadro Novo: mesmos gestos na 3D e no SVG, mesmo estado e aprovação',q.s3+' / '+q.ss);}
+     {const t=b.botoeiras||{};
+      confere(C,t.em3d===true&&t.term3d===true,'Botoeiras 3D abrem em 3D: BL e BD com os 2 bornes do motor.js');
+      confere(C,t.plaquetas===true&&t.nomes2D===true,'plaquetas dos bornes: mesmo nome do 2D (BL 3-4, BD 1-2), inclinadas para a câmera e com altura legível');
+      confere(C,!!t.badgeToque&&t.badgeToque.visivel&&t.badgeToque.texto==='BL · 4'&&!!t.badgeArraste&&t.badgeArraste.texto==='BL · 4 → L1 · X1'&&t.badgeSoltou&&t.badgeSoltou.visivel===false,'badge acima do dedo: mostra o borne no toque e origem → alvo no arraste; some ao soltar',JSON.stringify([t.badgeToque,t.badgeArraste]));
+      confere(C,t.apagada===true&&t.apertouBL===true&&t.soltouBL===true,'apertar BL: c.pressed afunda o êmbolo e acende L1; depois dos 700 ms ele volta e L1 apaga');
+      confere(C,t.bdCorta===true&&t.soltaram===true,'BL e BD apertados juntos: o NF corta e L1 fica apagada');
+      confere(C,t.aprovou3d===true&&t.aprovouSvg===true&&t.svgApertou===true&&t.equivalente===true,'Botoeiras: mesmos gestos na 3D e no SVG, mesmo estado e aprovação',t.s3+' / '+t.ss);}
      confere(C,b.liberou===true,'ao sair da bancada, o WebGL é liberado');}
     /* Fonte e aterramento: a fonte não tem PE; o terra vem da haste pelo BEP */
     const fa=t.fonte||{};
