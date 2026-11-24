@@ -219,6 +219,11 @@ let pistas={};
      {const z=b.zoom||{};
       confere(C,z.roda===true&&z.rodaFixa===true,'roda do mouse sobre um parafuso perto da borda: aproxima e o parafuso fica no mesmo lugar da tela',z.desvioRoda+' px');
       confere(C,z.pinca===true&&z.pincaSemFio===true,'pinça começando em cima de um parafuso: aproxima na direção dos dedos e não cria fio',z.desvioPinca+' px');}
+     {const l=b.loteC||{};
+      for(const [nome,o] of [['Escada',l.escada||{}],['Corredor',l.corredor||{}]]){
+        confere(C,o.em3d===true&&o.term3d===true&&o.plaquetas===true&&o.niveis===true,nome+' abre em 3D nos 3 níveis, com os bornes e nomes do motor.js e do 2D');
+        confere(C,o.inverte===true,nome+': cada toque em qualquer interruptor inverte a lâmpada (comando de vários pontos)');
+        confere(C,o.aprovou3d===true&&o.aprovouSvg===true&&o.equivalente===true,nome+': mesmos gestos na 3D e no SVG, mesmo estado e aprovação');}}
      confere(C,b.liberou===true,'ao sair da bancada, o WebGL é liberado');}
     /* Fonte e aterramento: a fonte não tem PE; o terra vem da haste pelo BEP */
     const fa=t.fonte||{};

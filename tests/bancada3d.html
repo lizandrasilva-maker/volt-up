@@ -241,6 +241,23 @@ const coresDoFioCSS=k=>(CORES[k].c.match(/var\(--[\w-]+\)|#[0-9a-f]{3,8}\b/gi)).
    for(let k=1;k<=4;k++){dedo('pointermove',11,q0.x-10*k,q0.y);dedo('pointermove',12,q0.x+60+10*k,q0.y)}
    dedo('pointerup',12,q0.x+100,q0.y);dedo('pointerup',11,q0.x-40,q0.y);
    z.pinca=D.distancia()<dd0*.85;z.pincaSemFio=BANCADA.st.wires.length===fios&&!BANCADA.st.wires.length;z.desvioPinca=Math.round(perto(q0,D.tela('L1.1')));}
+  /* ---- Lote C: interruptor paralelo (Escada) e intermediário (Corredor), pelo gabarito, na 3D e no SVG ---- */
+  {const c3=R.loteC={};S.mode='leve';
+   const tap=t=>{svg().querySelector('[data-t="'+t+'"]').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));window.dispatchEvent(new PointerEvent('pointerup'))};
+   const aciona=id=>svg().querySelector('[data-sw="'+id+'"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));
+   const roda=(fid,chaves)=>{const p=phaseById(fid),tp=()=>comARede(p.dados.leve),sig=st=>J({fios:st.wires.map(w=>w.a+'-'+w.b+':'+w.cor),pos:st.comps.filter(c=>c.type==='sw3'||c.type==='sw4').map(c=>!!c.pos)});
+     const o={};VISTA3D.ligada=true;S.seen['leve:'+fid+':cena']=1;runBuild(p,tp());o.em3d=!!document.querySelector('.bench3d canvas');o.term3d=BANCADA.st.comps.every(c=>D.bornesTERM3D(c)===terms(c).length);
+     let ca='';testeSol(fid).forEach(w=>{if(w.cor!==ca){cor(w.cor);ca=w.cor}toque(w.a);toque(w.b)});
+     /* cada toque em qualquer interruptor inverte a lâmpada */
+     let antes=D.brilho('L1')>0.5;o.inverte=chaves.every(id=>{toque(id);const agora=D.brilho('L1')>0.5,ok=agora!==antes;antes=agora;return ok});
+     o.aprovou3d=/aprovado/i.test(verificar());const s3=sig(BANCADA.st);
+     VISTA3D.ligada=false;runBuild(p,tp());ca='';testeSol(fid).forEach(w=>{if(w.cor!==ca){cor(w.cor);ca=w.cor}tap(w.a);tap(w.b)});chaves.forEach(aciona);
+     o.aprovouSvg=/aprovado/i.test(verificar());o.equivalente=s3===sig(BANCADA.st);
+     VISTA3D.ligada=true;o.niveis=['moderado','full'].map(md=>{S.mode=md;S.seen[md+':'+fid+':cena']=1;runBuild(p,comARede(p.dados[md]));const ok=!!document.querySelector('.bench3d canvas');S.mode='leve';return ok}).every(Boolean);return o};
+   c3.escada=roda('escada',['SP1','SP2','SP1']);c3.escada.plaquetas=null;
+   VISTA3D.ligada=true;runBuild(phaseById('escada'),comARede(phaseById('escada').dados.leve));c3.escada.plaquetas=J(D.plaquetas('SP1').map(p=>p.t))==='["C","1","2"]';
+   c3.corredor=roda('corredor',['SP1','SI','SP2','SI']);
+   VISTA3D.ligada=true;runBuild(phaseById('corredor'),comARede(phaseById('corredor').dados.leve));c3.corredor.plaquetas=J(D.plaquetas('SI').map(p=>p.t))==='["1","2","3","4"]';S.mode='moderado';}
   /* sair da bancada libera o WebGL */
   showMap();await new Promise(r=>setTimeout(r,0));R.liberou=VISTA3D.no===null;
 }catch(e){R.ERRO=e.message+' '+(e.stack||'')}
