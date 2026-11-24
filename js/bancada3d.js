@@ -28,9 +28,9 @@ const TERM3D={
   /* fonte: índices do motor.js .0 = L1, .1 = N, .2 = L2, .3 = L3; na régua, da esquerda para a direita, L1 L2 L3 N (como no 2D) */
   src:c=>{const n=typeof nFases==='function'?nFases(c):1,ordem=[0,...(n>=2?[2]:[]),...(n>=3?[3]:[]),1],pos=[];
     ordem.forEach((k,i)=>{pos[k]=[(i-(ordem.length-1)/2)*1.25,-3.6,3.3]});return pos},
-  fuse:()=>[[0,3.1,DIN.z0+DIN.D+.05],[0,-2.6,DIN.z0+DIN.D+.05]],      /* .0 = entrada (topo), .1 = saída (base) */
+  fuse:()=>[[0,3,DEGRAU+.05],[0,-3,DEGRAU+.05]],                      /* .0 = entrada (topo), .1 = saída (base) */
   lamp:()=>[[-1.35,-1.35,.7],[1.35,-1.35,.7]],                        /* .0 = X1, .1 = X2 */
-  dr:()=>[[-1.2,3.1,FRENTE+.05],[1.2,3.1,FRENTE+.05],[-1.2,-2.6,FRENTE+.05],[1.2,-2.6,FRENTE+.05]], /* .0 = entrada F, .1 = entrada N, .2 = saída F, .3 = saída N */
+  dr:()=>[[-1.2,3,DEGRAU+.05],[1.2,3,DEGRAU+.05],[-1.2,-3,DEGRAU+.05],[1.2,-3,DEGRAU+.05]], /* .0 = entrada F, .1 = entrada N, .2 = saída F, .3 = saída N */
   btn:()=>[[-.85,-3.35,1.15],[.85,-3.35,1.15]],                       /* bloco de contato embaixo da moldura */
   sw:()=>[[-.85,-2.75,1.0],[.85,-2.75,1.0]],
   sw3:()=>[[-1.1,-2.75,1.0],[0,-2.75,1.0],[1.1,-2.75,1.0]],          /* paralelo (three-way): .0 = C (comum), .1 = 1, .2 = 2 */
@@ -49,7 +49,7 @@ const TERM3D={
   /* fotocélula: régua embaixo, .0 = L (fase), .1 = N, .2 = C (carga) */
   foto:()=>[[-1.1,-3.2,1.0],[0,-3.2,1.0],[1.1,-3.2,1.0]],
   /* relé de impulso: .0/.1 = A1/A2 (bobina, à esquerda), .2/.3 = 1-2 (contato, à direita) */
-  ri:()=>[[-1.2,3.1,FRENTE+.05],[-1.2,-2.6,FRENTE+.05],[1.2,3.1,FRENTE+.05],[1.2,-2.6,FRENTE+.05]]
+  ri:()=>[[-1.2,3,DEGRAU+.05],[-1.2,-3,DEGRAU+.05],[1.2,3,DEGRAU+.05],[1.2,-3,DEGRAU+.05]]
 };
 const bornesDe=c=>(TERM3D[c.type]?TERM3D[c.type](c):[]).map(p=>new THREE.Vector3(...p));
 
@@ -169,37 +169,32 @@ function fonte(c){const g=new THREE.Group(),bornes=bornesDe(c);
   bornes.map((_,k)=>[k,nomeBorne(c,k),k===1?cn:cf]).forEach(([k,t,cor])=>{const anel=new THREE.Mesh(new THREE.TorusGeometry(.66,.09,8,24),mat(cor));anel.position.copy(bornes[k]).add(new THREE.Vector3(0,0,-.06));g.add(anel);
     plaqueta(g,nomeBorne(c,k),bornes[k].x,-1.95,3.55)});
   return {g,bornes,corpo:[caixa,frente,visor,regua],extra:{led,visor:tx},fases:nf}}
-function disjuntor(c){const g=new THREE.Group(),bornes=bornesDe(c),{W,H,D,z0}=DIN;
-  const corpo=new THREE.Mesh(new THREE.BoxGeometry(W,H,D),mat(PAL.corpoDIN));corpo.position.z=z0+D/2;g.add(corpo);
-  const frente=new THREE.Mesh(new THREE.BoxGeometry(W*.9,H*.46,.7),mat(PAL.frenteDIN));frente.position.set(0,0,z0+D+.35);g.add(frente);
-  /* alavanca articulada: sai da frente (eixo +Z) por uma fenda e gira em torno do eixo X no pino:
-     inclinada para cima = ligado, para baixo = desligado (c.trip) */
-  const fenda=new THREE.Mesh(new THREE.BoxGeometry(1.25,1.3,.06),mat(PAL.cavidade));fenda.position.set(0,.2,z0+D+.72);g.add(fenda);
-  const pino=new THREE.Group();pino.position.set(0,.2,z0+D+.7);g.add(pino);
+/* Disjuntor (1 módulo, 3 níveis): bornes 1 (entrada, em cima) e 2 (saída, embaixo) no degrau, com a marcação impressa;
+   no frontal, a alavanca sai por uma fenda (eixo +Z) e gira no pino: para cima = ligado, para baixo = desligado (c.trip). */
+function disjuntor(c){const g=new THREE.Group(),bornes=bornesDe(c),W=DIN.W,mal=carcaca3(g,W,bornes);
+  const fenda=new THREE.Mesh(new THREE.BoxGeometry(1.25,1.3,.06),mat(PAL.cavidade));fenda.position.set(0,.4,FRENTE+.03);g.add(fenda);
+  const pino=new THREE.Group();pino.position.set(0,.4,FRENTE);g.add(pino);
   const alav=new THREE.Mesh(new THREE.BoxGeometry(.95,.75,1.5),mat(PAL.alavanca));alav.position.z=.75;pino.add(alav);
   const ponta=new THREE.Mesh(new THREE.BoxGeometry(.97,.77,.45),mat(PAL.pontaAlavanca));ponta.position.z=1.4;pino.add(ponta);
-  const lab=rotulo(c.lab||c.id,2.2,.8,{cor:'#2f4a6e'});lab.position.set(0,-1.35,z0+D+.71);g.add(lab);
-  const curva=rotulo('C10',1.4,.6,{cor:'#2f4a6e'});curva.position.set(0,-3.55,z0+D+.01);g.add(curva);
+  const curva=rotulo('C10','auto',.55,{cor:PAL.serig,esc:.72});curva.position.set(0,1.82,FRENTE+.02);g.add(curva);
+  tag(g,c.lab||c.id,0,-1.45,FRENTE+.02);
   poeParafusos(g,bornes);
-  bornes.forEach((b,k)=>plaqueta(g,nomeBorne(c,k),W/2+.75,b.y,b.z+.3));
-  return {g,bornes,corpo:[corpo,frente,alav,ponta],extra:{pino}}}
-/* DR bipolar (2 módulos): alavanca dupla acoplada (as duas caem juntas), botão T de teste e visor armado/desarmado.
-   O botão T relata acionou(id, 'test'); o que o teste faz (desarmar) está em acionarPeca. */
-function dr(c){const g=new THREE.Group(),bornes=bornesDe(c),{H,D,z0}=DIN,W=LARG_DIN.dr;
-  const corpo=new THREE.Mesh(new THREE.BoxGeometry(W,H,D),mat(PAL.corpoDIN));corpo.position.z=z0+D/2;g.add(corpo);
-  /* recorte frontal em degrau */
-  const frente=new THREE.Mesh(new THREE.BoxGeometry(W*.92,H*.5,.7),mat(PAL.frenteDIN));frente.position.set(0,.1,FRENTE+.35);g.add(frente);
-  const fenda=new THREE.Mesh(new THREE.BoxGeometry(2.9,1.3,.06),mat(PAL.cavidade));fenda.position.set(0,.5,FRENTE+.72);g.add(fenda);
-  const pino=new THREE.Group();pino.position.set(0,.5,FRENTE+.7);g.add(pino);
+  bornes.forEach((b,k)=>serigrafia(g,nomeBorne(c,k),nomeBorne(c,k),b.x,b.y+Math.sign(b.y)*.98));
+  return {g,bornes,corpo:[...mal,alav,ponta],extra:{pino}}}
+/* DR bipolar (2 módulos, 3 níveis): alavanca dupla acoplada (as duas caem juntas), botão T de teste e visor armado/
+   desarmado. O botão T relata acionou(id, 'test'); o que o teste faz (desarmar) está em acionarPeca. */
+function dr(c){const g=new THREE.Group(),bornes=bornesDe(c),W=LARG_DIN.dr,mal=carcaca3(g,W,bornes);
+  const fenda=new THREE.Mesh(new THREE.BoxGeometry(2.9,1.3,.06),mat(PAL.cavidade));fenda.position.set(0,.75,FRENTE+.03);g.add(fenda);
+  const pino=new THREE.Group();pino.position.set(0,.75,FRENTE);g.add(pino);
   const alavancas=[-.85,.85].map(x=>{const a=new THREE.Mesh(new THREE.BoxGeometry(.85,.75,1.5),mat(PAL.alavanca));a.position.set(x,0,.75);pino.add(a);return a});
   const barra=new THREE.Mesh(new THREE.BoxGeometry(2.6,.77,.45),mat(PAL.pontaAlavanca));barra.position.z=1.4;pino.add(barra);
-  const teste=new THREE.Mesh(new THREE.BoxGeometry(1.1,.7,.36),mat(PAL.teste));teste.position.set(1.35,-1.25,FRENTE+.88);teste.userData.lado='test';g.add(teste);
-  const lt=rotulo('T',.6,.6,{cor:'#1b1a10'});lt.position.set(1.35,-1.25,FRENTE+1.07);g.add(lt);
-  const visor=new THREE.Mesh(new THREE.BoxGeometry(1.1,.6,.12),matUnico(PAL.armado,{emissive:0x0f4a24}));visor.position.set(-1.2,-1.25,FRENTE+.75);g.add(visor);
-  const lab=rotulo((c.lab||c.id)+' 30mA',3.6,.8,{cor:'#2f4a6e'});lab.position.set(0,-3.5,FRENTE+.01);g.add(lab);
+  const teste=new THREE.Mesh(new THREE.BoxGeometry(1.1,.6,.36),mat(PAL.teste));teste.position.set(1.5,-.75,FRENTE+.18);teste.userData.lado='test';g.add(teste);
+  const lt=rotulo('T',.6,.55,{cor:'#1b1a10'});lt.position.set(1.5,-.75,FRENTE+.37);g.add(lt);
+  const visor=new THREE.Mesh(new THREE.BoxGeometry(1.1,.5,.12),matUnico(PAL.armado,{emissive:0x0f4a24}));visor.position.set(-1.5,-.75,FRENTE+.06);g.add(visor);
+  tag(g,(c.lab||c.id)+' · 30 mA',0,-1.6,FRENTE+.02);
   poeParafusos(g,bornes);
-  bornes.forEach((b,k)=>plaqueta(g,nomeBorne(c,k),Math.sign(b.x)*(W/2+.65),b.y,b.z+.3));
-  return {g,bornes,corpo:[corpo,frente,...alavancas,barra,teste,visor],extra:{pino,visor,teste}}}
+  bornes.forEach((b,k)=>serigrafia(g,nomeBorne(c,k),nomeBorne(c,k),b.x,b.y+Math.sign(b.y)*.98));
+  return {g,bornes,corpo:[...mal,...alavancas,barra,teste,visor],extra:{pino,visor,teste}}}
 /* trilho DIN 35 mm (perfil "chapéu"), extrudado ao longo de X */
 function trilho(x0,x1,y){const s=new THREE.Shape(),P=[[-1.35,0],[1.35,0],[1.35,.65],[1.75,.65],[1.75,.75],[1.25,.75],[1.25,.1],[-1.25,.1],[-1.25,.75],[-1.75,.75],[-1.75,.65],[-1.35,.65]];
   s.moveTo(...P[0]);P.slice(1).forEach(p=>s.lineTo(...p));s.closePath();
@@ -398,23 +393,21 @@ function fotocelula(c){const g=new THREE.Group(),bornes=bornesDe(c),V=THREE.Vect
   poeParafusos(g,bornes);
   bornes.forEach((b,k)=>plaqueta(g,nomeBorne(c,k),b.x,-4.4,.55));
   return {g,bornes,corpo:[ceu,placa,corpo,cupula,janela],extra:{ceu,sol,lua,estrelas,janela,txt}}}
-/* Relé de impulso (telerruptor, 2 módulos): à esquerda a bobina A1/A2 e a alavanca de comando manual, que sobe
-   quando o contato 1-2 está fechado; visor laranja com o contato fechado. Não é acionado à mão no jogo: cada pulso
-   na bobina inverte c.on (calculado pelo solver), e a peça só mostra o estado. */
-function releImpulso(c){const g=new THREE.Group(),bornes=bornesDe(c),{H,D,z0}=DIN,W=LARG_DIN.ri;
-  const corpo=new THREE.Mesh(new THREE.BoxGeometry(W,H,D),mat(PAL.corpoDIN));corpo.position.z=z0+D/2;g.add(corpo);
-  const frente=new THREE.Mesh(new THREE.BoxGeometry(W*.9,H*.46,.5),mat(PAL.frenteDIN));frente.position.set(0,.2,FRENTE+.25);g.add(frente);
-  const fenda=new THREE.Mesh(new THREE.BoxGeometry(1.2,1.3,.06),mat(PAL.cavidade));fenda.position.set(-1.1,.1,FRENTE+.52);g.add(fenda);
-  const pino=new THREE.Group();pino.position.set(-1.1,.1,FRENTE+.5);g.add(pino);
+/* Relé de impulso (telerruptor, 2 módulos, 3 níveis): à esquerda a bobina A1/A2, à direita o contato 1-2; no frontal
+   a alavanca de comando manual, que sobe quando o contato está fechado, e o visor laranja. Não é acionado à mão no
+   jogo: cada pulso na bobina inverte c.on (calculado pelo solver), e a peça só mostra o estado. */
+function releImpulso(c){const g=new THREE.Group(),bornes=bornesDe(c),W=LARG_DIN.ri,mal=carcaca3(g,W,bornes);
+  const fenda=new THREE.Mesh(new THREE.BoxGeometry(1.2,1.3,.06),mat(PAL.cavidade));fenda.position.set(-1.1,.45,FRENTE+.03);g.add(fenda);
+  const pino=new THREE.Group();pino.position.set(-1.1,.45,FRENTE);g.add(pino);
   const alav=new THREE.Mesh(new THREE.BoxGeometry(.9,.75,1.4),mat(PAL.alavanca));alav.position.z=.7;pino.add(alav);
   const ponta=new THREE.Mesh(new THREE.BoxGeometry(.92,.77,.45),mat(PAL.teste));ponta.position.z=1.3;pino.add(ponta);
-  const nome=rotulo('RI',1.2,.7,{cor:'#2f4a6e'});nome.position.set(1.1,1.45,FRENTE+.51);g.add(nome);
-  const bob=rotulo((typeof rede==='function'?rede().V:220)+' V~',1.9,.55,{fundo:'#2f4a6e',cor:'#f8fafc',esc:.62});bob.position.set(1.1,.6,FRENTE+.51);g.add(bob);
-  const visor=new THREE.Mesh(new THREE.BoxGeometry(1.4,.55,.12),matUnico(PAL.riOff,{emissive:0x000000}));visor.position.set(1.1,-.3,FRENTE+.52);g.add(visor);
-  const lab=rotulo((c.lab||c.id)+' · impulso',3.6,.7,{cor:'#2f4a6e'});lab.position.set(0,-1.3,FRENTE+.51);g.add(lab);
+  const nome=rotulo('RI','auto',.6,{cor:PAL.serig,esc:.72});nome.position.set(1.1,1.5,FRENTE+.02);g.add(nome);
+  const bob=rotulo((typeof rede==='function'?rede().V:220)+' V~','auto',.5,{fundo:'#2f4a6e',cor:'#f8fafc',esc:.62});bob.position.set(1.1,.8,FRENTE+.02);g.add(bob);
+  const visor=new THREE.Mesh(new THREE.BoxGeometry(1.3,.5,.12),matUnico(PAL.riOff,{emissive:0x000000}));visor.position.set(1.1,0,FRENTE+.06);g.add(visor);
+  tag(g,(c.lab||c.id)+' · impulso',0,-1.5,FRENTE+.02);
   poeParafusos(g,bornes);
-  bornes.forEach((b,k)=>plaqueta(g,nomeBorne(c,k),Math.sign(b.x)*(W/2+.7),b.y,b.z+.3));
-  return {g,bornes,corpo:[corpo,frente,alav,ponta,visor],extra:{pino,visor}}}
+  bornes.forEach((b,k)=>serigrafia(g,nomeBorne(c,k),nomeBorne(c,k),b.x,b.y+Math.sign(b.y)*.98));
+  return {g,bornes,corpo:[...mal,alav,ponta,visor],extra:{pino,visor}}}
 const CONSTRUTOR={src:fonte,fuse:disjuntor,lamp:lampada,dr,btn:botoeira,kc:contatora,ft:reletermico,sw:interruptor,sw3:interruptor,sw4:interruptor,motor:motorEl,bep,haste,boia:boiaEl,foto:fotocelula,ri:releImpulso,pilha:pilhaEl};
 
 /* ---------- estado da cena (uma bancada 3D por vez) ---------- */
