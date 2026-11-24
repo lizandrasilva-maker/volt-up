@@ -77,9 +77,11 @@ try{const q=new URLSearchParams(location.search).get('3d');if(q==='1')localStora
 VISTA3D.ligada=VISTA3D.flag;
 /* peças que a vista 3D já desenha: fonte 1F+N, disjuntor, DR e lâmpada sem PE (Laboratório 3D e Quadro Novo).
    As outras bancadas ficam no SVG. */
-VISTA3D.suporta=st=>st.comps.every(c=>(c.type==='src'&&nFases(c)===1)||c.type==='fuse'||c.type==='dr'||c.type==='btn'||(c.type==='lamp'&&c.pe!==true));
-function quer3D(st){return !!(VISTA3D.flag&&VISTA3D.ligada&&VISTA3D.vista&&VISTA3D.vista.aceita(st))}
-function pode3D(st){return VISTA3D.flag&&!VISTA3D.erro&&(VISTA3D.vista?VISTA3D.vista.aceita(st):VISTA3D.suporta(st))}
+VISTA3D.suporta=st=>st.comps.every(c=>(c.type==='src'&&nFases(c)===1)||c.type==='fuse'||c.type==='dr'||c.type==='btn'||c.type==='kc'||c.type==='ft'||(c.type==='lamp'&&c.pe!==true));
+/* o botão 🧊 3D aparece em toda bancada cujas peças já existem em 3D, com ou sem ?3d=1 (o flag só abre direto em 3D
+   e mostra os laboratórios). O Three.js é baixado no primeiro toque no botão. */
+function quer3D(st){return !!(VISTA3D.ligada&&VISTA3D.vista&&VISTA3D.vista.aceita(st))}
+function pode3D(st){return !VISTA3D.erro&&(VISTA3D.vista?VISTA3D.vista.aceita(st):VISTA3D.suporta(st))}
 /* baixa o Three.js e js/bancada3d.js só quando a 3D é pedida (import dinâmico, com o three da importmap do index.html).
    Quando termina, redesenha a bancada aberta, se ainda for a mesma. */
 function carrega3D(){
@@ -115,6 +117,25 @@ const LAB3D_BOT={id:'lab3dbot',nome:'Botoeiras 3D',sub:'Liga (NA) e desliga (NF)
       if(!(a.lamp.L1>0.04))return L()?'Apertei o verde e a lâmpada não acendeu. O caminho é fase, disjuntor, vermelho, verde, lâmpada e neutro.':'Com o LIGA apertado, L1 deveria acender: fase → DJ → BD → BL → L1 → neutro.';
       if(r(false,false).lamp.L1>0.04)return L()?'Sem apertar nada a lâmpada ficou acesa: o verde só fecha enquanto está apertado.':'Sem acionar, L1 acesa: o LIGA (NA) precisa estar em série no caminho.';
       if(r(true,true).lamp.L1>0.04)return L()?'Apertando o vermelho junto, a lâmpada deveria apagar. O vermelho vai em série, antes do verde.':'Com o DESLIGA acionado, L1 deveria apagar: o NF em série abre o circuito.';
+      return null}}]))};
+/* Laboratório 3D de comando: partida com selo usando a lâmpada como carga (o motor 3D vem depois).
+   Força: fase → DJ → K 1-2 → FT 1-2 → L1 → neutro. Comando: DJ → FT 95-96 → BD → BL → A1; A2 no neutro; selo 13-14
+   em paralelo com o BL. A conferência aperta e solta as botoeiras e desarma o FT numa cópia do circuito. */
+const LAB3D_KC={id:'lab3dkc',nome:'Contatora 3D',sub:'Comando com selo e relé térmico',kind:'bancada',tipo:'build',ic:'sobrecarga',cor:'#3d5a7a',
+  card:{leve:'Verde liga, o selo segura, vermelho desliga.',moderado:'Selo 13-14 em paralelo com o LIGA; 95-96 em série com a bobina.',full:'Relé térmico: 95-96 NF no comando; o disparo derruba a bobina e o selo.'},
+  dados:Object.fromEntries(['leve','moderado','full'].map(md=>[md,{
+    comps:[BAT(),C('DJ','fuse',100,60,0,{lab:'DJ 10A'}),C('K','kc',175,60,0),C('FT','ft',255,60,0),C('BD','btn',120,170,0,{nf:true}),C('BL','btn',190,170,0,{nf:false}),C('L1','lamp',280,170,0)],
+    real:[['DJ','🎚','disjuntor'],['K','🧲','contatora'],['FT','🌡️','relé térmico'],['BD','🔴','botoeira desliga (NF)'],['BL','🟢','botoeira liga (NA)'],['L1','💡','carga (no lugar do motor)']],
+    goal:'L1 liga no verde, continua ao soltar (selo 13-14) e desliga no vermelho ou quando o relé térmico (95-96) desarma. Força pelo 1-2 da contatora e do relé.',
+    check:st=>{const s=clone(st.comps).map(c=>{if(c.type==='fuse'||c.type==='ft')c.trip=false;if(c.type==='btn')c.pressed=false;if(c.type==='kc')c.on=false;return c});
+      const g=id=>s.find(c=>c.id===id),acesa=()=>{const r=solve(s,st.wires);if(r.short)throw 0;return r.lamp.L1>0.04};
+      try{
+        g('BL').pressed=true;if(!acesa())return L()?'Apertei o verde e a lâmpada não acendeu. O verde leva a fase até a bobina (A1); o A2 vai no neutro; o 1-2 da contatora liga a lâmpada.':'LIGA apertado e L1 apagada: o BL energiza A1-A2 e o contato 1-2 alimenta a carga.';
+        g('BL').pressed=false;if(!acesa())return L()?'Soltei o verde e a lâmpada apagou: falta o selo. Ligue o 13-14 junto com o verde.':'Soltei o LIGA e L1 apagou: falta o selo 13-14 em paralelo com o LIGA.';
+        g('BD').pressed=true;if(acesa())return L()?'Apertei o vermelho e a lâmpada não apagou. O vermelho fica antes do verde e do selo.':'DESLIGA acionado e L1 seguiu acesa: o NF vai em série, antes do LIGA e do selo.';
+        g('BD').pressed=false;if(acesa())return 'Soltei o DESLIGA e L1 voltou sozinha: o selo tem que ficar depois do DESLIGA.';
+        g('BL').pressed=true;acesa();g('BL').pressed=false;g('FT').trip=true;if(acesa())return L()?'O relé térmico desarmou e a lâmpada continuou: o 95-96 tem que estar no caminho da bobina.':'FT desarmado e L1 acesa: o 95-96 (NF) vai em série com a bobina.';
+      }catch(e){return 'Curto-circuito: tem caminho sem carga entre fase e neutro.'}
       return null}}]))};
 function encaixa3D(ctx){
   const vaga=app.querySelector('[data-vaga3d]');if(!vaga||!VISTA3D.vista)return false;

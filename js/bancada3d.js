@@ -16,14 +16,19 @@ const cssVar=(n,padrao)=>{try{return getComputedStyle(document.documentElement).
 /* ---------- bornes: posição local de cada borne, com os MESMOS índices de terms(c) no motor.js ----------
    O construtor de cada peça lê esta tabela para pôr os parafusos; nenhuma peça define borne por conta própria. */
 const DIN={W:2.4,H:8,D:4.6,z0:.75};/* módulo DIN estilizado (1 módulo = 2,4) sobre o trilho de 0,75 */
-const LARG_DIN={fuse:DIN.W,dr:2*DIN.W};/* largura de cada peça de trilho: disjuntor 1 módulo, DR bipolar 2 */
+const LARG_DIN={fuse:DIN.W,dr:2*DIN.W,kc:3*DIN.W,ft:2*DIN.W};/* largura de cada peça de trilho: disjuntor 1 módulo, DR e relé térmico 2, contatora 3 */
+const RECUO=.7;/* degrau recuado da bobina da contatora (A1/A2) */
 const FRENTE=DIN.z0+DIN.D;/* face frontal dos módulos DIN */
 const TERM3D={
   src:()=>[[-1.25,-3.6,3.3],[1.25,-3.6,3.3]],                         /* .0 = L1, .1 = N */
   fuse:()=>[[0,3.1,DIN.z0+DIN.D+.05],[0,-2.6,DIN.z0+DIN.D+.05]],      /* .0 = entrada (topo), .1 = saída (base) */
   lamp:()=>[[-1.35,-1.35,.7],[1.35,-1.35,.7]],                        /* .0 = X1, .1 = X2 */
   dr:()=>[[-1.2,3.1,FRENTE+.05],[1.2,3.1,FRENTE+.05],[-1.2,-2.6,FRENTE+.05],[1.2,-2.6,FRENTE+.05]], /* .0 = entrada F, .1 = entrada N, .2 = saída F, .3 = saída N */
-  btn:()=>[[-.85,-2.55,1.05],[.85,-2.55,1.05]]                       /* .0/.1 = contato (NA 3-4 na BL, NF 1-2 na BD) */
+  btn:()=>[[-.85,-2.55,1.05],[.85,-2.55,1.05]],                      /* .0/.1 = contato (NA 3-4 na BL, NF 1-2 na BD) */
+  /* contatora: .0/.1 = A1/A2 (bobina, no degrau recuado), .2/.3 = 1-2 (potência), .4/.5 = 13-14 (selo) */
+  kc:()=>[[-2.4,3.1,FRENTE-RECUO+.05],[-2.4,-2.6,FRENTE-RECUO+.05],[0,3.1,FRENTE+.05],[0,-2.6,FRENTE+.05],[2.4,3.1,FRENTE+.05],[2.4,-2.6,FRENTE+.05]],
+  /* relé térmico: .0/.1 = 1-2 (força), .2/.3 = 95-96 (NF de comando) */
+  ft:()=>[[-1.2,3.1,FRENTE+.05],[-1.2,-2.6,FRENTE+.05],[1.2,3.1,FRENTE+.05],[1.2,-2.6,FRENTE+.05]]
 };
 const bornesDe=c=>(TERM3D[c.type]?TERM3D[c.type](c):[]).map(p=>new THREE.Vector3(...p));
 
@@ -31,7 +36,7 @@ const bornesDe=c=>(TERM3D[c.type]?TERM3D[c.type](c):[]).map(p=>new THREE.Vector3
 const PAL={corpoDIN:0xE6E9EF,frenteDIN:0xD5DAE2,trilho:0x9AA5B4,cavidade:0x1F2933,zinco:0xCBD5E1,fenda:0x3A4048,
   fonte:0x7C8A99,fonteFrente:0x5D6B7A,lcd:0xC6D68A,regua:0x2A2F36,alavanca:0x2F4A6E,pontaAlavanca:0xE24C3F,
   painel:0x1D3550,soquete:0xD9DDE3,base:0xE6E9EF,teste:0xECC94B,armado:0x38A169,desarmado:0xE53E3E,
-  botoeiraBase:0x334155,liga:0x2F855A,desliga:0xC53030};
+  botoeiraBase:0x334155,liga:0x2F855A,desliga:0xC53030,janela:0x1F2933,emboloOff:0x94A3B8,emboloOn:0xF97316,rearme:0x3182CE,dial:0x2F4A6E};
 
 /* ---------- cache compartilhado (materiais e texturas estáticos) ----------
    Peças iguais usam o mesmo material; só o que muda com o estado (LED, bulbo, visor) tem material próprio.
@@ -175,7 +180,35 @@ function botoeira(c){const g=new THREE.Group(),bornes=bornesDe(c),nf=!!c.nf,cor=
   poeParafusos(g,bornes);
   bornes.forEach((b,k)=>plaqueta(g,nomeBorne(c,k),b.x,-3.75,.55));
   return {g,bornes,corpo:[base,colar,...partes],extra:{embolo}}}
-const CONSTRUTOR={src:fonte,fuse:disjuntor,lamp:lampada,dr,btn:botoeira};
+/* Contatora (3 módulos): degrau recuado com a bobina A1/A2 (etiqueta da tensão da rede), frente com o contato de
+   potência 1-2 e o auxiliar 13-14. Janela central com o êmbolo: com c.on (bobina energizada) ele recua e fica laranja.
+   Não é acionável à mão (só a bobina liga a contatora): o toque no corpo não muda nada. */
+const EMBOLO={z:FRENTE+.35,recuo:-.2};
+function contatora(c){const g=new THREE.Group(),bornes=bornesDe(c),{H,D,z0}=DIN,W=LARG_DIN.kc,wd=DIN.W;
+  const corpo=new THREE.Mesh(new THREE.BoxGeometry(W-wd,H,D),mat(PAL.corpoDIN));corpo.position.set(wd/2,0,z0+D/2);g.add(corpo);
+  const degrau=new THREE.Mesh(new THREE.BoxGeometry(wd,H,D-RECUO),mat(PAL.frenteDIN));degrau.position.set(-W/2+wd/2,0,z0+(D-RECUO)/2);g.add(degrau);
+  const janela=new THREE.Mesh(new THREE.BoxGeometry(2.2,1.6,.2),mat(PAL.janela));janela.position.set(1.2,.25,FRENTE+.1);g.add(janela);
+  const embolo=new THREE.Mesh(new THREE.BoxGeometry(1.2,.8,.5),mat(PAL.emboloOff));embolo.position.set(1.2,.25,EMBOLO.z);g.add(embolo);
+  const lab=rotulo(c.lab||c.id,1.6,.8,{cor:'#2f4a6e'});lab.position.set(1.2,-1.25,FRENTE+.01);g.add(lab);
+  const bob=rotulo((typeof rede==='function'?rede().V:220)+' V~',2.1,.62,{fundo:'#2f4a6e',cor:'#f8fafc',esc:.62});bob.position.set(-W/2+wd/2,.25,FRENTE-RECUO+.02);g.add(bob);
+  poeParafusos(g,bornes);
+  /* plaquetas acima dos bornes de cima e abaixo dos de baixo, deslocadas para o fio não cobrir o texto */
+  bornes.forEach((b,k)=>plaqueta(g,nomeBorne(c,k),b.x+.75,b.y+(b.y>0?1.05:-1.05),b.z+.3));
+  return {g,bornes,corpo:[corpo,degrau,janela,embolo],extra:{embolo}}}
+/* Relé térmico (2 módulos): dial de ajuste da corrente, botão azul de rearme e visor (verde armado, vermelho disparado).
+   O toque no corpo relata acionou(id): em acionarPeca isso simula a sobrecarga ou rearma (c.trip). */
+function reletermico(c){const g=new THREE.Group(),bornes=bornesDe(c),{H,D,z0}=DIN,W=LARG_DIN.ft;
+  const corpo=new THREE.Mesh(new THREE.BoxGeometry(W,H,D),mat(PAL.corpoDIN));corpo.position.z=z0+D/2;g.add(corpo);
+  const frente=new THREE.Mesh(new THREE.BoxGeometry(W*.9,H*.46,.5),mat(PAL.frenteDIN));frente.position.set(0,.2,FRENTE+.25);g.add(frente);
+  const dial=new THREE.Mesh(new THREE.CylinderGeometry(.7,.7,.3,24),mat(PAL.dial));dial.rotation.x=Math.PI/2;dial.position.set(-.95,.9,FRENTE+.65);g.add(dial);
+  const ponteiro=new THREE.Mesh(new THREE.BoxGeometry(.12,.6,.1),mat(PAL.zinco));ponteiro.position.set(-.95,1.1,FRENTE+.82);ponteiro.rotation.z=-.6;g.add(ponteiro);
+  const rearme=new THREE.Mesh(new THREE.CylinderGeometry(.45,.45,.5,20),mat(PAL.rearme));rearme.rotation.x=Math.PI/2;rearme.position.set(1,.9,FRENTE+.75);g.add(rearme);
+  const visor=new THREE.Mesh(new THREE.BoxGeometry(1.4,.55,.12),matUnico(PAL.armado,{emissive:0x0f4a24}));visor.position.set(0,-.55,FRENTE+.52);g.add(visor);
+  const lab=rotulo((c.lab||c.id)+' · 95-96',3.6,.75,{cor:'#2f4a6e'});lab.position.set(0,-1.5,FRENTE+.51);g.add(lab);
+  poeParafusos(g,bornes);
+  bornes.forEach((b,k)=>plaqueta(g,nomeBorne(c,k),Math.sign(b.x)*(W/2+.7),b.y,b.z+.3));
+  return {g,bornes,corpo:[corpo,frente,dial,rearme,visor],extra:{visor,rearme}}}
+const CONSTRUTOR={src:fonte,fuse:disjuntor,lamp:lampada,dr,btn:botoeira,kc:contatora,ft:reletermico};
 
 /* ---------- estado da cena (uma bancada 3D por vez) ---------- */
 let E=null;
@@ -191,8 +224,7 @@ function montar(no,ctx){
   const sol=new THREE.DirectionalLight(0xFFFDF5,2.2);sol.position.set(10,16,24);scene.add(sol);
   const painel=new THREE.Mesh(new THREE.BoxGeometry(37,28,.6),mat(PAL.painel));painel.position.z=-.3;scene.add(painel);
   const controls=new OrbitControls(camera,cv);controls.target.set(0,-1,2);
-  controls.minDistance=22;controls.maxDistance=70;controls.minAzimuthAngle=-.65;controls.maxAzimuthAngle=.65;controls.minPolarAngle=.95;controls.maxPolarAngle=1.95;
-  controls.screenSpacePanning=true;controls.update();
+  controls.screenSpacePanning=true;
   /* contorno com o --contorno do jogo (mesma lineart do SVG) */
   const contorno=new THREE.Color(cssVar('--contorno','#070c16'));
   const efeito=new OutlineEffect(renderer,{defaultThickness:.0045,defaultColor:[contorno.r,contorno.g,contorno.b],defaultAlpha:1});
@@ -207,7 +239,13 @@ function montar(no,ctx){
   construir(ctx.st);
   /* caixa que envolve as peças desta bancada: a câmera enquadra o que existe (cada fase tem um arranjo) */
   E.caixa=new THREE.Box3();Object.values(E.pecas).forEach(p=>E.caixa.expandByObject(p.g));
+  limites(controls);controls.update();
   controls.addEventListener('change',pede);
+  controls.addEventListener('start',()=>{if(E&&E.livre)controls.autoRotate=false});/* tocou: para o giro automático */
+  /* modo 360°: solta a câmera para dar a volta na instalação; enquanto ativo, nada na bancada muda */
+  E.b360=document.createElement('button');E.b360.type='button';E.b360.className='btn vbtn b360';E.b360.setAttribute('aria-pressed','false');E.b360.textContent='↻ 360°';
+  E.b360.addEventListener('click',()=>modo360(!E.livre));no.appendChild(E.b360);
+  E.dica=document.createElement('div');E.dica.className='dica360';E.dica.hidden=true;E.dica.textContent='Arraste para dar a volta na instalação. Para montar, toque em ✋.';no.appendChild(E.dica);
   no.addEventListener('pointerdown',aoTocar,true);/* captura: decide antes do OrbitControls */
   E.ro=new ResizeObserver(()=>{if(dimensiona())pede()});E.ro.observe(no);
 }
@@ -227,16 +265,23 @@ function construir(st){
 function dimensiona(){const w=Math.max(260,Math.round(E.no.clientWidth||E.no.parentElement&&E.no.parentElement.clientWidth||340)),h=Math.round(Math.min(w*.78,520));
   if(w===E.tamanho[0]&&h===E.tamanho[1])return false;E.tamanho=[w,h];E.renderer.setSize(w,h);E.camera.aspect=w/h;E.camera.updateProjectionMatrix();enquadra();return true}
 /* põe a câmera em 3/4 frontal-superior, longe o bastante para caber todas as peças com folga (reenquadra quando o tamanho muda) */
+/* modo de trabalho: a câmera gira pouco, para o quadro nunca ficar de costas */
+function limites(c){c.minAzimuthAngle=-.65;c.maxAzimuthAngle=.65;c.minPolarAngle=.95;c.maxPolarAngle=1.95}
+function modo360(on){if(!E)return;E.livre=!!on;const c=E.controls;
+  if(E.livre){c.minAzimuthAngle=-Infinity;c.maxAzimuthAngle=Infinity;c.minPolarAngle=.08;c.maxPolarAngle=Math.PI-.08;c.maxDistance=(E.dist||40)*2.2;c.autoRotate=!reduz();c.autoRotateSpeed=2.4;escondeBadge()}
+  else{c.autoRotate=false;limites(c);enquadra()}
+  E.b360.setAttribute('aria-pressed',String(E.livre));E.b360.textContent=E.livre?'✋ Montar':'↻ 360°';E.dica.hidden=!E.livre;E.no.classList.toggle('livre',E.livre);pede()}
 function enquadra(){if(!E.caixa||E.caixa.isEmpty())return;const tam=E.caixa.getSize(new THREE.Vector3()),c=E.caixa.getCenter(new THREE.Vector3());
   const meia=Math.tan(E.camera.fov*Math.PI/360),d=Math.max(tam.y*1.25,tam.x*1.15/E.camera.aspect)/2/meia+tam.z;
   E.camera.position.copy(c).addScaledVector(new THREE.Vector3(.13,.2,1).normalize(),d);E.controls.target.copy(c);
-  E.controls.minDistance=d*.45;E.controls.maxDistance=d*1.6;E.controls.update()}
+  E.dist=d;E.controls.minDistance=d*.45;E.controls.maxDistance=d*(E.livre?2.2:1.6);E.controls.update()}
 
 /* ---------- desenho sob demanda: só há laço enquanto alguma animação está rodando ---------- */
 function pede(){if(E&&!E.pedido)E.pedido=requestAnimationFrame(quadro)}
 function quadro(){if(!E)return;E.pedido=0;const agora=performance.now();
   E.anim=E.anim.filter(a=>{const k=Math.min(1,(agora-a.t0)/a.dur);a.passo(k,agora);return k<1});
-  E.efeito.render(E.scene,E.camera);if(E.anim.length)pede()}
+  const gira=E.livre&&E.controls.autoRotate;if(gira)E.controls.update();/* giro automático do 360° */
+  E.efeito.render(E.scene,E.camera);if(E.anim.length||gira)pede()}
 const anima=(dur,passo)=>{if(reduz()){passo(1,performance.now());return}E.anim.push({t0:performance.now(),dur,passo});pede()};
 
 /* ---------- fios ----------
@@ -288,6 +333,10 @@ function atualizar(ctx){
     /* disjuntor e DR: a alavanca (no DR, as duas acopladas) cai quando c.trip */
     if(c.type==='fuse'||c.type==='dr'){const alvo=c.trip?.5:-.5;if(p.ang!==alvo){const de=p.extra.pino.rotation.x;p.ang=alvo;anima(180,k=>{p.extra.pino.rotation.x=de+(alvo-de)*k})}else p.extra.pino.rotation.x=alvo}
     /* botoeira: o êmbolo afunda enquanto c.pressed (estado do acionarPeca) e volta quando ele cai */
+    /* contatora: o êmbolo recua e fica laranja enquanto a bobina está energizada (c.on, calculado pelo solver) */
+    if(c.type==='kc'){const on=!!c.on;if(p.on!==on){p.on=on;const e=p.extra.embolo,de=e.position.z,para=EMBOLO.z+(on?EMBOLO.recuo:0);e.material=mat(on?PAL.emboloOn:PAL.emboloOff);anima(120,k=>{e.position.z=de+(para-de)*k})}}
+    /* relé térmico: visor vermelho e botão de rearme saltado quando disparado (c.trip) */
+    if(c.type==='ft'){p.extra.visor.material.color.setHex(c.trip?PAL.desarmado:PAL.armado);p.extra.visor.material.emissive.setHex(c.trip?0x6b1a12:0x0f4a24);p.extra.rearme.position.z=FRENTE+(c.trip?1.05:.75)}
     if(c.type==='btn'){const alvo=c.pressed?BOTAO.afunda:0;if(p.emb!==alvo){const de=p.extra.embolo.position.z,para=BOTAO.z+alvo;p.emb=alvo;anima(90,k=>{p.extra.embolo.position.z=de+(para-de)*k})}}
     if(c.type==='dr'){p.extra.visor.material.color.setHex(c.trip?PAL.desarmado:PAL.armado);p.extra.visor.material.emissive.setHex(c.trip?0x6b1a12:0x0f4a24)}
     if(c.type==='src'){p.extra.led.material.color.setHex(c.trip?0xe24c3f:0x43b05c);p.extra.led.material.emissive.setHex(c.trip?0x7a1d12:0x1f7a36);
@@ -320,7 +369,7 @@ function alvoEm(x,y){const r=E.cv.getBoundingClientRect();if(!r.width)return nul
 function pontoNoPlano(x,y){const r=E.cv.getBoundingClientRect(),p=new THREE.Vector2((x-r.left)/r.width*2-1,-((y-r.top)/r.height)*2+1);
   E.raycaster.setFromCamera(p,E.camera);const q=new THREE.Vector3();return E.raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,0,1),-3),q)?q:null}
 function aoTocar(e){
-  if(!E||!E.ctx||(e.button!==undefined&&e.button>0))return;
+  if(!E||!E.ctx||e.target!==E.cv||E.livre||(e.button!==undefined&&e.button>0))return;
   const alvo=alvoEm(e.clientX,e.clientY);if(!alvo)return;/* espaço vazio: girar, aproximar e arrastar a câmera */
   e.stopPropagation();e.preventDefault();
   const ctl=E.ctx.ctl,ed=E.ctx.editavel!==false,x0=e.clientX,y0=e.clientY;let arrastando=false;
@@ -344,7 +393,7 @@ function destruir(){if(!E)return;
   if(E.pedido)cancelAnimationFrame(E.pedido);E.ro.disconnect();E.no.removeEventListener('pointerdown',aoTocar,true);E.controls.dispose();
   E.scene.traverse(o=>{if(o.geometry)o.geometry.dispose()});
   if(CACHE){CACHE.mat.forEach(m=>m.dispose());CACHE.tex.forEach(t=>t.dispose());CACHE.unicos.forEach(m=>{if(m.map)m.map.dispose();m.dispose()});CACHE=null}
-  clearTimeout(E.badgeT);E.badge.remove();
+  clearTimeout(E.badgeT);E.badge.remove();E.b360.remove();E.dica.remove();
   E.renderer.dispose();try{E.renderer.forceContextLoss()}catch(e){}E.cv.remove();E=null}
 
 /* ---------- inspeção para os testes ---------- */
@@ -369,6 +418,11 @@ const debug={
   telaTeste:id=>naTela(E.pecas[id].extra.teste.getWorldPosition(new THREE.Vector3())),
   visorDR:id=>E.pecas[id].extra.visor.material.color.getHex()===PAL.desarmado?'desarmado':'armado',
   emboloAlvo:id=>E.pecas[id].emb||0,
+  emboloKC:id=>({on:!!E.pecas[id].on,cor:E.pecas[id].extra.embolo.material.color.getHexString()}),
+  visorFT:id=>E.pecas[id].extra.visor.material.color.getHex()===PAL.desarmado?'disparado':'armado',
+  livre:()=>!!E.livre,
+  azimute:()=>[E.controls.minAzimuthAngle,E.controls.maxAzimuthAngle],
+  botao360:()=>E.b360,
   badge:()=>({visivel:!E.badge.hidden,texto:E.badge.textContent}),
   plaquetas:pid=>{const o=[];E.pecas[pid].g.traverse(m=>{if(m.userData.plaqueta)o.push({t:m.userData.plaqueta,incl:m.rotation.x,alt:m.geometry.parameters.height})});return o},
   nomeBorne:(pid,k)=>nomeBorne(E.pecas[pid].c,k),
