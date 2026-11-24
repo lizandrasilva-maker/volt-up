@@ -231,8 +231,9 @@ let pistas={};
       confere(C,p.multi===true&&p.volta3d===true,'do 2D dá para abrir o diagrama Multifilar (SVG) e voltar para a 3D girando',JSON.stringify(p));}
      confere(C,(b.rolagem||{}).ok===true,'tocar numa peça com a bancada no fim da página não faz a tela subir (a rolagem fica onde estava)',JSON.stringify(b.rolagem));
      {const pc=b.pontos||{};
-      confere(C,pc.inicio===true&&pc.completo===true&&pc.sobra===true,'pontos de conexão: cada borne do circuito tem anel e contador ligados/esperados (0/1 → verde ao completar, laranja com fio a mais)');
-      confere(C,pc.fullSoAnel===true,'no nível full os pontos aparecem só com o anel, sem o número de condutores');}
+      confere(C,pc.soAnelAntes===true,'pontos de conexão: antes do primeiro Verificar aparece só o anel (sem número)');
+      confere(C,pc.inicio===true&&pc.completo===true&&pc.sobra===true,'depois de um Verificar com erro, cada borne mostra o contador ligados/esperados (0/1 → verde ao completar, laranja com fio a mais)');
+      confere(C,pc.fullSoAnel===true,'no nível full os pontos aparecem só com o anel, sem o número, mesmo depois de errar');}
      {const l=b.loteC||{};
       for(const [nome,o] of [['Escada',l.escada||{}],['Corredor',l.corredor||{}]]){
         confere(C,o.em3d===true&&o.term3d===true&&o.plaquetas===true&&o.niveis===true,nome+' abre em 3D nos 3 níveis, com os bornes e nomes do motor.js e do 2D');
