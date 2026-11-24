@@ -336,7 +336,12 @@ body[data-cap="cap3"] .vn::before{background:
 body.leve .vn-box{font-size:17px}
 .vn-caret{position:absolute;right:10px;bottom:4px;color:var(--amber);font-size:12px;animation:bob 1s infinite}
 @keyframes bob{50%{transform:translateY(3px)}}
-.vn-ctrl{display:flex;gap:6px}.vn-ctrl .btn{flex:1;min-height:42px;padding:6px 8px}.vn-ctrl .btn.main{flex:1.4}
+/* barra de controles: linha própria embaixo da cena (nunca por cima do personagem), fundo sólido e botões opacos */
+.vn-ctrl{grid-column:1/-1;position:relative;z-index:3;display:flex;gap:6px;justify-content:flex-end;padding:10px 12px 12px;background:var(--bg);border-top:2px solid var(--contorno)}
+.vn-ctrl .btn{flex:1;max-width:220px;min-height:44px;padding:6px 8px}.vn-ctrl .btn.main{flex:1.4;max-width:300px}
+.vn-ctrl .btn.ghost{background:var(--panel2)}
+.vn{grid-template-rows:1fr auto}
+.vn-fig{grid-row:1}.vn-side{grid-row:1}
 /* Ficha, carreira, plantão, conquistas, respiro */
 .big{font-family:var(--display);font-weight:400;font-size:clamp(28px,8.5vw,40px);line-height:1.02;letter-spacing:.01em;text-wrap:balance;margin:0}
 .big em{font-style:normal;color:var(--amber)}
