@@ -46,6 +46,10 @@ body.leve .btn.sm{min-height:46px}
 :focus-visible{outline:3px solid var(--neutro);outline-offset:2px}
 .row{display:flex;gap:10px;flex-wrap:wrap}
 .row>.btn{flex:1 1 130px}
+/* desfazer / refazer: botões só com o ícone, ao lado de Limpar fios */
+.row>.btn.icone{flex:0 0 52px;min-width:52px;padding:0;font-size:22px;line-height:1}
+.row>.btn.icone:disabled{opacity:.35}
+.row:has(.icone)>.btn:not(.icone){flex-basis:96px}
 
 .hero{display:flex;flex-direction:column;gap:10px;padding-top:18px}
 .hero .bolt{color:var(--amber)}
@@ -739,6 +743,10 @@ svg.curto{animation:shake .32s 2}
 .bctl-esq{display:flex;gap:6px;align-items:flex-end}
 .bench3d{padding:0;overflow:hidden;min-height:240px;background:#13283c}
 .bench3d .vaga3d{min-height:260px}
+/* enquanto a 3D baixa: mesmo tamanho da cena (bancada + faixa do poste), para nada pular quando ela aparece */
+.carrega3d{aspect-ratio:1/1.11;max-height:680px;display:grid;place-items:center;color:var(--muted);font:800 14px var(--body)}
+.carrega3d.cc{aspect-ratio:1/.78}
+@media (prefers-reduced-motion:no-preference){.carrega3d{animation:pisca3d 1.2s ease-in-out infinite alternate}@keyframes pisca3d{from{opacity:.45}to{opacity:1}}}
 .cena3d{position:relative;width:100%}
 .cena3d canvas{display:block;width:100%;height:auto;touch-action:none;-webkit-user-select:none;user-select:none;border-radius:0 0 16px 16px}
 .bench3d .bctl{top:calc(var(--faixa3d,0px) + 8px);bottom:auto;left:auto;right:8px;justify-content:flex-end}
