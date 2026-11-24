@@ -90,6 +90,33 @@ const coresDoFioCSS=k=>(CORES[k].c.match(/var\(--[\w-]+\)|#[0-9a-f]{3,8}\b/gi)).
    aciona('DR');aciona('DR');tap('L1.1');tap('B.1');
    svg().querySelector('[data-w="5"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));aciona('DR');
    q.aprovouSvg=/aprovado/i.test(verificar());q.equivalente=s3===sig(BANCADA.st);q.s3=s3;q.ss=sig(BANCADA.st);}
+  /* ---- Botoeiras 3D (BL liga NA, BD desliga NF) e legibilidade dos bornes ---- */
+  {S.mode='moderado';const bt=R.botoeiras={},tb=()=>comARede(LAB3D_BOT.dados.moderado),espera=ms=>new Promise(r=>setTimeout(r,ms));
+   const sig=st=>J({fios:st.wires.map(w=>w.a+'-'+w.b+':'+w.cor),apertadas:st.comps.filter(c=>c.type==='btn').map(c=>!!c.pressed)});
+   const peca=id=>BANCADA.st.comps.find(c=>c.id===id);
+   VISTA3D.ligada=true;runBuild(LAB3D_BOT,tb());
+   bt.em3d=!!document.querySelector('.bench3d canvas');bt.term3d=BANCADA.st.comps.every(c=>D.bornesTERM3D(c)===terms(c).length);
+   /* plaquetas: uma por borne, com o nome do 2D, inclinadas para a câmera e com altura legível */
+   const todas=['B','DJ','BD','BL','L1'].flatMap(id=>D.plaquetas(id));
+   bt.plaquetas=J(D.plaquetas('BL').map(p=>p.t))==='["3","4"]'&&J(D.plaquetas('BD').map(p=>p.t))==='["1","2"]'&&todas.length===10&&todas.every(p=>p.incl<0&&p.alt>=1);
+   bt.nomes2D=['B','DJ','L1','BL'].every(id=>{const c=peca(id);return terms(c).every((_,k)=>D.nomeBorne(id,k)===REAL_TERMS[c.type][k].n)});
+   cor('fase');toque('B.0');toque('DJ.0');toque('DJ.1');toque('BD.0');toque('BD.1');toque('BL.0');
+   /* arraste de BL.1 até L1.0: o badge acompanha o dedo com origem → alvo e some ao soltar */
+   {const p=D.tela('BL.1'),q=D.tela('L1.0');pe('pointerdown',p,cv());bt.badgeToque=D.badge();
+    pe('pointermove',{x:(p.x+q.x)/2,y:(p.y+q.y)/2+20});pe('pointermove',q);bt.badgeArraste=D.badge();pe('pointerup',q);bt.badgeSoltou=D.badge()}
+   cor('neutro');toque('L1.1');toque('B.1');
+   bt.apagada=D.brilho('L1')<0.05&&D.emboloAlvo('BL')===0;
+   toque('BL');bt.apertouBL=peca('BL').pressed===true&&D.brilho('L1')>0.5&&D.emboloAlvo('BL')<-0.2;
+   await espera(800);bt.soltouBL=peca('BL').pressed===false&&D.brilho('L1')<0.05&&D.emboloAlvo('BL')===0;
+   toque('BL');toque('BD');bt.bdCorta=peca('BL').pressed===true&&peca('BD').pressed===true&&D.emboloAlvo('BD')<-0.2&&D.brilho('L1')<0.05;
+   await espera(800);bt.soltaram=peca('BL').pressed===false&&peca('BD').pressed===false;
+   bt.aprovou3d=/aprovado/i.test(verificar());const s3=sig(BANCADA.st);
+   VISTA3D.ligada=false;runBuild(LAB3D_BOT,tb());
+   const tap=t=>{svg().querySelector('[data-t="'+t+'"]').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));window.dispatchEvent(new PointerEvent('pointerup'))};
+   const aciona=id=>svg().querySelector('[data-sw="'+id+'"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));
+   cor('fase');tap('B.0');tap('DJ.0');tap('DJ.1');tap('BD.0');tap('BD.1');tap('BL.0');tap('BL.1');tap('L1.0');cor('neutro');tap('L1.1');tap('B.1');
+   aciona('BL');bt.svgApertou=peca('BL').pressed===true;await espera(800);aciona('BL');aciona('BD');await espera(800);
+   bt.aprovouSvg=/aprovado/i.test(verificar());bt.equivalente=s3===sig(BANCADA.st);bt.s3=s3;bt.ss=sig(BANCADA.st);}
   /* sair da bancada libera o WebGL */
   showMap();await new Promise(r=>setTimeout(r,0));R.liberou=VISTA3D.no===null;
 }catch(e){R.ERRO=e.message+' '+(e.stack||'')}
