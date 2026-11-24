@@ -30,6 +30,7 @@ Padroniza o visual e a construção das peças 3D da bancada (`js/bancada3d.js`)
 10. **Emendas com Wago (`poeWagos()`).** Quando 2 ou mais fios chegam ao mesmo borne, um conector de alavancas (corpo `#DDE3EA`, uma alavanca laranja `#F28C28` por fio e mais uma para o borne) aparece no ponto em que os caminhos se separam, na borda da peça.
 11. **Fonte 1F/2F/3F+N.** Tocar na fonte (com a proteção armada) abre o seletor HTML `1F+N · 2F+N · 3F+N`; a escolha vai por `acionou(id, 'fases:n')` e a regra `aplicaFases()` (`js/fases.js`, a mesma da Oficina) troca as fases e tira os fios de bornes que deixaram de existir. A peça é refeita (`refazPeca`) com a régua L1 L2 L3 N, como no 2D, e o visor mostra `V/FF V~`.
 12. **Dois toques rápidos no espaço vazio** devolvem a câmera ao enquadramento (sem botão).
+13. **Zoom no ponto (`zoomNoPonto`).** Pinça e roda do mouse aproximam câmera e alvo na direção do ponto entre os dedos (ou do cursor), que fica parado na tela; o zoom do OrbitControls fica desligado (o `zoomToCursor` do r160 mistura `pageX` com a posição na janela e não conhece a faixa do caminho da energia no alto do canvas). Um segundo dedo cancela o toque em andamento (nada de fio por engano). Distância mínima `0,18 ×` a de enquadramento.
 8. **360° sempre ligado (sem botão).** A câmera gira livre o tempo todo (`limites()`: azimute sem limite, polar quase completo). Arrastar no espaço vazio gira; tocar em borne, peça ou fio continua montando (toque sem movimento vai para o `ctl`). Na bancada fica só o botão "🔌 2D".
 
 ---

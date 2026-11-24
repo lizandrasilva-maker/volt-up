@@ -385,10 +385,16 @@ function montar(no,ctx){
   /* caixa que envolve as peças desta bancada: a câmera enquadra o que existe (cada fase tem um arranjo) */
   E.caixa=new THREE.Box3();Object.values(E.pecas).forEach(p=>E.caixa.expandByObject(p.g));
   limites(controls);controls.update();
+  /* o zoom é nosso (zoomNoPonto): o OrbitControls aproxima sempre o centro; aqui o ponto entre os dedos fica parado */
+  controls.enableZoom=false;
   controls.addEventListener('change',pede);
   /* modo 360°: solta a câmera para dar a volta na instalação; enquanto ativo, nada na bancada muda */
 
+  E.ponteiros=new Map();E.pinca=null;
+  no.addEventListener('pointerdown',rastreia,true);/* antes de aoTocar: conta os dedos na tela */
   no.addEventListener('pointerdown',aoTocar,true);/* captura: decide antes do OrbitControls */
+  window.addEventListener('pointermove',moveDedos);window.addEventListener('pointerup',soltaDedo);window.addEventListener('pointercancel',soltaDedo);
+  cv.addEventListener('wheel',rodaMouse,{passive:false});
   E.ro=new ResizeObserver(()=>{if(dimensiona())pede()});E.ro.observe(no);
 }
 function construir(st){
@@ -421,7 +427,7 @@ function limites(c){c.minAzimuthAngle=-Infinity;c.maxAzimuthAngle=Infinity;c.min
 function enquadra(){if(!E.caixa||E.caixa.isEmpty())return;const tam=E.caixa.getSize(new THREE.Vector3()),c=E.caixa.getCenter(new THREE.Vector3());
   const meia=Math.tan(E.camera.fov*Math.PI/360),d=Math.max(tam.y*1.25,tam.x*1.15/E.camera.aspect)/2/meia+tam.z;
   E.camera.position.copy(c).addScaledVector(new THREE.Vector3(.13,.2,1).normalize(),d);E.controls.target.copy(c);
-  E.dist=d;E.controls.minDistance=d*.45;E.controls.maxDistance=d*2.2;E.controls.update()}
+  E.dist=d;E.controls.minDistance=d*.18;E.controls.maxDistance=d*2.2;E.controls.update()}
 
 /* ---------- desenho sob demanda: só há laço enquanto alguma animação está rodando ---------- */
 function pede(){if(E&&!E.pedido)E.pedido=requestAnimationFrame(quadro)}
@@ -584,20 +590,40 @@ function alvoEm(x,y){const r=areaBancada();if(!r.width||y<r.top)return null;
   const u=it[0].object.userData;return u.peca?{peca:u.peca,lado:u.lado}:u.w!==undefined?{w:u.w}:null}
 function pontoNoPlano(x,y){const r=areaBancada();
   E.raycaster.setFromCamera(ndc(x,y,r),E.camera);const q=new THREE.Vector3();return E.raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,0,1),-3),q)?q:null}
+/* ---------- zoom no ponto ----------
+   Aproxima (ou afasta) câmera e alvo na direção de um ponto P da bancada: P fica parado na tela e o resto cresce
+   em volta. Assim dá para chegar perto de uma peça na borda. Pinça com dois dedos e roda do mouse usam isto;
+   girar (um dedo) e arrastar (dois dedos) continuam com o OrbitControls. */
+function pontoDaTela(x,y){const r=areaBancada();if(!r.width||y<r.top||y>r.top+r.height)return null;E.raycaster.setFromCamera(ndc(x,y,r),E.camera);
+  const q=new THREE.Vector3();return E.raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,0,1),-2),q)?q:null}
+function zoomNoPonto(x,y,fator){const P=pontoDaTela(x,y);if(!P)return;const c=E.controls,cam=E.camera.position,alvo=c.target,d=cam.distanceTo(alvo);
+  const f=Math.min(Math.max(fator,c.minDistance/d),c.maxDistance/d);if(Math.abs(f-1)<1e-4)return;
+  cam.sub(P).multiplyScalar(f).add(P);alvo.sub(P).multiplyScalar(f).add(P);c.update();pede()}
+function rodaMouse(e){if(!E)return;e.preventDefault();zoomNoPonto(e.clientX,e.clientY,Math.exp(e.deltaY*.0015))}
+function rastreia(e){if(!E)return;E.ponteiros.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(E.ponteiros.size===2){const [a,b]=[...E.ponteiros.values()];E.pinca={d:Math.hypot(a.x-b.x,a.y-b.y)};escondeBadge();fechaFases()}}
+function moveDedos(e){if(!E||!E.ponteiros.has(e.pointerId))return;E.ponteiros.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(E.pinca&&E.ponteiros.size===2){const [a,b]=[...E.ponteiros.values()],d=Math.hypot(a.x-b.x,a.y-b.y);
+    if(d>10&&E.pinca.d>10)zoomNoPonto((a.x+b.x)/2,(a.y+b.y)/2,E.pinca.d/d);E.pinca.d=d}}
+function soltaDedo(e){if(!E)return;E.ponteiros.delete(e.pointerId);if(E.ponteiros.size<2)E.pinca=null}
+
 function aoTocar(e){
   if(!E||!E.ctx||e.target!==E.cv||(e.button!==undefined&&e.button>0))return;
+  if(E.ponteiros.size>1)return;/* segundo dedo: é gesto (pinça ou arraste), não toque em peça */
   fechaFases();
   const alvo=alvoEm(e.clientX,e.clientY);if(!alvo){toqueVazio(e);return}/* espaço vazio: girar, aproximar e arrastar a câmera */
   e.stopPropagation();e.preventDefault();
-  const ctl=E.ctx.ctl,ed=E.ctx.editavel!==false,x0=e.clientX,y0=e.clientY;let arrastando=false;
+  const ctl=E.ctx.ctl,ed=E.ctx.editavel!==false,x0=e.clientX,y0=e.clientY;let arrastando=false,cancelado=false;
+  /* se um segundo dedo chegar (pinça), o toque em andamento é cancelado: nada de fio nem acionamento */
+  const virouGesto=()=>{if(cancelado||!E||E.ponteiros.size<2)return cancelado;cancelado=true;if(E.fioTmp){tiraMalha(E.fioTmp);E.fioTmp=null}escondeBadge();pede();return true};
   if(alvo.t)mostraBadge(x0,y0,textoBorne(alvo.t));
-  const move=ev=>{if(!alvo.t||!ed)return;if(!arrastando&&Math.hypot(ev.clientX-x0,ev.clientY-y0)<10)return;arrastando=true;
+  const move=ev=>{if(virouGesto()||!alvo.t||!ed)return;if(!arrastando&&Math.hypot(ev.clientX-x0,ev.clientY-y0)<10)return;arrastando=true;
     const sob=alvoEm(ev.clientX,ev.clientY);mostraBadge(ev.clientX,ev.clientY,textoBorne(alvo.t)+' → '+(sob&&sob.t&&sob.t!==alvo.t?textoBorne(sob.t):'…'));
     const q=pontoNoPlano(ev.clientX,ev.clientY);if(!q)return;if(E.fioTmp)tiraMalha(E.fioTmp);E.fioTmp=malhaFio(E.bornes[alvo.t],q,E.ctx.cor||'fase');E.scene.add(E.fioTmp);pede()};
   const up=ev=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',up);
     if(E&&E.fioTmp){tiraMalha(E.fioTmp);E.fioTmp=null;pede()}
     if(E)escondeBadge(arrastando||ev.type==='pointercancel'?0:700);/* toque simples: o nome fica um instante */
-    if(ev.type==='pointercancel')return;
+    if(ev.type==='pointercancel'||cancelado)return;
     if(arrastando){const fim=alvoEm(ev.clientX,ev.clientY);ctl.arrastouFio(alvo.t,fim&&fim.t||null);return}
     if(alvo.t){if(ed)ctl.tocouBorne(alvo.t)}
     else if(alvo.peca){const pc=E.pecas[alvo.peca];if(pc&&pc.c.type==='src'&&!pc.c.trip&&ed)abreFases(pc.c,ev.clientX,ev.clientY);else ctl.acionou(alvo.peca,alvo.lado||0)}
@@ -607,7 +633,8 @@ function aoTocar(e){
 
 /* libera tudo: geometrias da cena, materiais e texturas do cache e o contexto WebGL */
 function destruir(){if(!E)return;
-  if(E.pedido)cancelAnimationFrame(E.pedido);E.ro.disconnect();E.no.removeEventListener('pointerdown',aoTocar,true);E.controls.dispose();
+  if(E.pedido)cancelAnimationFrame(E.pedido);E.ro.disconnect();E.no.removeEventListener('pointerdown',aoTocar,true);E.no.removeEventListener('pointerdown',rastreia,true);
+  window.removeEventListener('pointermove',moveDedos);window.removeEventListener('pointerup',soltaDedo);window.removeEventListener('pointercancel',soltaDedo);E.cv.removeEventListener('wheel',rodaMouse);E.controls.dispose();
   E.scene.traverse(o=>{if(o.geometry)o.geometry.dispose()});E.faixa.scene.traverse(o=>{if(o.geometry)o.geometry.dispose()});
   if(CACHE){CACHE.mat.forEach(m=>m.dispose());CACHE.tex.forEach(t=>t.dispose());CACHE.unicos.forEach(m=>{if(m.map)m.map.dispose();m.dispose()});CACHE=null}
   clearTimeout(E.badgeT);E.badge.remove();fechaFases();
@@ -647,6 +674,7 @@ const debug={
   wagos:()=>(E.wagos||[]).map(w=>w.userData.wago+':'+w.userData.vias).sort(),
   seletorFases:()=>E.seletor,
   camera:()=>E.camera.position.toArray().map(v=>+v.toFixed(2)),
+  distancia:()=>E.camera.position.distanceTo(E.controls.target),
   giraCamera:()=>{E.camera.position.applyAxisAngle(new THREE.Vector3(0,1,0),1.1);E.camera.lookAt(E.controls.target);E.controls.update()},
   tecla:id=>E.pecas[id].tec,
   motorGira:id=>E.pecas[id].gira||0,

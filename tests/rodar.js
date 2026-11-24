@@ -216,6 +216,9 @@ let pistas={};
       confere(C,Array.isArray(e.wagos)&&e.wagos.length>0&&JSON.stringify(e.wagos)===JSON.stringify(e.wagosEsperados),'conector Wago em toda emenda (2 ou mais fios no mesmo borne), com uma alavanca por fio e mais uma para o borne',JSON.stringify(e.wagos));
       confere(C,e.seletor===true&&e.tres===true&&e.ligouL2===true&&e.volta1===true,'fonte: tocar abre o seletor 1F/2F/3F+N; 3F+N cria L2 e L3 (plaquetas L1 N L2 L3); voltar a 1F+N tira os fios de L2/L3');
       confere(C,e.reenquadra===true,'dois toques rápidos no espaço vazio devolvem a câmera ao enquadramento da bancada');}
+     {const z=b.zoom||{};
+      confere(C,z.roda===true&&z.rodaFixa===true,'roda do mouse sobre um parafuso perto da borda: aproxima e o parafuso fica no mesmo lugar da tela',z.desvioRoda+' px');
+      confere(C,z.pinca===true&&z.pincaSemFio===true,'pinça começando em cima de um parafuso: aproxima na direção dos dedos e não cria fio',z.desvioPinca+' px');}
      confere(C,b.liberou===true,'ao sair da bancada, o WebGL é liberado');}
     /* Fonte e aterramento: a fonte não tem PE; o terra vem da haste pelo BEP */
     const fa=t.fonte||{};
