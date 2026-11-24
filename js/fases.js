@@ -289,7 +289,9 @@ function runBuild(p,task){
     tirouFio:i=>{if(won||!st.wires[i])return;hist.marca();st.wires.splice(i,1);msg=null;render()}
   };
   const bancadaId=BANCADA_ID;BANCADA.st=st;
-  const pontos=pontosDaMontagem(p.id,st);/* leve e moderado: contador ligados/esperados; full: só o anel */
+  /* pontos de conexão: o anel aparece desde o começo; o contador ligados/esperados só depois do primeiro Verificar
+     com erro (nível leve e moderado). No full, só o anel. */
+  const pontos=pontosDaMontagem(p.id,st);
   const render=()=>{
     const r=resolve(st.comps,st.wires),R=vistaReal(),v3=quer3D(st),p3=pode3D(st),yAntes=benchY,estRede=curto?'short':Object.values(r.lamp||{}).some(b=>b>.04)?'on':'',aguarda=!v3&&p3&&VISTA3D.ligada&&VISTA3D.baixavel&&!VISTA3D.vista&&!VISTA3D.erro;
     VISTA3D.redesenha={id:bancadaId,f:render};
@@ -315,7 +317,7 @@ function runBuild(p,task){
     /* a tela é redesenhada inteira: até a cena 3D voltar para a vaga, a página fica mais curta e o navegador puxa
        a rolagem para cima. Depois de encaixar a cena, devolve a rolagem de antes do toque (a bancada não "sobe"). */
     const reencaixa=()=>{if(drawnAntes&&Math.abs(window.scrollY-yAntes)>1){window.scrollTo(0,yAntes)}benchY=window.scrollY};
-    if(!aguarda&&!(v3&&encaixa3D({st,res:r,sel,curto:curtoAgora,cor,editavel:!won,ctl,bancada:bancadaId,girar:!VISTA3D.plano&&!!VISTA3D.girar,plano:!!VISTA3D.plano,cc,pontos,dica:S.mode==='full'?'ponto':'conta'})))
+    if(!aguarda&&!(v3&&encaixa3D({st,res:r,sel,curto:curtoAgora,cor,editavel:!won,ctl,bancada:bancadaId,girar:!VISTA3D.plano&&!!VISTA3D.girar,plano:!!VISTA3D.plano,cc,pontos,dica:S.mode!=='full'&&tries>0?'conta':'ponto'})))
       ligaSVGBancada(app.querySelector('.bench svg'),ctl,{zm,pos:t=>tpos(st.comps,t),centroX:id=>{const c=st.comps.find(x=>x.id===id);return R?RP(c)[0]:c.x}});
     reencaixa();
     const c=document.getElementById('clr');if(c)c.onclick=()=>{if(st.wires.length)hist.marca();st.wires=[];sel=null;msg=null;render()};

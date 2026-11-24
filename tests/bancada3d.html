@@ -287,11 +287,13 @@ const coresDoFioCSS=k=>(CORES[k].c.match(/var\(--[\w-]+\)|#[0-9a-f]{3,8}\b/gi)).
   /* ---- Pontos de conexão: anel e contador ligados/esperados em cada borne do circuito ---- */
   {const pc=R.pontos={},p=phaseById('escada');S.mode='leve';S.seen['leve:escada:cena']=1;VISTA3D.ligada=true;VISTA3D.girar=false;runBuild(p,comARede(p.dados.leve));
    const sol=testeSol('escada'),esp={};sol.forEach(w=>[w.a,w.b].forEach(t=>{esp[t]=(esp[t]||0)+1}));
+   /* antes de verificar: só o anel; depois do primeiro Verificar com erro, aparece o contador */
+   const d00=D.dicas();pc.soAnelAntes=Object.keys(d00).length===Object.keys(esp).length&&Object.values(d00).every(v=>v==='falta');verificar();
    const d0=D.dicas();pc.inicio=Object.keys(esp).every(t=>d0[t]==='falta 0/'+esp[t])&&Object.keys(d0).length===Object.keys(esp).length;
    let ca='';sol.forEach(w=>{if(w.cor!==ca){cor(w.cor);ca=w.cor}toque(w.a);toque(w.b)});
    pc.completo=Object.values(D.dicas()).every(v=>/^ok /.test(v));
    cor('retorno');toque('SP1.1');toque('SP2.0');pc.sobra=/^sobra 2\/1/.test(D.dicas()['SP1.1']||'');
-   S.mode='full';S.seen['full:escada:cena']=1;runBuild(p,comARede(p.dados.full));const df=D.dicas();pc.fullSoAnel=Object.keys(df).length>0&&Object.values(df).every(v=>v==='falta');S.mode='moderado';}
+   S.mode='full';S.seen['full:escada:cena']=1;runBuild(p,comARede(p.dados.full));const df=D.dicas();verificar();const df2=D.dicas();pc.fullSoAnel=Object.keys(df).length>0&&Object.values(df).every(v=>v==='falta')&&Object.values(df2).every(v=>v==='falta');S.mode='moderado';}
   /* ---- Lote C: interruptor paralelo (Escada) e intermediário (Corredor), pelo gabarito, na 3D e no SVG ---- */
   {const c3=R.loteC={};S.mode='leve';
    const tap=t=>{svg().querySelector('[data-t="'+t+'"]').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));window.dispatchEvent(new PointerEvent('pointerup'))};
