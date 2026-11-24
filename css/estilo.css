@@ -570,3 +570,79 @@ svg.curto{animation:shake .32s 2}
 /* fios da bancada CC: vermelho no positivo, preto (com contorno claro) no negativo */
 .w.pos,.mw.pos{stroke:#d33a2c}.w.neg,.mw.neg{stroke:#2a2e35;filter:drop-shadow(0 0 .8px #c9d1db)}
 .pal .btn[data-cor="neg"] .sw8{outline:1.5px solid #c9d1db}
+
+/* ================= ACABAMENTO (estilo jogo de luta + neobrutalismo) =================
+   Mantém a identidade (fundo azul-noite, âmbar de ação, Bungee + Nunito) e reforça:
+   1) títulos em faixa amarela diagonal; 2) contorno de 3px e sombra chapada em diagonal;
+   3) cores fixas de significado: verde = acerto, vermelho = erro, azul = informação
+      (âmbar continua sendo ação e recompensa); 4) "Fase concluída" com fundo dividido em diagonal;
+   5) toque padronizado: o que é tocável sobe um pouco no passar do mouse e afunda ao pressionar. */
+:root{
+  --ok:#43b05c;--ok-ink:#07220f;--erro:#e24c3f;--erro-ink:#2b0905;--info:#5aaee6;
+  --sombra:3px 4px 0 var(--contorno);--sombra-alta:5px 7px 0 var(--contorno);--sombra-baixa:0 1px 0 var(--contorno);
+  --faixa:linear-gradient(180deg,#ffd84d,var(--amber) 55%,#e3a91b)}
+
+/* 1) faixas diagonais: o fundo é inclinado, o texto fica reto */
+.world>h2,.result h2,.result>.eyebrow,.goal .gi{position:relative;isolation:isolate;display:inline-block;margin:0}
+.world>h2::before,.result h2::before,.result>.eyebrow::before,.goal .gi::before{content:"";position:absolute;inset:0;z-index:-1;
+  background:var(--faixa);border:3px solid var(--contorno);border-radius:3px;box-shadow:var(--sombra);transform:skewX(-12deg)}
+.world>h2{color:#1b1a10;padding:6px 16px 5px;margin-left:6px;flex:0 1 auto;min-width:0;font-size:clamp(17px,5.2vw,21px);line-height:1.15}
+.result h2{color:#1b1a10;padding:9px 26px 8px;font-size:clamp(22px,7vw,30px);line-height:1.1;animation:faixaEntra .4s cubic-bezier(.2,.9,.3,1.3) both .05s}
+.result>.eyebrow{color:var(--amber);padding:4px 14px;letter-spacing:.22em}
+.result>.eyebrow::before{background:var(--contorno);border-color:var(--amber);box-shadow:none}
+.goal .gi{color:#1b1a10;padding:3px 9px 2px;margin:0 2px 0 3px;font-size:12px;padding-top:3px}
+.goal .gi::before{border-width:2px;box-shadow:2px 3px 0 var(--contorno)}
+/* o nome do capítulo no mapa já fica dentro de um cartão com arte: sem faixa */
+.chcard .world>h2{color:inherit;padding:0;margin:0;font-size:inherit}
+.chcard .world>h2::before{content:none}
+.vn-name{border:3px solid var(--contorno);border-radius:3px;box-shadow:var(--sombra);transform:skewX(-12deg);padding:5px 14px;background:var(--faixa)}
+@keyframes faixaEntra{from{opacity:0;transform:translateX(-40px) scaleX(.6)}}
+
+/* 2) contorno de 3px e sombra chapada em diagonal */
+.btn{border-width:2.5px;box-shadow:var(--sombra)}
+.btn.main{border:3px solid var(--contorno);box-shadow:4px 5px 0 var(--contorno);background:var(--faixa)}
+.btn.ghost{border-width:2.5px;box-shadow:none}
+.btn:disabled{box-shadow:none}
+.qcard,.chcard,.goal,.vn,.bubble,.toast,.valid,.cres{border:3px solid var(--contorno);box-shadow:var(--sombra)}
+.qcard{box-shadow:var(--sombra),inset 0 0 0 2px color-mix(in srgb,var(--info) 28%,transparent)}
+.vn,.chcard{box-shadow:4px 6px 0 var(--contorno)}
+.vn-box{border-width:3px;box-shadow:var(--sombra)}
+.toast{box-shadow:inset 0 0 0 2px var(--amber),var(--sombra)}
+.opt{border:3px solid var(--contorno);background:var(--panel2)}
+.card{box-shadow:5px 7px 0 var(--contorno),0 0 0 2px var(--contorno)}
+.mcard{border:3px solid var(--contorno);box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--c) 55%,transparent),4px 6px 0 var(--contorno)}
+.mcard.breve{box-shadow:none}
+.char{border-color:var(--contorno);box-shadow:var(--sombra)}
+.char[aria-pressed="true"]{box-shadow:inset 0 0 0 3px var(--amber),var(--sombra)}
+
+/* 3) cores fixas de significado */
+.fb{border:3px solid var(--contorno);border-radius:12px;box-shadow:var(--sombra)}
+.fb.good{background:color-mix(in srgb,var(--ok) 24%,var(--panel));border-left:9px solid var(--ok)}
+.fb.bad{background:color-mix(in srgb,var(--erro) 22%,var(--panel));border-left:9px solid var(--erro)}
+.fb.info{background:color-mix(in srgb,var(--info) 20%,var(--panel));border-left:9px solid var(--info)}
+.opt.right{background:var(--ok);border-color:var(--contorno);color:var(--ok-ink);box-shadow:var(--sombra)}
+.opt.wrong{background:color-mix(in srgb,var(--erro) 26%,var(--panel));border-color:var(--contorno);box-shadow:inset 0 0 0 2px var(--erro)}
+.valid{background:color-mix(in srgb,var(--ok) 18%,var(--panel));border-left:9px solid var(--ok)}
+.valid.warn{background:color-mix(in srgb,var(--amber) 14%,var(--panel));border-left-color:var(--amber)}
+.cres.ok{background:color-mix(in srgb,var(--ok) 42%,var(--panel));border-left:9px solid var(--ok)}
+.cres.no{background:color-mix(in srgb,var(--erro) 40%,var(--panel));border-left:9px solid var(--erro)}
+.prog i.ok{background:var(--ok)}.prog i.no{background:var(--erro)}
+
+/* 4) fase concluída: fundo dividido em diagonal, como a tela de vitória */
+.result::after{content:"";position:absolute;z-index:-2;left:-16px;right:-16px;top:-12px;height:270px;
+  background:linear-gradient(160deg,color-mix(in srgb,var(--amber) 42%,#4a1a2c) 0 48.5%,var(--contorno) 48.5% 51.5%,color-mix(in srgb,#7d5cff 38%,var(--bg)) 51.5% 100%);
+  clip-path:polygon(0 0,100% 0,100% 80%,0 100%);animation:corta .45s cubic-bezier(.2,.9,.3,1) both}
+@keyframes corta{from{clip-path:polygon(0 0,0 0,0 100%,0 100%)}}
+
+/* 5) toque padronizado */
+.btn,.mcard,.char,.node .dot{transition:transform .12s ease,box-shadow .12s ease,background .2s,border-color .15s}
+@media (hover:hover){
+  .btn:not(:disabled):not(.ghost):hover,.char:hover{transform:translate(-1px,-2px);box-shadow:var(--sombra-alta)}
+  .btn.main:not(:disabled):hover{box-shadow:6px 8px 0 var(--contorno)}
+  .mcard:not(.breve):hover,.mcard:focus-visible{transform:translate(-1px,-3px);box-shadow:inset 0 0 0 2px var(--c),6px 9px 0 var(--contorno),0 0 22px color-mix(in srgb,var(--c) 35%,transparent)}
+  .node:not(.lock):hover .dot{transform:translate(-1px,-2px)}
+}
+.btn:not(:disabled):not(.ghost):active,.char:active{transform:translate(3px,4px);box-shadow:var(--sombra-baixa)}
+.btn.ghost:not(:disabled):active{transform:translate(1px,2px)}
+.mcard:not(.breve):active{transform:translate(3px,5px);box-shadow:inset 0 0 0 2px var(--c),var(--sombra-baixa)}
+.node:not(.lock):active .dot{transform:translate(2px,3px) scale(.96)}
