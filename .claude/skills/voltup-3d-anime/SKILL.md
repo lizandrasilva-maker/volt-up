@@ -23,7 +23,7 @@ Padroniza o visual e a construção das peças 3D da bancada (`js/bancada3d.js`)
 5. **Canvas persistente.** A cena nasce uma vez por bancada (`montar`), é reencaixada a cada redesenho (`atualizar`) e liberada em `destruir` (contrato de `VISTA3D` em `js/fases.js`). Abrir outra bancada 3D (`ctx.bancada` diferente) monta uma cena nova. Desenho sob demanda: só há laço de quadros enquanto houver animação.
 6. **Câmera enquadra a bancada.** `enquadra()` calcula a caixa das peças da fase e põe a câmera em 3/4 frontal-superior com folga; não fixe posição de câmera por fase.
 
-**Peças já implementadas:** fonte 1F+N, disjuntor (`fuse`), DR bipolar (`dr`, Quadro Novo), botoeiras (`btn`, BL e BD), contatora (`kc`), relé térmico (`ft`) e lâmpada sem PE. Laboratórios (menu, com `?3d=1`): "Laboratório 3D", "Botoeiras 3D" e "Contatora 3D".
+**Peças já implementadas:** fonte 1F+N, disjuntor (`fuse`), DR bipolar (`dr`, Quadro Novo), botoeiras (`btn`, BL e BD), contatora (`kc`), relé térmico (`ft`), interruptor simples (`sw`: espelho, tecla basculante que inclina com `c.closed`, bornes L e R) e lâmpada sem PE. Fases do jogo que já abrem em 3D: Primeiro Circuito, Série ou Paralelo e Quadro Novo (Cap. 2). Laboratórios (menu, com `?3d=1`): "Laboratório 3D", "Botoeiras 3D" e "Contatora 3D".
 
 7. **Botão 🧊 3D sem flag.** Aparece em toda bancada cujas peças estão em `VISTA3D.suporta`; o Three.js só é baixado no primeiro toque. `?3d=1` apenas abre direto em 3D e mostra os laboratórios.
 9. **Caminho da energia em 3D (`montaFaixa()`).** Na vista 3D, a faixa poste → transformador → ramal → medidor → quadro → circuito é desenhada no alto do MESMO canvas (viewport de cima, cena e câmera próprias; nunca um segundo contexto WebGL). Estado: `on` (alguma carga em `res.lamp` > 0,04: pontos de luz correm pelos cabos, LED do medidor pisca, lâmpada acende), `short` (`ctx.curto`: cabos com `matCurto`) ou parado. Legendas iguais às de `entrada()` no SVG, com a rede escolhida. Toque, raycast e projeção usam só a área da bancada (`areaBancada()`). No 2D a faixa continua em SVG.
@@ -91,6 +91,7 @@ Padroniza o visual e a construção das peças 3D da bancada (`js/bancada3d.js`)
 | DR `dr` (bipolar) | `.0` = entrada fase, `.1` = entrada neutro, `.2` = saída fase, `.3` = saída neutro |
 | Contatora `kc` | `.0`/`.1` = A1/A2 (bobina), `.2`/`.3` = 1-2 (contato de potência, 1 polo), `.4`/`.5` = 13-14 (auxiliar NA, selo) |
 | Relé térmico `ft` | `.0`/`.1` = 1-2 (força), `.2`/`.3` = 95-96 (NF de comando) |
+| Interruptor simples `sw` | `.0` = L (entrada da fase), `.1` = R (retorno) |
 | Botoeira `btn` | `.0`/`.1`: NA 3-4 se `!c.nf` (BL), NF 1-2 se `c.nf` (BD) |
 | Motor `motor` (monofásico) | `.0`/`.1` = força, `.2` = PE (carcaça) |
 

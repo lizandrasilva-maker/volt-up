@@ -24,7 +24,8 @@ const TERM3D={
   fuse:()=>[[0,3.1,DIN.z0+DIN.D+.05],[0,-2.6,DIN.z0+DIN.D+.05]],      /* .0 = entrada (topo), .1 = saída (base) */
   lamp:()=>[[-1.35,-1.35,.7],[1.35,-1.35,.7]],                        /* .0 = X1, .1 = X2 */
   dr:()=>[[-1.2,3.1,FRENTE+.05],[1.2,3.1,FRENTE+.05],[-1.2,-2.6,FRENTE+.05],[1.2,-2.6,FRENTE+.05]], /* .0 = entrada F, .1 = entrada N, .2 = saída F, .3 = saída N */
-  btn:()=>[[-.85,-2.55,1.05],[.85,-2.55,1.05]],                      /* .0/.1 = contato (NA 3-4 na BL, NF 1-2 na BD) */
+  btn:()=>[[-.85,-2.55,1.05],[.85,-2.55,1.05]],
+  sw:()=>[[-.85,-2.75,1.0],[.85,-2.75,1.0]],                           /* .0 = L (entrada da fase), .1 = R (retorno) */                      /* .0/.1 = contato (NA 3-4 na BL, NF 1-2 na BD) */
   /* contatora: .0/.1 = A1/A2 (bobina, no degrau recuado), .2/.3 = 1-2 (potência), .4/.5 = 13-14 (selo) */
   kc:()=>[[-2.4,3.1,FRENTE-RECUO+.05],[-2.4,-2.6,FRENTE-RECUO+.05],[0,3.1,FRENTE+.05],[0,-2.6,FRENTE+.05],[2.4,3.1,FRENTE+.05],[2.4,-2.6,FRENTE+.05]],
   /* relé térmico: .0/.1 = 1-2 (força), .2/.3 = 95-96 (NF de comando) */
@@ -36,7 +37,7 @@ const bornesDe=c=>(TERM3D[c.type]?TERM3D[c.type](c):[]).map(p=>new THREE.Vector3
 const PAL={corpoDIN:0xE6E9EF,frenteDIN:0xD5DAE2,trilho:0x9AA5B4,cavidade:0x1F2933,zinco:0xCBD5E1,fenda:0x3A4048,
   fonte:0x7C8A99,fonteFrente:0x5D6B7A,lcd:0xC6D68A,regua:0x2A2F36,alavanca:0x2F4A6E,pontaAlavanca:0xE24C3F,
   painel:0x1D3550,soquete:0xD9DDE3,base:0xE6E9EF,teste:0xECC94B,armado:0x38A169,desarmado:0xE53E3E,
-  botoeiraBase:0x334155,liga:0x2F855A,desliga:0xC53030,janela:0x1F2933,emboloOff:0x94A3B8,emboloOn:0xF97316,rearme:0x3182CE,dial:0x2F4A6E};
+  botoeiraBase:0x334155,liga:0x2F855A,desliga:0xC53030,janela:0x1F2933,emboloOff:0x94A3B8,emboloOn:0xF97316,rearme:0x3182CE,dial:0x2F4A6E,espelho:0xF1F3F6,tecla:0xE6E9EF,marca:0x2F855A};
 
 /* ---------- cache compartilhado (materiais e texturas estáticos) ----------
    Peças iguais usam o mesmo material; só o que muda com o estado (LED, bulbo, visor) tem material próprio.
@@ -208,7 +209,21 @@ function reletermico(c){const g=new THREE.Group(),bornes=bornesDe(c),{H,D,z0}=DI
   poeParafusos(g,bornes);
   bornes.forEach((b,k)=>plaqueta(g,nomeBorne(c,k),Math.sign(b.x)*(W/2+.7),b.y,b.z+.3));
   return {g,bornes,corpo:[corpo,frente,dial,rearme,visor],extra:{visor,rearme}}}
-const CONSTRUTOR={src:fonte,fuse:disjuntor,lamp:lampada,dr,btn:botoeira,kc:contatora,ft:reletermico};
+/* Interruptor simples de parede: espelho, tecla basculante e bloco de bornes L (fase) e R (retorno).
+   A tecla inclina pelo estado c.closed (o toque relata acionou; em acionarPeca, flipSwitch inverte). */
+const TECLA={on:-.3,off:.3,z:.6};
+function interruptor(c){const g=new THREE.Group(),bornes=bornesDe(c);
+  const espelho=new THREE.Mesh(new THREE.BoxGeometry(3.4,4.4,.5),mat(PAL.espelho));espelho.position.set(0,.7,.25);g.add(espelho);
+  const moldura=new THREE.Mesh(new THREE.BoxGeometry(2.4,3.2,.12),mat(PAL.cavidade));moldura.position.set(0,.7,.52);g.add(moldura);
+  const pino=new THREE.Group();pino.position.set(0,.7,TECLA.z);g.add(pino);
+  const tecla=new THREE.Mesh(new THREE.BoxGeometry(2.1,2.9,.45),mat(PAL.tecla));tecla.position.z=.2;pino.add(tecla);
+  const marca=new THREE.Mesh(new THREE.BoxGeometry(.9,.18,.06),mat(PAL.marca));marca.position.set(0,1.05,.45);pino.add(marca);
+  const adesivo=rotulo(c.lab||c.id,2.2,.8,{fundo:'#2f4a6e',cor:'#f8fafc',esc:.62});adesivo.position.set(0,3.4,.52);g.add(adesivo);
+  const bloco=new THREE.Mesh(new THREE.BoxGeometry(3,1.2,.9),mat(PAL.cavidade));bloco.position.set(0,-2.75,.45);g.add(bloco);
+  poeParafusos(g,bornes);
+  bornes.forEach((b,k)=>plaqueta(g,nomeBorne(c,k),b.x,-3.95,.55));
+  return {g,bornes,corpo:[espelho,moldura,tecla],extra:{pino}}}
+const CONSTRUTOR={src:fonte,fuse:disjuntor,lamp:lampada,dr,btn:botoeira,kc:contatora,ft:reletermico,sw:interruptor};
 
 /* ---------- caminho da energia em 3D (faixa no alto do mesmo canvas) ----------
    Poste com transformador → ramal → medidor na fachada → quadro → circuito (lâmpada), na mesma linguagem visual da
@@ -404,6 +419,8 @@ function atualizar(ctx){
     if(c.type==='kc'){const on=!!c.on;if(p.on!==on){p.on=on;const e=p.extra.embolo,de=e.position.z,para=EMBOLO.z+(on?EMBOLO.recuo:0);e.material=mat(on?PAL.emboloOn:PAL.emboloOff);anima(120,k=>{e.position.z=de+(para-de)*k})}}
     /* relé térmico: visor vermelho e botão de rearme saltado quando disparado (c.trip) */
     if(c.type==='ft'){p.extra.visor.material.color.setHex(c.trip?PAL.desarmado:PAL.armado);p.extra.visor.material.emissive.setHex(c.trip?0x6b1a12:0x0f4a24);p.extra.rearme.position.z=FRENTE+(c.trip?1.05:.75)}
+    /* interruptor: a tecla inclina para ligado ou desligado (c.closed) */
+    if(c.type==='sw'){const alvo=c.closed?TECLA.on:TECLA.off;if(p.tec!==alvo){const pi=p.extra.pino,de=p.tec===undefined?alvo:pi.rotation.x;p.tec=alvo;anima(120,k=>{pi.rotation.x=de+(alvo-de)*k})}}
     if(c.type==='btn'){const alvo=c.pressed?BOTAO.afunda:0;if(p.emb!==alvo){const de=p.extra.embolo.position.z,para=BOTAO.z+alvo;p.emb=alvo;anima(90,k=>{p.extra.embolo.position.z=de+(para-de)*k})}}
     if(c.type==='dr'){p.extra.visor.material.color.setHex(c.trip?PAL.desarmado:PAL.armado);p.extra.visor.material.emissive.setHex(c.trip?0x6b1a12:0x0f4a24)}
     if(c.type==='src'){p.extra.led.material.color.setHex(c.trip?0xe24c3f:0x43b05c);p.extra.led.material.emissive.setHex(c.trip?0x7a1d12:0x1f7a36);
@@ -490,6 +507,7 @@ const debug={
   telaTeste:id=>naTela(E.pecas[id].extra.teste.getWorldPosition(new THREE.Vector3())),
   visorDR:id=>E.pecas[id].extra.visor.material.color.getHex()===PAL.desarmado?'desarmado':'armado',
   emboloAlvo:id=>E.pecas[id].emb||0,
+  tecla:id=>E.pecas[id].tec,
   emboloKC:id=>({on:!!E.pecas[id].on,cor:E.pecas[id].extra.embolo.material.color.getHexString()}),
   visorFT:id=>E.pecas[id].extra.visor.material.color.getHex()===PAL.desarmado?'disparado':'armado',
   livre:()=>!!E.livre,

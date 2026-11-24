@@ -150,6 +150,25 @@ const coresDoFioCSS=k=>(CORES[k].c.match(/var\(--[\w-]+\)|#[0-9a-f]{3,8}\b/gi)).
    corAtual='';FIOS.forEach(([c,a,b])=>{if(c!==corAtual){cor(c);corAtual=c}tap(a);tap(b)});
    aciona('BL');await espera(800);aciona('BD');await espera(800);aciona('BL');await espera(800);aciona('FT');aciona('FT');
    k.aprovouSvg=/aprovado/i.test(verificar());k.equivalente=s3===sig(BANCADA.st);k.s3=s3;k.ss=sig(BANCADA.st);}
+  /* ---- Interruptor simples: Primeiro Circuito (Cap. 2, nível Técnico) e Série ou Paralelo nos 3 níveis ---- */
+  {const s=R.interruptor={};S.mode='moderado';const pp=phaseById('primeiro'),tp=()=>comARede(pp.dados.moderado),peca=id=>BANCADA.st.comps.find(c=>c.id===id);
+   const sig=st=>J({fios:st.wires.map(w=>w.a+'-'+w.b+':'+w.cor),s1:!!st.comps.find(c=>c.id==='S1').closed,dj:!!st.comps.find(c=>c.id==='F').trip});
+   const FIOS=[['fase','B.0','F.0'],['fase','F.1','S1.0'],['retorno','S1.1','L1.0'],['neutro','L1.1','B.1']];
+   VISTA3D.ligada=true;S.seen['moderado:primeiro:cena']=1;runBuild(pp,tp());
+   s.em3d=!!document.querySelector('.bench3d canvas');s.term3d=BANCADA.st.comps.every(c=>D.bornesTERM3D(c)===terms(c).length);
+   s.plaquetas=J(D.plaquetas('S1').map(p=>p.t))==='["L","R"]';
+   let ca='';FIOS.forEach(([c,a,b])=>{if(c!==ca){cor(c);ca=c}toque(a);toque(b)});
+   s.desligado=D.brilho('L1')<0.05&&D.tecla('S1')>0;
+   toque('S1');s.liga=peca('S1').closed===true&&D.brilho('L1')>0.5&&D.tecla('S1')<0;
+   toque('S1');s.desliga=peca('S1').closed===false&&D.brilho('L1')<0.05&&D.tecla('S1')>0;
+   s.aprovou3d=/aprovado/i.test(verificar());const s3=sig(BANCADA.st);
+   VISTA3D.ligada=false;runBuild(pp,tp());
+   const tap=t=>{svg().querySelector('[data-t="'+t+'"]').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));window.dispatchEvent(new PointerEvent('pointerup'))};
+   const aciona=id=>svg().querySelector('[data-sw="'+id+'"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));
+   ca='';FIOS.forEach(([c,a,b])=>{if(c!==ca){cor(c);ca=c}tap(a);tap(b)});aciona('S1');aciona('S1');
+   s.aprovouSvg=/aprovado/i.test(verificar());s.equivalente=s3===sig(BANCADA.st);s.s3=s3;s.ss=sig(BANCADA.st);
+   /* Série ou Paralelo abre em 3D nos 3 níveis (interruptores S0, S1, S2) */
+   VISTA3D.ligada=true;const pl=phaseById('paralelo');s.paralelo=['leve','moderado','full'].map(md=>{S.mode=md;S.seen[md+':paralelo:cena']=1;runBuild(pl,comARede(pl.dados[md]));return !!document.querySelector('.bench3d canvas')}).every(Boolean);S.mode='moderado';}
   /* sair da bancada libera o WebGL */
   showMap();await new Promise(r=>setTimeout(r,0));R.liberou=VISTA3D.no===null;
 }catch(e){R.ERRO=e.message+' '+(e.stack||'')}
