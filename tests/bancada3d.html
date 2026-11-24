@@ -124,10 +124,14 @@ const coresDoFioCSS=k=>(CORES[k].c.match(/var\(--[\w-]+\)|#[0-9a-f]{3,8}\b/gi)).
   {const v=R.v360={};S.mode='leve';const pq=phaseById('quadronovo');VISTA3D.flag=false;VISTA3D.ligada=false;
    runBuild(pq,comARede(pq.dados.leve));const b=document.querySelector('[data-3d="1"]');v.botaoSemFlag=!!b&&!!document.querySelector('.bench svg');
    b.click();v.abriu=!!document.querySelector('.bench3d canvas');
-   const b3=D.botao360();b3.click();v.livre=D.livre()&&D.azimute()[0]===-Infinity&&/Montar/.test(b3.textContent);
-   const antes=BANCADA.st.wires.length;toque('B.0');toque('DG.0');v.naoMexe=BANCADA.st.wires.length===antes&&!D.badge().visivel;
-   b3.click();v.voltou=!D.livre()&&D.azimute()[0]===-.65&&D.azimute()[1]===.65;
-   toque('B.0');toque('DG.0');v.montaDeNovo=BANCADA.st.wires.length===antes+1;VISTA3D.flag=true;}
+   /* 360° sempre ligado: câmera livre desde o início, sem botão de modo, e montar continua funcionando */
+   v.livre=D.azimute()[0]===-Infinity&&D.azimute()[1]===Infinity&&!document.querySelector('.cena3d .b360');
+   const antes=BANCADA.st.wires.length;toque('B.0');toque('DG.0');v.montaLivre=BANCADA.st.wires.length===antes+1;VISTA3D.flag=true;}
+  /* fios: nenhum corredor passa por trás de uma peça que não é dele (Primeiro Circuito Leve, Quadro Novo, Partida Direta) */
+  {const t=R.traçado={};VISTA3D.ligada=true;
+   S.mode='leve';const p1=phaseById('primeiro');S.seen['leve:primeiro:cena']=1;runBuild(p1,comARede(p1.dados.leve));let ca='';testeSol('primeiro').forEach(w=>{if(w.cor!==ca){cor(w.cor);ca=w.cor}toque(w.a);toque(w.b)});t.primeiro=D.semAtravessar();
+   const pq=phaseById('quadronovo');S.seen['leve:quadronovo:cena']=1;runBuild(pq,comARede(pq.dados.leve));ca='';testeSol('quadronovo').forEach(w=>{if(w.cor!==ca){cor(w.cor);ca=w.cor}toque(w.a);toque(w.b)});t.quadro=D.semAtravessar();
+   S.mode='moderado';const pp=phaseById('partida');runBuild(pp,comARede(pp.dados.moderado));ca='';testeSol('partida').forEach(w=>{if(w.cor!==ca){cor(w.cor);ca=w.cor}toque(w.a);toque(w.b)});t.partida=D.semAtravessar();t.quais=D.atravessados();t.rotaK1=D.rotaDe('K.1','B.1');}
   /* ---- Contatora e relé térmico: comando com selo (lâmpada no lugar do motor) ---- */
   {S.mode='moderado';const k=R.contatora={},tk=()=>comARede(LAB3D_KC.dados.moderado),espera=ms=>new Promise(r=>setTimeout(r,ms));
    const peca=id=>BANCADA.st.comps.find(c=>c.id===id);

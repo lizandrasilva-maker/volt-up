@@ -384,11 +384,8 @@ function montar(no,ctx){
   E.caixa=new THREE.Box3();Object.values(E.pecas).forEach(p=>E.caixa.expandByObject(p.g));
   limites(controls);controls.update();
   controls.addEventListener('change',pede);
-  controls.addEventListener('start',()=>{if(E&&E.livre)controls.autoRotate=false});/* tocou: para o giro automático */
   /* modo 360°: solta a câmera para dar a volta na instalação; enquanto ativo, nada na bancada muda */
-  E.b360=document.createElement('button');E.b360.type='button';E.b360.className='btn vbtn b360';E.b360.setAttribute('aria-pressed','false');E.b360.textContent='↻ 360°';
-  E.b360.addEventListener('click',()=>modo360(!E.livre));no.appendChild(E.b360);
-  E.dica=document.createElement('div');E.dica.className='dica360';E.dica.hidden=true;E.dica.textContent='Arraste para dar a volta na instalação. Para montar, toque em ✋.';no.appendChild(E.dica);
+
   no.addEventListener('pointerdown',aoTocar,true);/* captura: decide antes do OrbitControls */
   E.ro=new ResizeObserver(()=>{if(dimensiona())pede()});E.ro.observe(no);
 }
@@ -409,29 +406,25 @@ function construir(st){
 function dimensiona(){const w=Math.max(260,Math.round(E.no.clientWidth||E.no.parentElement&&E.no.parentElement.clientWidth||340)),h=Math.round(Math.min(w*.78,520)),hb=Math.round(Math.min(FX.maxAlt,w*FX.altura));
   if(w===E.tamanho[0]&&h===E.tamanho[1]&&hb===E.faixaH)return false;E.tamanho=[w,h];E.faixaH=hb;E.renderer.setSize(w,h+hb);
   E.camera.aspect=w/h;E.camera.updateProjectionMatrix();E.faixa.camera.aspect=w/hb;enquadraFaixa();enquadra();
-  E.b360.style.top=(hb+8)+'px';return true}
+  return true}
 /* põe a câmera em 3/4 frontal-superior, longe o bastante para caber todas as peças com folga (reenquadra quando o tamanho muda) */
-/* modo de trabalho: a câmera gira pouco, para o quadro nunca ficar de costas */
-function limites(c){c.minAzimuthAngle=-.65;c.maxAzimuthAngle=.65;c.minPolarAngle=.95;c.maxPolarAngle=1.95}
-function modo360(on){if(!E)return;E.livre=!!on;const c=E.controls;
-  if(E.livre){c.minAzimuthAngle=-Infinity;c.maxAzimuthAngle=Infinity;c.minPolarAngle=.08;c.maxPolarAngle=Math.PI-.08;c.maxDistance=(E.dist||40)*2.2;c.autoRotate=!reduz();c.autoRotateSpeed=2.4;escondeBadge()}
-  else{c.autoRotate=false;limites(c);enquadra()}
-  E.b360.setAttribute('aria-pressed',String(E.livre));E.b360.textContent=E.livre?'✋ Montar':'↻ 360°';E.dica.hidden=!E.livre;E.no.classList.toggle('livre',E.livre);pede()}
+/* câmera sempre livre (360°): arrastar no espaço vazio dá a volta na instalação; tocar em borne, peça ou fio continua
+   montando (o toque sem movimento vai para o ctl, o arraste no vazio vai para a câmera). Sem botão de modo. */
+function limites(c){c.minAzimuthAngle=-Infinity;c.maxAzimuthAngle=Infinity;c.minPolarAngle=.08;c.maxPolarAngle=Math.PI-.08}
 function enquadra(){if(!E.caixa||E.caixa.isEmpty())return;const tam=E.caixa.getSize(new THREE.Vector3()),c=E.caixa.getCenter(new THREE.Vector3());
   const meia=Math.tan(E.camera.fov*Math.PI/360),d=Math.max(tam.y*1.25,tam.x*1.15/E.camera.aspect)/2/meia+tam.z;
   E.camera.position.copy(c).addScaledVector(new THREE.Vector3(.13,.2,1).normalize(),d);E.controls.target.copy(c);
-  E.dist=d;E.controls.minDistance=d*.45;E.controls.maxDistance=d*(E.livre?2.2:1.6);E.controls.update()}
+  E.dist=d;E.controls.minDistance=d*.45;E.controls.maxDistance=d*2.2;E.controls.update()}
 
 /* ---------- desenho sob demanda: só há laço enquanto alguma animação está rodando ---------- */
 function pede(){if(E&&!E.pedido)E.pedido=requestAnimationFrame(quadro)}
 function quadro(){if(!E)return;E.pedido=0;const agora=performance.now();
   E.anim=E.anim.filter(a=>{const k=Math.min(1,(agora-a.t0)/a.dur);a.passo(k,agora);return k<1});
-  const gira=E.livre&&E.controls.autoRotate;if(gira)E.controls.update();/* giro automático do 360° */
   const r=E.renderer,[w,h]=E.tamanho,hb=E.faixaH||0;r.setScissorTest(true);
   r.setViewport(0,0,w,h);r.setScissor(0,0,w,h);E.efeito.render(E.scene,E.camera);
   let rodando=false;if(!reduz())Object.values(E.pecas).forEach(p=>{if(p.c.type==='motor'&&p.gira>.04){p.extra.eixo.rotation.x+=.35*p.gira;rodando=true}});
   let flui=false;if(hb){flui=animaFaixa(agora);r.setViewport(0,h,w,hb);r.setScissor(0,h,w,hb);E.efeito.render(E.faixa.scene,E.faixa.camera)}
-  r.setScissorTest(false);if(E.anim.length||gira||flui||rodando)pede()}
+  r.setScissorTest(false);if(E.anim.length||flui||rodando)pede()}
 const anima=(dur,passo)=>{if(reduz()){passo(1,performance.now());return}E.anim.push({t0:performance.now(),dur,passo});pede()};
 
 /* ---------- fios ----------
@@ -448,9 +441,38 @@ function caminho(pts){const P=pts.filter((p,i)=>i===0||p.distanceTo(pts[i-1])>1e
     const ent=p.clone().addScaledVector(p.clone().sub(a).normalize(),-r),sai=p.clone().addScaledVector(b.clone().sub(p).normalize(),r);
     if(atual.distanceTo(ent)>1e-3)cp.add(new THREE.LineCurve3(atual,ent));cp.add(new THREE.QuadraticBezierCurve3(ent,p.clone(),sai));atual=sai}
   cp.add(new THREE.LineCurve3(atual,P[P.length-1].clone()));return cp}
-function rota(w,i){const a=saida(w.a),b=saida(w.b),A=a.T,B=b.T,V=THREE.Vector3,pista=i%FIO.pistas;
-  const zL=FIO.z0+pista*FIO.prof,yc=a.borda+a.dir*(.45+pista*FIO.pista),zA=A.z+FIO.frente,zB=B.z+FIO.frente;
-  return caminho([A,new V(A.x,A.y,zA),new V(A.x,a.borda,zA),new V(A.x,a.borda,zL),new V(A.x,yc,zL),new V(B.x,yc,zL),new V(B.x,b.borda,zL),new V(B.x,b.borda,zB),new V(B.x,B.y,zB),B])}
+/* Caminho do fio sem passar por trás de nenhuma peça (caixas de todas as peças da bancada):
+   - os dois bornes saem para o mesmo lado: o corredor horizontal fica além das DUAS peças e, se cruzar outra peça,
+     vai se afastando até achar uma altura livre;
+   - saem para lados opostos: cada ponta usa o seu corredor, e os dois se ligam por uma coluna vertical livre ao lado
+     das peças (à esquerda ou à direita do destino ou da origem).
+   Fios diferentes ficam em pistas diferentes (altura e profundidade). */
+const caixas=()=>Object.values(E.pecas).map(p=>p.caixa);
+function livreH(y,x0,x1,cxs){const a=Math.min(x0,x1),b=Math.max(x0,x1);return cxs.every(c=>!(y>c.min.y-.1&&y<c.max.y+.1&&b>c.min.x&&a<c.max.x))}
+function livreV(x,y0,y1,cxs){const a=Math.min(y0,y1),b=Math.max(y0,y1);return cxs.every(c=>!(x>c.min.x-.1&&x<c.max.x+.1&&b>c.min.y&&a<c.max.y))}
+/* Busca, para cada fio, o caminho mais curto do tipo: sai da origem até um corredor perto dela (altura yA), anda até
+   uma coluna (xr), sobe ou desce até um corredor perto do destino (yB) e chega ao destino. Testa algumas alturas de
+   corredor em cada ponta e colunas nas bordas das peças; fica com a mais curta em que nenhum trecho passa por uma peça.
+   Se nada servir (bancada muito cheia), usa o caminho simples. */
+function rota(w,i){const a=saida(w.a),b=saida(w.b),A=a.T,B=b.T,V=THREE.Vector3,pista=i%FIO.pistas,folga=.45+pista*FIO.pista;
+  const zL=FIO.z0+pista*FIO.prof,zA=A.z+FIO.frente,zB=B.z+FIO.frente,cxs=caixas(),off=.7+pista*.25;
+  /* alturas de corredor: começam coladas na peça; o afastamento da pista (folga) é só preferência, para os fios
+     paralelos se separarem quando há espaço, sem bloquear o caminho quando a bancada está apertada */
+  const ys=p=>Array.from({length:42},(_,k)=>({y:p.borda+p.dir*(.35+k*.3),pref:Math.abs(.35+k*.3-folga)}));
+  const yAs=ys(a),yBs=ys(b);
+  const xs=[A.x,B.x,(A.x+B.x)/2];cxs.forEach(c=>xs.push(c.min.x-off,c.max.x+off));
+  let melhor=null,custo=Infinity;
+  for(const {y:yA,pref:pa} of yAs){if(!livreV(A.x,a.borda,yA,cxs))break;
+    for(const {y:yB,pref:pb} of yBs){if(!livreV(B.x,b.borda,yB,cxs))break;
+      for(const xr of xs){const c=Math.abs(yA-a.borda)+Math.abs(xr-A.x)+Math.abs(yA-yB)+Math.abs(B.x-xr)+Math.abs(yB-b.borda)+.8*(pa+pb);
+        if(c>=custo)continue;
+        if(livreH(yA,A.x,xr,cxs)&&livreV(xr,yA,yB,cxs)&&livreH(yB,xr,B.x,cxs)){custo=c;melhor=[yA,xr,yB]}}}}
+  rota.ultima={melhor,borda:[a.borda,b.borda],A:[A.x,A.y],B:[B.x,B.y],yAs,yBs,caixas:cxs.map(c=>[c.min.x,c.min.y,c.max.x,c.max.y].map(v=>+v.toFixed(2)))};
+  const pts=[A,new V(A.x,A.y,zA),new V(A.x,a.borda,zA),new V(A.x,a.borda,zL)];
+  if(melhor){const[yA,xr,yB]=melhor;pts.push(new V(A.x,yA,zL),new V(xr,yA,zL),new V(xr,yB,zL),new V(B.x,yB,zL))}
+  else{const y=a.dir===b.dir?(a.dir<0?Math.min(a.borda,b.borda):Math.max(a.borda,b.borda))+a.dir*folga:a.borda+a.dir*folga;pts.push(new V(A.x,y,zL),new V(B.x,y,zL))}
+  pts.push(new V(B.x,b.borda,zL),new V(B.x,b.borda,zB),new V(B.x,B.y,zB),B);
+  return caminho(pts)}
 function tubo(cur,raio,lados){return new THREE.TubeGeometry(cur,Math.max(32,Math.round(cur.getLength()*5)),raio,lados,false)}
 function listras(geo,comp){const rep=Math.max(2,Math.round(comp*1.2)),uv=geo.attributes.uv;for(let i=0;i<uv.count;i++)uv.setX(i,uv.getX(i)*rep)}
 /* fio provisório do arraste: reto e fino, do borne até o dedo */
@@ -462,7 +484,7 @@ function desenhaFios(st){
   const ass=st.wires.map(w=>w.a+'>'+w.b+':'+(w.cor||'')).join('|');if(ass===E.assinaturaFios)return;E.assinaturaFios=ass;
   E.fios.forEach(tiraFio);E.fios=[];
   st.wires.forEach((w,i)=>{if(!E.bornes[w.a]||!E.bornes[w.b])return;const cor=w.cor||'fase',cur=rota(w,i);
-    const geo=tubo(cur,FIO.raio,8);listras(geo,cur.getLength());const m=new THREE.Mesh(geo,matFio(cor));m.userData={w:i,cor,a:w.a};
+    const geo=tubo(cur,FIO.raio,8);listras(geo,cur.getLength());const m=new THREE.Mesh(geo,matFio(cor));m.userData={w:i,cor,a:w.a,rota:rota.ultima};
     const h=new THREE.Mesh(tubo(cur,FIO.toque,6),E.matToque);h.userData.w=i;m.userData.toque=h;
     E.scene.add(m,h);E.fios.push(m);E.hits.push(h)});
 }
@@ -531,7 +553,7 @@ function alvoEm(x,y){const r=areaBancada();if(!r.width||y<r.top)return null;
 function pontoNoPlano(x,y){const r=areaBancada();
   E.raycaster.setFromCamera(ndc(x,y,r),E.camera);const q=new THREE.Vector3();return E.raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,0,1),-3),q)?q:null}
 function aoTocar(e){
-  if(!E||!E.ctx||e.target!==E.cv||E.livre||(e.button!==undefined&&e.button>0))return;
+  if(!E||!E.ctx||e.target!==E.cv||(e.button!==undefined&&e.button>0))return;
   const alvo=alvoEm(e.clientX,e.clientY);if(!alvo)return;/* espaço vazio: girar, aproximar e arrastar a câmera */
   e.stopPropagation();e.preventDefault();
   const ctl=E.ctx.ctl,ed=E.ctx.editavel!==false,x0=e.clientX,y0=e.clientY;let arrastando=false;
@@ -555,7 +577,7 @@ function destruir(){if(!E)return;
   if(E.pedido)cancelAnimationFrame(E.pedido);E.ro.disconnect();E.no.removeEventListener('pointerdown',aoTocar,true);E.controls.dispose();
   E.scene.traverse(o=>{if(o.geometry)o.geometry.dispose()});E.faixa.scene.traverse(o=>{if(o.geometry)o.geometry.dispose()});
   if(CACHE){CACHE.mat.forEach(m=>m.dispose());CACHE.tex.forEach(t=>t.dispose());CACHE.unicos.forEach(m=>{if(m.map)m.map.dispose();m.dispose()});CACHE=null}
-  clearTimeout(E.badgeT);E.badge.remove();E.b360.remove();E.dica.remove();
+  clearTimeout(E.badgeT);E.badge.remove();
   E.renderer.dispose();try{E.renderer.forceContextLoss()}catch(e){}E.cv.remove();E=null}
 
 /* ---------- inspeção para os testes ---------- */
@@ -572,6 +594,15 @@ const debug={
   telaFio:i=>{const f=E.fios.find(m=>m.userData.w===i),cur=f.geometry.parameters.path;
     for(const u of [.5,.4,.6,.3,.7,.2,.8,.15,.85]){const p=naTela(cur.getPointAt(u)),a=alvoEm(p.x,p.y);if(a&&a.w===i)return p}return naTela(cur.getPointAt(.5))},
   realcados:()=>E.fios.filter(f=>!f.material.transparent).length,
+  /* nenhum trecho do corredor (horizontal, junto à chapa) passa por dentro da caixa de uma peça que não é dele */
+  /* trechos junto à chapa (z constante) que passam por dentro da caixa de uma peça que não é ponta do fio */
+  atravessados:()=>{const o=[];E.fios.forEach(f=>{const w=E.ctx.st.wires[f.userData.w],pontas=[w.a,w.b].map(t=>t.split('.')[0]);
+    f.geometry.parameters.path.curves.filter(c=>c.isLineCurve3&&Math.abs(c.v1.z-c.v2.z)<1e-6&&c.v1.z<2).forEach(c=>Object.entries(E.pecas).forEach(([id,p])=>{if(pontas.includes(id))return;const cx=p.caixa;
+      const x0=Math.min(c.v1.x,c.v2.x),x1=Math.max(c.v1.x,c.v2.x),y0=Math.min(c.v1.y,c.v2.y),y1=Math.max(c.v1.y,c.v2.y);
+      if(x1>cx.min.x&&x0<cx.max.x&&y1>cx.min.y&&y0<cx.max.y)o.push(w.a+'-'+w.b+' por '+id)}))});return o},
+  semAtravessar:()=>debug.atravessados().length===0,
+  rotaDe:(a,b)=>{const f=E.fios.find(m=>{const w=E.ctx.st.wires[m.userData.w];return w.a===a&&w.b===b});return f&&f.userData.rota},
+  azimute:()=>[E.controls.minAzimuthAngle,E.controls.maxAzimuthAngle],
   /* todo trecho reto do fio anda num eixo só (x, y ou z): traçado em ângulo reto, como no diagrama */
   ortogonal:()=>E.fios.every(f=>f.geometry.parameters.path.curves.filter(c=>c.isLineCurve3).every(c=>{const d=c.v2.clone().sub(c.v1);return [d.x,d.y,d.z].filter(v=>Math.abs(v)>1e-6).length<=1})),
   /* pistas: fios diferentes correm em profundidades diferentes (não ficam um sobre o outro) */
@@ -585,10 +616,7 @@ const debug={
   nivel:id=>E.pecas[id].nivel,
   emboloKC:id=>({on:!!E.pecas[id].on,cor:E.pecas[id].extra.embolo.material.color.getHexString()}),
   visorFT:id=>E.pecas[id].extra.visor.material.color.getHex()===PAL.desarmado?'disparado':'armado',
-  livre:()=>!!E.livre,
   faixa:()=>({estado:E.faixa.estado,legendas:E.faixa.legendas,altura:E.faixaH,pontos:E.faixa.pontos.filter(p=>p.visible).length,cabos:E.faixa.cabos.length}),
-  azimute:()=>[E.controls.minAzimuthAngle,E.controls.maxAzimuthAngle],
-  botao360:()=>E.b360,
   badge:()=>({visivel:!E.badge.hidden,texto:E.badge.textContent}),
   plaquetas:pid=>{const o=[];E.pecas[pid].g.traverse(m=>{if(m.userData.plaqueta)o.push({t:m.userData.plaqueta,incl:m.rotation.x,alt:m.geometry.parameters.height})});return o},
   nomeBorne:(pid,k)=>nomeBorne(E.pecas[pid].c,k),

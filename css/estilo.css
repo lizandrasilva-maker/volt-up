@@ -747,10 +747,3 @@ svg.curto{animation:shake .32s 2}
 .badge-borne{position:absolute;z-index:3;pointer-events:none;transform:translate(-50%,calc(-100% - 46px));white-space:nowrap;
   background:#f8fafc;color:#070c16;font:900 15px/1.2 var(--body);padding:5px 11px;border:3px solid var(--contorno);border-radius:10px;box-shadow:3px 4px 0 var(--contorno)}
 .badge-borne[hidden]{display:none}
-/* modo 360° da bancada 3D */
-.cena3d .b360{position:absolute;top:8px;left:8px;z-index:2;min-height:36px;padding:2px 12px;font-size:13px;border-radius:10px;background:color-mix(in srgb,var(--panel2) 85%,transparent)}
-.cena3d .b360[aria-pressed="true"]{background:var(--faixa);color:#1b1a10;border-color:var(--contorno)}
-.cena3d .dica360{position:absolute;left:8px;right:8px;bottom:8px;z-index:2;pointer-events:none;text-align:center;font-weight:800;font-size:13px;color:#f8fafc;
-  background:color-mix(in srgb,#070c16 70%,transparent);border-radius:10px;padding:6px 10px}
-.cena3d .dica360[hidden]{display:none}
-.cena3d.livre canvas{cursor:grab}

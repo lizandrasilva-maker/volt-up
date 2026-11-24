@@ -27,7 +27,7 @@ Padroniza o visual e a construção das peças 3D da bancada (`js/bancada3d.js`)
 
 7. **Botão 🧊 3D sem flag.** Aparece em toda bancada cujas peças estão em `VISTA3D.suporta`; o Three.js só é baixado no primeiro toque. `?3d=1` apenas abre direto em 3D e mostra os laboratórios.
 9. **Caminho da energia em 3D (`montaFaixa()`).** Na vista 3D, a faixa poste → transformador → ramal → medidor → quadro → circuito é desenhada no alto do MESMO canvas (viewport de cima, cena e câmera próprias; nunca um segundo contexto WebGL). Estado: `on` (alguma carga em `res.lamp` > 0,04: pontos de luz correm pelos cabos, LED do medidor pisca, lâmpada acende), `short` (`ctx.curto`: cabos com `matCurto`) ou parado. Legendas iguais às de `entrada()` no SVG, com a rede escolhida. Toque, raycast e projeção usam só a área da bancada (`areaBancada()`). No 2D a faixa continua em SVG.
-8. **Modo 360°.** O botão `↻ 360°` (dentro da cena) solta a câmera (sem limite de giro, giro automático até o primeiro toque). Enquanto ativo, nenhum toque chega ao `ctl`: o circuito não muda. `✋ Montar` volta aos limites de trabalho (`limites()`) e reenquadra. Ao incluir uma peça, acrescente o tipo em `VISTA3D.suporta` (`js/fases.js`).
+8. **360° sempre ligado (sem botão).** A câmera gira livre o tempo todo (`limites()`: azimute sem limite, polar quase completo). Arrastar no espaço vazio gira; tocar em borne, peça ou fio continua montando (toque sem movimento vai para o `ctl`). Na bancada fica só o botão "🔌 2D".
 
 ---
 
@@ -78,7 +78,8 @@ Padroniza o visual e a construção das peças 3D da bancada (`js/bancada3d.js`)
 - **Fios legíveis como diagrama (`rota()` em `bancada3d.js`):** nada de arco grosso cruzando a bancada.
   - **Finos:** raio `0,13` (`FIO.raio`); um tubo invisível de raio `0,5` em volta (material de toque) mantém o toque fácil.
   - **Em ângulo reto com cantos arredondados:** o fio sai do borne para a frente, corre pela face da peça até a borda (por cima se o borne está na metade de cima da peça, por baixo se está na de baixo), mergulha até perto da chapa e segue em trechos horizontais e verticais (`CurvePath` de `LineCurve3` com uma `QuadraticBezierCurve3` em cada canto).
-  - **Cada fio na sua pista:** altura do corredor e profundidade mudam por fio (`FIO.pista`, `FIO.prof`, `FIO.pistas`), para fios paralelos não se sobreporem.
+  - **Caminho sem passar por trás de peça (`rota()`):** busca o caminho mais curto do tipo origem → corredor perto dela (yA) → coluna (xr) → corredor perto do destino (yB) → destino, testando alturas a partir da borda de cada peça e colunas nas bordas das peças; nenhum trecho junto à chapa pode entrar na caixa de outra peça (`livreH`/`livreV`). Se a bancada estiver cheia a ponto de não haver caminho, usa o corredor simples.
+  - **Cada fio na sua pista:** a profundidade muda por fio (`FIO.prof`) e o afastamento preferido do corredor também (`FIO.pista`), mas só como preferência de custo, nunca bloqueando o caminho.
   - **Realce do ponto elétrico:** com um borne selecionado (`ctx.sel`), os fios do mesmo potencial (`ctx.res.net`) ficam cheios e os outros ficam translúcidos (`matFioApagado`, do cache).
   - Toda peça nova precisa da `caixa` (`Box3` do grupo) para o fio saber por onde sair.
 
