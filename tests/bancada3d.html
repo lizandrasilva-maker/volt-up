@@ -362,6 +362,20 @@ const coresDoFioCSS=k=>(CORES[k].c.match(/var\(--[\w-]+\)|#[0-9a-f]{3,8}\b/gi)).
    toque('S1');toque('L1');e5.troca=/* abre o S1 antes de trocar: com 4,5 V a lâmpada nova queimaria de novo */!peca('L1').broken&&D.queimada('L1')===false;
    e5.niveis=['leve','moderado','full'].map(md=>{S.mode=md;S.seen[md+':lanterna:cena']=1;runBuild(p,comARede(p.dados[md]));return !!document.querySelector('.bench3d canvas')}).every(Boolean);
    S.mode='moderado';}
+  /* ---- Lote F: Oficina com a bancada 3D, setas para mover peça, desfazer/refazer; Medir usa o desenho das ponteiras ---- */
+  {const of=R.oficina={},abre=()=>document.getElementById('cx').click(),cv3=()=>!!document.querySelector('.bench3d canvas'),svg2=()=>!!document.querySelector('#bench svg');
+   S.mode='leve';escolheVista('3d');VISTA3D.girar=false;S.sandbox=null;runSandbox();of.em3d=cv3();
+   abre();document.querySelector('[data-add="lamp"]').click();of.lampada=cv3()&&S.sandbox.comps.some(c=>c.id==='L1');
+   abre();document.querySelector('[data-cor="fase"]').click();toque('B.0');toque('L1.0');
+   abre();document.querySelector('[data-cor="neutro"]').click();toque('B.1');toque('L1.1');
+   of.acende=S.sandbox.wires.length===2&&D.brilho('L1')>0.5;
+   document.getElementById('desf').click();of.desfez=S.sandbox.wires.length===1;document.getElementById('refz').click();of.refez=S.sandbox.wires.length===2&&D.brilho('L1')>0.5;
+   toque('L1');const x0=S.sandbox.comps.find(c=>c.id==='L1').x;const mv=document.querySelector('[data-mover="1,0"]');if(mv)mv.click();
+   of.moveu=!!mv&&S.sandbox.comps.find(c=>c.id==='L1').x===x0+10&&cv3();document.getElementById('desf').click();of.voltou=S.sandbox.comps.find(c=>c.id==='L1').x===x0;
+   abre();document.querySelector('[data-tool="meter"]').click();of.medir=svg2()&&!cv3();
+   abre();document.querySelector('[data-tool="build"]').click();of.volta3d=cv3();
+   abre();document.querySelector('[data-cat="predial"]').click();document.querySelector('[data-add="sw2"]').click();of.semPeca3d=svg2()&&!cv3();
+   S.sandbox=null;S.mode='moderado';}
   /* sair da bancada libera o WebGL */
   showMap();await new Promise(r=>setTimeout(r,0));R.liberou=VISTA3D.no===null;
 }catch(e){R.ERRO=e.message+' '+(e.stack||'')}
