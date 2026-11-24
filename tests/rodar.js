@@ -197,6 +197,11 @@ let pistas={};
       confere(C,k.fios===true&&k.liga===true&&k.selo===true&&k.desliga===true,'comando: LIGA energiza a bobina (êmbolo recua laranja), o selo 13-14 segura, DESLIGA derruba');
       confere(C,k.termico===true&&k.rearme===true,'relé térmico: tocar simula a sobrecarga (95-96 abre, visor vermelho, bobina cai); tocar de novo rearma');
       confere(C,k.aprovou3d===true&&k.aprovouSvg===true&&k.equivalente===true,'Contatora 3D: mesmos gestos na 3D e no SVG, mesmo estado e aprovação',k.s3+' / '+k.ss);}
+     {const s=b.interruptor||{};
+      confere(C,s.em3d===true&&s.term3d===true&&s.plaquetas===true,'interruptor simples em 3D: bornes L e R iguais ao motor.js e ao 2D; Primeiro Circuito abre em 3D');
+      confere(C,s.desligado===true&&s.liga===true&&s.desliga===true,'tocar no interruptor inclina a tecla (c.closed) e liga e desliga a lâmpada');
+      confere(C,s.aprovou3d===true&&s.aprovouSvg===true&&s.equivalente===true,'Primeiro Circuito: mesmos gestos na 3D e no SVG, mesmo estado e aprovação',s.s3+' / '+s.ss);
+      confere(C,s.paralelo===true,'Série ou Paralelo abre em 3D nos 3 níveis');}
      confere(C,b.liberou===true,'ao sair da bancada, o WebGL é liberado');}
     /* Fonte e aterramento: a fonte não tem PE; o terra vem da haste pelo BEP */
     const fa=t.fonte||{};
