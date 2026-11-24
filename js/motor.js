@@ -3,7 +3,7 @@
    Análise nodal resolve as tensões; brilho = potência relativa a 1 lâmpada sozinha na fonte. */
 const C=(id,type,x,y,v,ex)=>Object.assign({id,type,x,y,v:!!v},ex||{});
 const W=(a,b,e)=>({a,b,e});
-const NAME={src:'fonte',haste:'haste de aterramento',bep:'BEP',lamp:'luminária',sw:'interruptor',fuse:'disjuntor',sw2:'interruptor duplo',sw3:'interruptor paralelo',sw4:'interruptor intermediário',dr:'DR',dps:'DPS',foto:'fotocélula',ri:'relé de impulso',boia:'boia de nível',motor:'motor',kc:'contatora',ft:'relé térmico',btn:'botoeira'};
+const NAME={src:'fonte',haste:'haste de aterramento',bep:'BEP',pilha:'pilha',lamp:'luminária',sw:'interruptor',fuse:'disjuntor',sw2:'interruptor duplo',sw3:'interruptor paralelo',sw4:'interruptor intermediário',dr:'DR',dps:'DPS',foto:'fotocélula',ri:'relé de impulso',boia:'boia de nível',motor:'motor',kc:'contatora',ft:'relé térmico',btn:'botoeira'};
 /* Posição dos bornes. Na vista real (GEOM_REAL, ligada por board()) cada peça tem os bornes onde o
    equipamento tem (js/bancada-real.js). O cálculo só usa o número do borne, então é o mesmo nas duas vistas.
    A lâmpada é bocal com 2 bornes (X1/X2), sem PE; só uma luminária com pe:true teria o 3º borne.
@@ -18,7 +18,8 @@ const NAME={src:'fonte',haste:'haste de aterramento',bep:'BEP',lamp:'luminária'
    Fonte (src): L1, N, L2, L3 (c.fases = 1, 2 ou 3; sempre com neutro). Não tem PE: o neutro chega aterrado
    pela própria fonte (esquema TT) e o terra da instalação é criado pela haste.
      haste de aterramento: 1 borne (conector no topo)       bep (barramento de equipotencialização principal): 4 bornes unidos */
-const SYM_TERMS={haste:[[0,-26]],bep:[[-18,16],[-6,16],[6,16],[18,16]],sw2:[[-26,0],[26,-14],[26,14]],sw3:[[-26,0],[26,-14],[26,14]],dr:[[-12,-30],[12,-30],[-12,30],[12,30]],
+/* pilha (bancada CC): borne 0 = +, borne 1 = − */
+const SYM_TERMS={pilha:[[-26,0],[26,0]],haste:[[0,-26]],bep:[[-18,16],[-6,16],[6,16],[18,16]],sw2:[[-26,0],[26,-14],[26,14]],sw3:[[-26,0],[26,-14],[26,14]],dr:[[-12,-30],[12,-30],[-12,30],[12,30]],
   boia:[[-26,0],[26,0]],sw4:[[-26,-12],[-26,12],[26,-12],[26,12]],dps:[[0,-26],[0,26]],foto:[[-26,0],[0,26],[26,0]],ri:[[-12,-30],[-12,30],[12,-30],[12,30]],
   motor:[[-26,0],[26,0],[0,26]],kc:[[-30,-30],[-30,30],[0,-30],[0,30],[30,-30],[30,30]],ft:[[-12,-30],[-12,30],[14,-30],[14,30]],btn:[[-26,0],[26,0]]};
 let GEOM_REAL=false;
@@ -157,7 +158,7 @@ function wirePath(comps,w){const [x1,y1]=tpos(comps,w.a),[x2,y2]=tpos(comps,w.b)
 /* Símbolo das peças da Oficina (Diagrama): caixa com a letra de identificação e os condutores até os bornes. */
 /* peças que o aluno aciona com um toque (interruptores, botoeiras, DR/relé em teste, fotocélula, boia) */
 const ACION={sw:1,sw2:1,sw3:1,sw4:1,btn:1,dr:1,ft:1,foto:1,boia:1,fuse:1};
-const SYM_TXT={haste:'⏚',bep:'BEP',boia:'BÓIA',sw2:'S 2×',sw3:'S ⇅',sw4:'S ⤨',dr:'DR',dps:'DPS',foto:'FC',ri:'RI',motor:'M',kc:'K',ft:'FT',btn:'B'};
+const SYM_TXT={pilha:'1,5V',haste:'⏚',bep:'BEP',boia:'BÓIA',sw2:'S 2×',sw3:'S ⇅',sw4:'S ⤨',dr:'DR',dps:'DPS',foto:'FC',ri:'RI',motor:'M',kc:'K',ft:'FT',btn:'B'};
 function symGeneric(c,b,o){
   const hw=c.type==='kc'?22:c.type==='motor'?14:16,hh=c.type==='kc'||c.type==='dr'||c.type==='ft'||c.type==='ri'?18:12;
   let s=SYM_TERMS[c.type].map(([x,y])=>{const ex=Math.max(-hw,Math.min(hw,x)),ey=Math.max(-hh,Math.min(hh,y));return '<line class="sym" x1="'+x+'" y1="'+y+'" x2="'+ex+'" y2="'+ey+'"/>'}).join('');

@@ -106,6 +106,15 @@ let pistas={};
      confere('Curto-circuito',c.dgDesliga===true,'Quadro Novo: tocar na alavanca do DG desliga o disjuntor geral');
      confere('Telas de bancada (desenho e aviso)',c.zoom===true,'zoom: "−" apagado com a bancada inteira; "+" amplia e "−" volta ao tamanho normal');
      confere('Curto-circuito',c.verificaDesarmado===true,'"Verificar" com a proteção desarmada pede para corrigir e religar');}
+    {const k=t.cc||{},J=JSON.stringify;
+     confere('Corrente contínua (Pilha e Lanterna)',J(k.serie)==='[2.88,0.288]','2 pilhas em série na lâmpada: 3 V ÷ 10,4 Ω → 0,288 A e 2,88 V',J(k.serie));
+     confere('Corrente contínua (Pilha e Lanterna)',J(k.umaPilha)==='[1.47,true]'&&k.paralelo&&k.paralelo[1]===true&&Math.abs(k.paralelo[0]-1.49)<0.02,'1 pilha (1,47 V) e pilhas em paralelo (~1,49 V): lâmpada fraca',J(k.umaPilha)+' '+J(k.paralelo));
+     confere('Corrente contínua (Pilha e Lanterna)',J(k.invertida)==='[true,"P1"]'||J(k.invertida)==='[true,"P2"]','pilha invertida: tensões se anulam e o jogo aponta a pilha virada',J(k.invertida));
+     confere('Corrente contínua (Pilha e Lanterna)',J(k.tres)==='[4.25,true]','3 pilhas em série: 4,5 V × 10 ÷ 10,6 Ω ≈ 4,25 V na lâmpada de 3 V → queima',J(k.tres));
+     confere('Corrente contínua (Pilha e Lanterna)',J(k.curto)==='[true,7.5]','fio direto na pilha: curto de 7,5 A (1,5 V ÷ 0,2 Ω)',J(k.curto));
+     confere('Corrente contínua (Pilha e Lanterna)',J(k.etapas)==='[true,true,true,true]','retorno em etapas (pista → explicação) e com linguagem diferente por nível',J(k.etapas));
+     confere('Corrente contínua (Pilha e Lanterna)',k.troca===true&&k.tela===true,'lâmpada queimada troca com um toque; bancada CC sem a faixa do poste, com aviso do modelo e fios + e −');
+     confere('Corrente contínua (Pilha e Lanterna)',k.ordemCap1==='faisca,lanterna,entrada,seguranca,primeiro,previsao,paralelo,defeito,ohm,renovavel','Capítulo 1 na ordem dos 3 atos (segurança antes do 220 V; Guardião Verde no fim)',k.ordemCap1);}
     {const m=t.multimetro||{};
      confere('Multímetro',m.temAparelho===true&&m.semLetras===true,'Caça-Defeito mostra o multímetro com as duas pontas e nenhuma letra nos parafusos');
      confere('Multímetro',m.antes==='– – –'&&m.umaPonta==='– – –','sem as duas pontas nos parafusos, o visor não mede',m.antes+' / '+m.umaPonta);

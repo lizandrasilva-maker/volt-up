@@ -98,7 +98,9 @@ function showMap(){
   setMode();const m=MODES[S.mode];
   const ch=CHAPTERS.find(c=>c.id===S.chap)||CHAPTERS[0];
   /* um capítulo só abre quando o anterior (jogável) estiver completo no nível atual; no modo teste tudo abre */
-  const completo=c=>!c.soon&&c.fases.every(id=>S.done[S.mode+':'+id]);
+  /* capítulo completo: todas as fases feitas, ou o aluno já viu o final dele (fase nova inserida depois
+     não trava de novo o capítulo seguinte para quem já tinha concluído) */
+  const completo=c=>!c.soon&&(c.fases.every(id=>S.done[S.mode+':'+id])||!!S.seen[S.mode+':'+c.id+':fim']);
   const fechado=c=>{const k=CHAPTERS.indexOf(c);return !window.VOLT_TESTE&&!c.soon&&k>0&&!completo(CHAPTERS[k-1])};
   const seenKey=S.mode+':'+ch.id+':intro';
   if(!ch.soon&&!fechado(ch)&&ch.intro&&!S.seen[seenKey]){S.seen[seenKey]=1;save();showScene(ch.intro,showMap);return}
@@ -114,7 +116,8 @@ function showMap(){
     let nextFound=false;
     const ids=ch.fases;
     const nodes=ids.map((id,i)=>{const p=phaseById(id);
-      const done=S.done[S.mode+':'+p.id]||0,open=window.VOLT_TESTE||i===0||S.done[S.mode+':'+ids[i-1]];
+      /* aberta: a primeira, a que já foi feita, ou a seguinte a uma feita (uma fase nova no meio não trava as já feitas) */
+      const done=S.done[S.mode+':'+p.id]||0,open=window.VOLT_TESTE||i===0||done||S.done[S.mode+':'+ids[i-1]];
       let cls=done?'done':open?'':'lock';if(open&&!done&&!nextFound){cls+=' next';nextFound=true}
       /* fase bloqueada: só o nome e o cadeado, sem subtítulo nem tipo */
       return '<button class="node '+cls+'" data-i="'+PHASES.indexOf(p)+'"><span class="dot">'+icon(p.ic)+'</span><span class="tt"><b>'+p.nome+'</b>'+(open?'<small>'+p.sub+'</small><span class="kind">'+p.kind+'</span>':'')+'</span>'+(done?stars(done):open?'':'<span class="cad" aria-label="bloqueada">🔒</span>')+'</button>';
@@ -154,7 +157,8 @@ function playPhase(i){
   const go=()=>({quiz:runQuiz,sort:runSort,build:runBuild,predict:runPredict,diag:runDiag})[p.tipo](p,d);
   const k=S.mode+':'+p.id+':cena';
   /* no modo teste a cena aparece sempre, para revisar a história */
-  if(SCENES[p.id]&&(window.VOLT_TESTE||!S.seen[k])){S.seen[k]=1;save();showScene(SCENES[p.id],go)}else go();
+  const cena=cenaDe(p.id);
+  if(cena&&(window.VOLT_TESTE||!S.seen[k])){S.seen[k]=1;save();showScene(cena,go)}else go();
 }
 function frame(p,inner,bubble){
   const tf=typeof testePhaseHTML==='function'?testePhaseHTML(p):'';

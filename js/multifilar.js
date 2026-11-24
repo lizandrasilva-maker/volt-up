@@ -6,7 +6,7 @@
    Usa os bornes da vista de símbolo (terms() com GEOM_REAL desligado); o cálculo é o mesmo. */
 
 /* Corpo de cada símbolo [x0,y0,x1,y1] em relação ao centro (peças que giram: sw, fuse, lamp). */
-const SYM_BOX={src:[-18,-20,18,20],haste:[-12,-16,12,14],bep:[-24,-8,24,8],lamp:[-12,-12,12,12],sw:[-14,-15,14,6],fuse:[-14,-14,14,6],sw2:[-14,-17,14,17],sw3:[-14,-17,14,17],sw4:[-14,-17,14,17],
+const SYM_BOX={pilha:[-14,-14,14,14],src:[-18,-20,18,20],haste:[-12,-16,12,14],bep:[-24,-8,24,8],lamp:[-12,-12,12,12],sw:[-14,-15,14,6],fuse:[-14,-14,14,6],sw2:[-14,-17,14,17],sw3:[-14,-17,14,17],sw4:[-14,-17,14,17],
   dr:[-21,-16,21,16],dps:[-9,-13,9,13],foto:[-17,-13,17,13],ri:[-22,-15,22,15],kc:[-40,-15,38,15],ft:[-21,-13,23,13],btn:[-14,-17,14,6],motor:[-15,-15,15,15],boia:[-14,-17,14,6]};
 const GIRA={sw:1,fuse:1,lamp:1};
 function symBounds(c,pad){pad=pad||0;const o=SYM_BOX[c.type];
@@ -34,6 +34,10 @@ function multiSym(c,b,o){
       s='<rect x="-18" y="-20" width="36" height="40" rx="5" class="mbody"/><path d="M-9 -7 q4.5 -8 9 0 t9 0" class="ms" style="stroke:var(--amber)"/>'+
         '<text y="6" text-anchor="middle" class="mtx">'+(nf===1?'1F+N':nf+'F+N')+'</text><text y="15" text-anchor="middle" class="mtx"'+(c.trip?' style="fill:var(--fase)"':'')+'>'+(c.trip?'PROT':(c.V||220)+' V~')+'</text>'+
         ln(0,-30,0,-20)+ln(0,20,0,30)+(nf>=2?ln(18,-10,28,-10):'')+(nf>=3?ln(18,10,28,10):'');break}
+    /* pilha: traço longo = polo positivo, traço curto e grosso = polo negativo */
+    case 'pilha':s=ln(-26,0,-4,0)+ln(4,0,26,0)+'<path d="M-4 -12 V12" class="ms"/><path d="M4 -6 V6" class="ms" style="stroke-width:4"/>'+
+      '<text x="-12" y="-6" text-anchor="middle" class="mtx" style="fill:var(--fase)">+</text><text x="12" y="-6" text-anchor="middle" class="mtx">−</text>'+
+      '<text y="22" text-anchor="middle" class="mtx">'+ccN(c.V||1.5)+' V</text>';break;
     /* haste: símbolo de terra (três traços decrescentes) */
     case 'haste':s=ln(0,-26,0,-4)+'<path d="M-12 -4 H12 M-8 2 H8 M-4 8 H4" class="ms"/>';break;
     /* BEP: barra com os bornes embaixo */
@@ -81,12 +85,12 @@ function multiSym(c,b,o){
     case 'boia':s=ln(-26,0,-12,0)+ln(12,0,26,0)+pto(-12,0)+pto(12,0)+contato(-12,0,12,0,!!c.vazia)+elo(0,c.vazia?0:-6,0,-12)+
       '<circle cy="-15" r="3.5" class="ms" style="fill:none"/>';break;
   }
-  if(o.toggle&&(ACION[c.type]||((c.type==='fuse'||c.type==='src')&&c.trip))&&c.type!=='sw'){const r=SYM_BOX[c.type];s+='<rect class="chit" data-sw="'+c.id+'" x="'+r[0]+'" y="'+r[1]+'" width="'+(r[2]-r[0])+'" height="'+(r[3]-r[1])+'"/>'}
+  if(o.toggle&&(ACION[c.type]||((c.type==='fuse'||c.type==='src')&&c.trip)||(c.type==='lamp'&&c.queima))&&c.type!=='sw'){const r=SYM_BOX[c.type];s+='<rect class="chit" data-sw="'+c.id+'" x="'+r[0]+'" y="'+r[1]+'" width="'+(r[2]-r[0])+'" height="'+(r[3]-r[1])+'"/>'}
   if(o.pickComp&&c.type!=='src'){const r=SYM_BOX[c.type];s+='<rect class="chit" data-c="'+c.id+'" x="'+(r[0]-6)+'" y="'+(r[1]-6)+'" width="'+(r[2]-r[0]+12)+'" height="'+(r[3]-r[1]+12)+'"/>'}
   return '<g transform="translate('+c.x+' '+c.y+')'+(GIRA[c.type]&&c.v?' rotate(90)':'')+'">'+s+'</g>';
 }
 /* Nome do borne no multifilar (o mesmo impresso na peça real; a fonte mostra L1, L2, L3 e N). */
-function multiBorne(c,k){if(c.type==='src')return bFonte(k);if(c.type==='bep'||c.type==='haste')return '';if(c.type==='btn'&&c.nf)return ['1','2'][k];
+function multiBorne(c,k){if(c.type==='src')return bFonte(k);if(c.type==='pilha')return k?'−':'+';if(c.type==='bep'||c.type==='haste')return '';if(c.type==='btn'&&c.nf)return ['1','2'][k];
   if(c.type==='lamp')return '';const T=REAL_TERMS[c.type]&&REAL_TERMS[c.type][k];return T?T.n:''}
 
 /* Bancada inteira em multifilar: condutores → símbolos → bornes e nomes → áreas de toque. */
