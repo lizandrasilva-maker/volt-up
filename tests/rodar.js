@@ -168,7 +168,7 @@ let pistas={};
      confere(C,b.djDesligou===true&&b.apagou===true&&b.religou===true,'tocar no disjuntor gira a alavanca: desliga (lâmpada apaga) e religa');
      confere(C,b.curto===true&&b.tirouCurto===true,'curto depois do disjuntor: DJ desarma, fios piscam e a faísca aparece; tocar no fio tira');
      confere(C,b.term3d===true,'TERM3D: cada peça tem na 3D os mesmos bornes que terms(c) no motor.js');
-     confere(C,b.materiais-b.materiaisAntes<=2&&b.materiais<b.malhasAgora*0.6,'materiais em cache: 3 fios acrescentam no máximo 2 materiais (fase e neutro) e peças repetidas dividem os seus',(b.materiais-b.materiaisAntes)+' novos; '+b.materiais+' materiais / '+b.malhasAgora+' malhas');
+     confere(C,b.materiais-b.materiaisAntes<=4&&b.materiais<b.malhasAgora*0.6,'materiais em cache: 3 fios acrescentam no máximo 4 materiais (fio e ponteira de fase e de neutro) e peças repetidas dividem os seus',(b.materiais-b.materiaisAntes)+' novos; '+b.materiais+' materiais / '+b.malhasAgora+' malhas');
      confere(C,b.contorno==='#070c16','contorno anime com o --contorno do jogo',b.contorno);
      confere(C,b.corFase===true&&b.corNeutro===true&&b.terraListrado===true,'cores dos fios vêm da tabela CORES do 2D; o terra é listrado nas duas cores dela');
      confere(C,b.fioFino===true&&b.ortogonal===true&&b.pistas===3,'fios finos, em ângulo reto e cada um na sua pista (legíveis como diagrama)',b.pistas+' pistas');
