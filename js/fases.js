@@ -233,9 +233,10 @@ function pontosDaMontagem(pid,st){if(typeof TESTE_SOL==='undefined')return null;
 /* Desfazer/refazer da montagem: cada passo guarda os fios e o estado que um fio muda (fases da fonte, proteção
    desarmada por curto, lâmpada queimada). Posição de interruptor e botoeira não entra: é teste, não montagem. */
 const CAMPOS_HIST=['fases','trip','broken','queima','show'];
-function historico(st){const antes=[],depois=[];
-  const foto=()=>JSON.stringify({w:st.wires,c:st.comps.map(c=>[c.id,CAMPOS_HIST.map(k=>c[k]===undefined?null:c[k])])});
-  const volta=f=>{const o=JSON.parse(f);st.wires=o.w;o.c.forEach(([id,vs])=>{const c=st.comps.find(x=>x.id===id);if(c)CAMPOS_HIST.forEach((k,i)=>{if(vs[i]===null)delete c[k];else c[k]=vs[i]})})};
+/* tudo = guarda a bancada inteira (peças e posições), para a Oficina, onde o aluno põe, tira e move peças */
+function historico(st,tudo){const antes=[],depois=[];
+  const foto=()=>tudo?JSON.stringify({w:st.wires,p:st.comps}):JSON.stringify({w:st.wires,c:st.comps.map(c=>[c.id,CAMPOS_HIST.map(k=>c[k]===undefined?null:c[k])])});
+  const volta=f=>{const o=JSON.parse(f);st.wires=o.w;if(o.p){st.comps=o.p;return}o.c.forEach(([id,vs])=>{const c=st.comps.find(x=>x.id===id);if(c)CAMPOS_HIST.forEach((k,i)=>{if(vs[i]===null)delete c[k];else c[k]=vs[i]})})};
   return {marca(){antes.push(foto());if(antes.length>80)antes.shift();depois.length=0},
     desfaz(){if(!antes.length)return false;depois.push(foto());volta(antes.pop());return true},
     refaz(){if(!depois.length)return false;antes.push(foto());volta(depois.pop());return true},
@@ -459,13 +460,20 @@ function runSandbox(){
   sb.comps.forEach(c=>{if(c.type==='btn')c.pressed=false});
   let tool='build',cor='fase',sel=null,selC=null,pt=novasPonteiras(),ultima=null,msg=null,sure=false,box=false,cat='fundamentos',curto=null;
   const checa=onde=>{const ev=protegeCurto(sb,onde);if(ev){curto=ev;msg={bad:1,t:msgCurto(ev)}}};
-  const zm=benchZoom();let drawn=false;BANCADA_ID++;
+  const zm=benchZoom();let drawn=false;BANCADA_ID++;const hist=historico(sb,true),oficinaId=BANCADA_ID;let v3=false,ultimoRes=null;
   const persist=()=>{S.sandbox=sb;save()};
+  /* a cena 3D da Oficina é refeita quando entra, sai ou se move uma peça (nas fases as peças nunca mudam) */
+  const chave3D=()=>'ofi:'+oficinaId+':'+sb.comps.map(c=>c.id+'/'+c.type+'/'+c.x+','+c.y+(c.nf?'nf':'')).join('|');
   const SPOTS=[[115,60],[185,60],[255,60],[308,60],[115,165],[185,165],[255,165],[308,165],[150,112],[230,112],[290,112]];
   const acionar=(c,lx)=>acionarPeca(c,lx,()=>{persist();render()});
   const getSvg=()=>document.querySelector('#bench svg');
   const sc=()=>sb.comps.find(c=>c.id===selC);
-  const benchHTML=()=>{const r=solve(sb.comps,sb.wires);return benchWrap(board(sb,{res:r,sel,selC,move:tool==='build',pickTerm:true,pickWire:tool==='build',ponteiras:tool==='meter'?pt:null,real:vistaReal(),vb:zm.vb(),curto}),'bench',zm)+statusChips(sb,r)};
+  /* Montar: a bancada 3D/2D com as peças novas (se todas as peças da bancada já existem em 3D); Medir: o desenho das
+     ponteiras do multímetro */
+  const benchHTML=()=>{const r=solve(sb.comps,sb.wires);ultimoRes=r;const p3=tool==='build'&&pode3D(sb);v3=tool==='build'&&quer3D(sb);
+    const aguarda=!v3&&p3&&VISTA3D.ligada&&VISTA3D.baixavel&&!VISTA3D.vista&&!VISTA3D.erro;if(aguarda)carrega3D();
+    const est=curto?'short':Object.values(r.lamp||{}).some(b=>b>.04)?'on':'';
+    return benchWrap(v3||aguarda?'':board(sb,{res:r,sel,selC,move:tool==='build',pickTerm:true,pickWire:tool==='build',ponteiras:tool==='meter'?pt:null,real:vistaReal(),vb:zm.vb(),curto}),'bench',zm,false,v3||aguarda,p3,aguarda,est)+statusChips(sb,r)};
   const redrawBench=()=>{document.getElementById('bw').innerHTML=benchHTML();bindBench()};
   const add=key=>{
     if(sb.comps.length>=14){msg={bad:1,t:'Bancada cheia: no máximo 13 peças além da fonte.'};render();return}
@@ -475,18 +483,21 @@ function runSandbox(){
     /* haste e BEP vão para o canto de baixo, perto da fonte (a haste fica no solo) */
     const livre=([x,y])=>!sb.comps.some(c=>Math.hypot(c.x-x,c.y-y)<(key==='haste'||key==='bep'?40:60));
     const spot=(key==='haste'?[[45,205],[130,215],[200,215]]:key==='bep'?[[95,192],[100,150]]:[]).concat(SPOTS).find(livre)||[185,112];
-    sb.comps.push(C(pre+n,type,spot[0],spot[1],0,ex));selC=pre+n;msg=null;persist();render()};
-  const addWire=(a,b)=>{sel=null;msg=null;if(!sb.wires.some(w=>(w.a===a&&w.b===b)||(w.a===b&&w.b===a))){sb.wires.push(Object.assign(W(a,b),{cor}));checa(b)}persist();render()};
+    hist.marca();sb.comps.push(C(pre+n,type,spot[0],spot[1],0,ex));selC=pre+n;msg=null;persist();render()};
+  const addWire=(a,b)=>{sel=null;msg=null;if(!sb.wires.some(w=>(w.a===a&&w.b===b)||(w.a===b&&w.b===a))){hist.marca();sb.wires.push(Object.assign(W(a,b),{cor}));checa(b)}persist();render()};
   /* contrato de intenções da Oficina (mesmo formato do runBuild). No modo Medir, tocar num borne encaixa a ponteira. */
   const ctl={
     tocouBorne:a=>{if(tool==='meter'){ultima=tocaPonteira(sb.comps,pt,a,ultima);render();return}
       if(sel===null)sel=a;else if(sel===a)sel=null;else{addWire(sel,a);return}render()},
     arrastouFio:(a,b)=>{if(b&&b!==a)addWire(a,b);else render()},
-    acionou:(id,lado)=>{const c=sb.comps.find(x=>x.id===id);if(!c)return;msg=null;selC=c.id;acionar(c,lado);checa(c.id);persist();render()},
-    tirouFio:i=>{if(!sb.wires[i])return;sb.wires.splice(i,1);persist();render()}
+    acionou:(id,lado)=>{const c=sb.comps.find(x=>x.id===id);if(!c)return;msg=null;selC=c.id;
+      /* fonte na 3D: o seletor 1F/2F/3F+N relata acionou(id, 'fases:n') */
+      if(c.type==='src'&&typeof lado==='string'&&lado.startsWith('fases:')){const n=+lado.slice(6);if(nFases(c)!==n)hist.marca();aplicaFases(sb,c,n);pt=novasPonteiras();persist();render();return}
+      acionar(c,lado);checa(c.id);persist();render()},
+    tirouFio:i=>{if(!sb.wires[i])return;hist.marca();sb.wires.splice(i,1);persist();render()}
   };
   const render=()=>{
-    const c=sc();
+    const c=sc(),yAntes=benchY;VISTA3D.redesenha={id:oficinaId,f:render};
     /* botões de ação da peça selecionada */
     const acoes=c?({sw:[['x',c.closed?'Abrir':'Fechar']],sw2:[['-1','Seção 1'],['1','Seção 2']],sw3:[['x','Inverter']],sw4:[['x','Inverter']],foto:[['x',c.noite?'Virar dia':'Virar noite']],boia:[['x',c.vazia?'Encher a caixa':'Esvaziar a caixa']],dr:[['x',c.trip?'Rearmar':'Testar']],
       ft:[['x',c.trip?'Rearmar':'Simular sobrecarga']],btn:[['x','Apertar']],fuse:[['x',c.trip?'Ligar':'Desligar']],
@@ -504,10 +515,12 @@ function runSandbox(){
         '<button class="btn ghost sm" id="cxf">Fechar a caixa</button></div>':'')+
       (tool==='meter'?multimetroHTML(leituraPonteiras(sb.comps,solve(sb.comps,sb.wires),pt),dicaPonteiras(pt)):'')+
       '<div id="bw">'+benchHTML()+'</div>'+
-      (c&&tool==='build'?'<div class="row" style="align-items:center"><span class="chip">'+c.id+'</span>'+(vistaReal()?'':'<button class="btn sm" id="rot">↻ Girar</button>')+acoes.map(([k,t])=>'<button class="btn sm" data-ac="'+k+'">'+t+'</button>').join('')+(c.type!=='src'?'<button class="btn sm danger" id="del">🗑 Remover</button>':'')+'</div>':'')+
+      (c&&tool==='build'?'<div class="row" style="align-items:center"><span class="chip">'+c.id+'</span>'+(vistaReal()?'':'<button class="btn sm" id="rot">↻ Girar</button>')+acoes.map(([k,t])=>'<button class="btn sm" data-ac="'+k+'">'+t+'</button>').join('')+
+        '<span class="mover" role="group" aria-label="Mover a peça">'+[['-1,0','◀','esquerda'],['0,-1','▲','cima'],['0,1','▼','baixo'],['1,0','▶','direita']].map(([d,t,n])=>'<button class="btn sm" data-mover="'+d+'" aria-label="Mover para '+n+'">'+t+'</button>').join('')+'</span>'+
+        (c.type!=='src'?'<button class="btn sm danger" id="del">🗑 Remover</button>':'')+'</div>':'')+
       (msg?'<div class="fb '+(msg.bad?'bad':'good')+'">'+msg.t+'</div>':drFuga?'<div class="fb info">🛡️ O '+drFuga.id+' desarmou: tem corrente escapando para o terra. Ache a fuga e toque no DR para rearmar.</div>':tool==='build'&&!sb.wires.length?'<p class="help">Abra a caixa para pegar peças. Toque em dois '+(vistaReal()?'parafusos':'pontos ⚪')+' para ligar um fio.</p>':'')+
-      '<div class="row"><button class="btn ghost" id="clr">'+(sure?'Toque de novo para limpar':'Limpar bancada')+'</button><button class="btn main" id="insp">🔎 Inspecionar</button></div>');
-    keepScroll(drawn);drawn=true;curto=null;/* a animação do curto roda uma vez só */
+      '<div class="row">'+botoesHist(hist)+'<button class="btn ghost" id="clr">'+(sure?'Toque de novo para limpar':'Limpar bancada')+'</button><button class="btn main" id="insp">🔎 Inspecionar</button></div>');
+    const curtoAgora=curto,drawnAntes=drawn;keepScroll(drawn);drawn=true;curto=null;/* a animação do curto roda uma vez só */
     document.getElementById('cx').onclick=()=>{box=!box;render()};
     const cxf=document.getElementById('cxf');if(cxf)cxf.onclick=()=>{box=false;render()};
     app.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>{tool=b.dataset.tool;pt=novasPonteiras();sel=null;if(tool==='meter')selC=null;msg=null;box=false;render()});
@@ -518,11 +531,17 @@ function runSandbox(){
     const rot=document.getElementById('rot');if(rot)rot.onclick=()=>{c.v=!c.v;persist();render()};
     app.querySelectorAll('[data-ac]').forEach(b=>b.onclick=()=>{const k=b.dataset.ac;
       /* fonte: troca o número de fases; fios presos em borne de fase que deixou de existir saem */
-      if(k[0]==='f'){aplicaFases(sb,c,+k.slice(1));
+      if(k[0]==='f'){if(nFases(c)!==+k.slice(1))hist.marca();aplicaFases(sb,c,+k.slice(1));
         pt=novasPonteiras();msg={t:'Fonte: '+fonteTxt(c)+'.'};persist();render();return}
       acionar(c,k==='-1'?-1:1);checa(c.id);persist();render()});
-    const del=document.getElementById('del');if(del)del.onclick=()=>{sb.comps=sb.comps.filter(x=>x!==c);sb.wires=sb.wires.filter(w=>!w.a.startsWith(c.id+'.')&&!w.b.startsWith(c.id+'.'));selC=null;persist();render()};
-    document.getElementById('clr').onclick=()=>{if(!sure){sure=true;render();return}sure=false;sb={comps:[BAT()],wires:[]};selC=null;sel=null;pt=novasPonteiras();msg=null;persist();render()};
+    app.querySelectorAll('[data-mover]').forEach(b=>b.onclick=()=>{const [dx,dy]=b.dataset.mover.split(',').map(Number);hist.marca();
+      c.x=Math.max(34,Math.min(306,c.x+dx*10));c.y=vistaReal()?Math.max(REAL_Y[0],Math.min(REAL_Y[1],c.y+dy*10)):Math.max(34,Math.min(216,c.y+dy*10));persist();render()});
+    const ds=document.getElementById('desf');if(ds)ds.onclick=()=>{if(!hist.desfaz())return;sel=null;if(!sc())selC=null;msg=null;persist();render()};
+    const rf=document.getElementById('refz');if(rf)rf.onclick=()=>{if(!hist.refaz())return;sel=null;if(!sc())selC=null;msg=null;persist();render()};
+    app.querySelectorAll('[data-modo]').forEach(b=>b.onclick=()=>{const m=b.dataset.modo;escolheVista(m);if(m==='multi')setVista(false);if(VISTA3D.ligada&&!VISTA3D.vista)carrega3D();sel=null;render()});
+    app.querySelectorAll('[data-girar]').forEach(b=>b.onclick=()=>{VISTA3D.girar=!VISTA3D.girar;sel=null;render()});
+    const del=document.getElementById('del');if(del)del.onclick=()=>{hist.marca();sb.comps=sb.comps.filter(x=>x!==c);sb.wires=sb.wires.filter(w=>!w.a.startsWith(c.id+'.')&&!w.b.startsWith(c.id+'.'));selC=null;persist();render()};
+    document.getElementById('clr').onclick=()=>{if(!sure){sure=true;render();return}sure=false;hist.marca();sb.comps=[BAT()];sb.wires=[];selC=null;sel=null;pt=novasPonteiras();msg=null;persist();render()};
     document.getElementById('insp').onclick=()=>{
       const r=solve(sb.comps,sb.wires);const nl=Object.values(r.lamp).filter(b=>b>0.04).length;
       const desl=sb.comps.find(c=>(c.type==='fuse'||c.type==='src')&&c.trip);
@@ -531,10 +550,13 @@ function runSandbox(){
       else if(r.short)msg={bad:1,t:'Curto-circuito! Há um caminho sem carga entre fase e neutro (ou terra). Na vida real, o disjuntor desarmaria.'};
       else{const m=normCheck(sb)||colorCheck(sb);msg=m?{bad:1,t:m}:{t:'Inspeção aprovada: cores conforme a norma e '+nl+' carga(s) ligada(s) agora.'}}
       if(!msg.bad){S.xp+=2;S.flags.ofi=1;markDaily('ofi');save()}render()};
-    bindBench();
+    bindBench(curtoAgora);
+    /* depois de encaixar a cena, a rolagem volta para onde estava (a página encurta durante o redesenho) */
+    if(drawnAntes&&Math.abs(window.scrollY-yAntes)>1)window.scrollTo(0,yAntes);benchY=window.scrollY;
   };
-  const bindBench=()=>{
-    const svg=getSvg();
+  const bindBench=curtoAgora=>{
+    if(v3){encaixa3D({st:sb,res:ultimoRes||solve(sb.comps,sb.wires),sel,curto:curtoAgora||null,cor,editavel:true,ctl,bancada:chave3D(),girar:!VISTA3D.plano&&!!VISTA3D.girar,plano:!!VISTA3D.plano,cc:false,pontos:null,dica:'ponto'});return}
+    const svg=getSvg();if(!svg)return;
     zm.bind(document.getElementById('bench'),app);
     if(tool==='meter')ligaPonteiras(svg,sb.comps,pt,id=>{ultima=id;render()},zm);
     /* fios, bornes e acionamento: as mesmas intenções do runBuild */

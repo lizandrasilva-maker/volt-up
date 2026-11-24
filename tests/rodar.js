@@ -251,6 +251,10 @@ let pistas={};
       confere(C,h.em3d===true&&h.term3d===true&&h.plaquetas===true&&h.niveis===true,'Hall abre em 3D nos 3 níveis: relé de impulso com A1, A2, 1 e 2 do motor.js e do 2D');
       confere(C,h.apagada===true&&h.pulso1===true&&h.segura===true&&h.pulso2===true,'relé de impulso: pulso no P1 acende (alavanca sobe, visor laranja) e a luz continua acesa ao soltar; pulso no P2 apaga');
       confere(C,h.aprovou3d===true&&h.aprovouSvg===true&&h.equivalente===true,'Hall: mesmos gestos na 3D e no SVG, mesmo estado e aprovação',h.s3+' / '+h.ss);}
+     {const o=b.oficina||{};
+      confere(C,o.em3d===true&&o.lampada===true&&o.acende===true,'Oficina abre em 3D; pôr uma lâmpada pela caixa e ligar fase e neutro acende',JSON.stringify(o));
+      confere(C,o.desfez===true&&o.refez===true&&o.moveu===true&&o.voltou===true,'Oficina: desfazer/refazer fios e mover peça pelas setas (o desfazer devolve a posição)',JSON.stringify(o));
+      confere(C,o.medir===true&&o.volta3d===true&&o.semPeca3d===true,'Oficina: Medir usa o desenho das ponteiras; Montar volta à 3D; peça sem 3D (interruptor duplo) usa o desenho antigo',JSON.stringify(o));}
      confere(C,b.liberou===true,'ao sair da bancada, o WebGL é liberado');}
     /* Fonte e aterramento: a fonte não tem PE; o terra vem da haste pelo BEP */
     const fa=t.fonte||{};
