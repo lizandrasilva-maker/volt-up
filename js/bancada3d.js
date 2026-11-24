@@ -301,10 +301,20 @@ function motorEl(c){const g=new THREE.Group(),bornes=bornesDe(c),zc=1.9;
   const porca=new THREE.CylinderGeometry(.36,.36,.22,6),pino=new THREE.CylinderGeometry(.13,.13,.5,10);
   bornes.forEach(b=>{const n=new THREE.Mesh(porca,mat(PAL.latao));n.rotation.x=Math.PI/2;n.position.copy(b).add(new THREE.Vector3(0,0,-.05));g.add(n);
     const p=new THREE.Mesh(pino,mat(PAL.latao));p.rotation.x=Math.PI/2;p.position.copy(b).add(new THREE.Vector3(0,0,.15));g.add(p)});
-  const placa=rotulo((c.lab||c.id)+' · 1~','auto',.7,{fundo:'#f8fafc',cor:'#070c16',esc:.6});placa.position.set(0,.1,zc+2.2);g.add(placa);/* na frente das aletas */
+  /* placa de estado (na frente das aletas): verde "GIRANDO" com o motor ligado, clara "PARADO" desligado */
+  const placa=rotuloVivo(4.4,.75,{fundo:'#f8fafc',cor:'#070c16',esc:.55});placa.position.set(0,.1,zc+2.2);g.add(placa);
+  /* polia na ponta do eixo com faixas amarelas e pretas: gira junto com o eixo; vista de frente, as faixas correm
+     quando o motor liga e param quando ele para (sinal bem visível mesmo de lado) */
+  const polia=new THREE.Mesh(new THREE.CylinderGeometry(1.05,1.05,.75,32),matPolia());polia.rotation.z=Math.PI/2;polia.position.x=1.05;eixo.add(polia);
+  const cubo=new THREE.Mesh(new THREE.CylinderGeometry(.42,.42,.85,16),mat(PAL.eixo));cubo.rotation.z=Math.PI/2;cubo.position.x=1.05;eixo.add(cubo);
   /* letras na borda da frente da caixa, abaixo dos pinos (o fio entra por cima) */
   bornes.forEach((b,k)=>{const t=nomeBorne(c,k)==='⏚'?'PE':nomeBorne(c,k),m=rotulo(t,'auto',.62,{cor:'#f8fafc',esc:.72});m.position.set(b.x,1.8,3.19);m.userData.plaqueta=nomeBorne(c,k);g.add(m)});
-  return {g,bornes,corpo:[carc,fundo,placaB],extra:{eixo}}}
+  return {g,bornes,corpo:[carc,fundo,placaB],extra:{eixo,placa}}}
+/* faixas de segurança da polia: 8 setores alternando amarelo e preto em volta do aro */
+function matPolia(){const C=cache();if(C.mat.has('polia'))return C.mat.get('polia');const cv=document.createElement('canvas');cv.width=256;cv.height=8;const x=cv.getContext('2d');
+  for(let i=0;i<8;i++){x.fillStyle=i%2?'#1F2328':'#FCC419';x.fillRect(i*32,0,32,8)}
+  const t=new THREE.CanvasTexture(cv);t.colorSpace=THREE.SRGBColorSpace;t.magFilter=THREE.NearestFilter;C.tex.set('polia',t);
+  const m=new THREE.MeshToonMaterial({map:t,gradientMap:tons()});C.mat.set('polia',m);return m}
 /* BEP (skill de painel): barra de cobre sobre dois isoladores laranja nas pontas, parafusos de latão alinhados
    (os 4 bornes do solver: todos o mesmo ponto, equipotencialização) */
 function bep(c){const g=new THREE.Group(),bornes=bornesDe(c);
@@ -494,7 +504,7 @@ function pede(){if(E&&!E.pedido)E.pedido=requestAnimationFrame(quadro)}
 function quadro(){if(!E)return;E.pedido=0;const agora=performance.now();
   E.anim=E.anim.filter(a=>{const k=Math.min(1,(agora-a.t0)/a.dur);a.passo(k,agora);return k<1});
   E.efeito.render(E.scene,E.camera);
-  let rodando=false;if(!reduz())Object.values(E.pecas).forEach(p=>{if(p.c.type==='motor'&&p.gira>.04){p.extra.eixo.rotation.x+=.35*p.gira;rodando=true}});
+  let rodando=false;if(!reduz())Object.values(E.pecas).forEach(p=>{if(p.c.type==='motor'&&p.gira>.04){p.extra.eixo.rotation.x+=.2*p.gira;rodando=true}});
   if(E.anim.length||rodando)pede()}
 const anima=(dur,passo)=>{if(reduz()){passo(1,performance.now());return}E.anim.push({t0:performance.now(),dur,passo});pede()};
 
@@ -678,7 +688,9 @@ function atualizar(ctx){
     /* boia: caixa vazia (contato fechado) ou cheia (aberto); a água sobe ou desce e a pera tomba ou flutua */
     if(c.type==='boia'){const alvo=c.vazia?CAIXA.vazia:CAIXA.cheia,inc=c.vazia?.55:-.6;if(p.nivel===undefined){p.nivel=alvo;p.inc=inc;poeNivel(p,alvo,inc)}
       else if(p.nivel!==alvo){const n0=p.nivel,i0=p.inc;p.nivel=alvo;p.inc=inc;anima(450,k=>poeNivel(p,n0+(alvo-n0)*k,i0+(inc-i0)*k))}}
-    if(c.type==='motor')p.gira=Math.max(0,Math.min(1,res.lamp[c.id]||0));
+    if(c.type==='motor'){p.gira=Math.max(0,Math.min(1,res.lamp[c.id]||0));const on=p.gira>.04;
+      if(p.ligado!==on){p.ligado=on;const v=p.extra.placa.userData.vivo;v.o.fundo=on?'#2B8A3E':'#f8fafc';v.o.cor=on?'#ffffff':'#070c16';
+        trocaTexto(p.extra.placa,(c.lab||c.id)+' · 1~ · '+(on?'GIRANDO':'PARADO'))}}
     /* fotocélula: céu de dia (sol) ou de noite (lua e estrelas), janela do sensor escura de noite (c.noite) */
     if(c.type==='foto'){const n=!!c.noite,e=p.extra;if(p.noite!==n){p.noite=n;e.ceu.material=mat(n?PAL.ceuNoite:PAL.ceuDia);e.sol.visible=!n;e.lua.visible=e.estrelas.visible=n;
       e.janela.material.color.setHex(n?SENSOR.noite:SENSOR.dia);e.txt.userData.vivo.o.cor=n?'#e9edf3':'#1d4a7a';trocaTexto(e.txt,n?'NOITE':'DIA')}}
@@ -840,6 +852,7 @@ const debug={
   giraCamera:()=>{E.camera.position.applyAxisAngle(new THREE.Vector3(0,1,0),1.1);E.camera.lookAt(E.controls.target);E.controls.update()},
   tecla:id=>E.pecas[id].tec,
   motorGira:id=>E.pecas[id].gira||0,
+  motorEstado:id=>{const p=E.pecas[id];return {placa:p.extra.placa.userData.vivo.txt,girando:!!p.ligado}},
   nivel:id=>E.pecas[id].nivel,
   emboloKC:id=>({on:!!E.pecas[id].on,cor:E.pecas[id].extra.embolo.material.color.getHexString()}),
   noite:id=>{const e=E.pecas[id].extra;return {lua:e.lua.visible,sol:e.sol.visible,ceu:e.ceu.material.color.getHex()===PAL.ceuNoite,texto:e.txt.userData.vivo.txt}},
