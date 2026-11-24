@@ -228,6 +228,19 @@ const coresDoFioCSS=k=>(CORES[k].c.match(/var\(--[\w-]+\)|#[0-9a-f]{3,8}\b/gi)).
    const r=document.querySelector('.bench3d canvas').getBoundingClientRect(),p={x:r.left+8,y:r.bottom-8};
    for(let k=0;k<2;k++){pe('pointerdown',p,cv());pe('pointerup',p)}
    e.reenquadra=girou&&J(D.camera())===c0;}
+  /* ---- Zoom no ponto: roda do mouse e pinça aproximam o que está perto da borda ---- */
+  {const z=R.zoom={};S.mode='moderado';VISTA3D.ligada=true;runBuild(LAB3D,comARede(LAB3D.dados.moderado));
+   const perto=(p,q)=>Math.hypot(p.x-q.x,p.y-q.y);
+   const p0=D.tela('L1.1'),d0=D.distancia();
+   cv().dispatchEvent(new WheelEvent('wheel',{bubbles:true,cancelable:true,clientX:p0.x,clientY:p0.y,deltaY:-400}));
+   const p1=D.tela('L1.1'),d1=D.distancia();z.roda=d1<d0*.7;z.rodaFixa=perto(p0,p1)<14;z.desvioRoda=Math.round(perto(p0,p1));
+   /* pinça: o primeiro dedo pousa no parafuso X2 e o segundo ao lado; afastar os dedos aproxima sem criar fio */
+   const fios=BANCADA.st.wires.length,q0=D.tela('L1.1'),dd0=D.distancia();
+   const dedo=(tipo,id,x,y,alvo)=>(alvo||window).dispatchEvent(new PointerEvent(tipo,{bubbles:true,cancelable:true,clientX:x,clientY:y,pointerId:id,pointerType:'touch',isPrimary:id===11}));
+   dedo('pointerdown',11,q0.x,q0.y,cv());dedo('pointerdown',12,q0.x+60,q0.y,cv());
+   for(let k=1;k<=4;k++){dedo('pointermove',11,q0.x-10*k,q0.y);dedo('pointermove',12,q0.x+60+10*k,q0.y)}
+   dedo('pointerup',12,q0.x+100,q0.y);dedo('pointerup',11,q0.x-40,q0.y);
+   z.pinca=D.distancia()<dd0*.85;z.pincaSemFio=BANCADA.st.wires.length===fios&&!BANCADA.st.wires.length;z.desvioPinca=Math.round(perto(q0,D.tela('L1.1')));}
   /* sair da bancada libera o WebGL */
   showMap();await new Promise(r=>setTimeout(r,0));R.liberou=VISTA3D.no===null;
 }catch(e){R.ERRO=e.message+' '+(e.stack||'')}
