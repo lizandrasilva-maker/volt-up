@@ -234,7 +234,7 @@ function runSandbox(){
     const ex={sw:{closed:false},sw2:{a:false,b:false},sw3:{pos:0},sw4:{pos:0},foto:{noite:false},boia:{vazia:true},btnNA:{nf:false},btnNF:{nf:true}}[key]||{};
     /* haste e BEP vão para o canto de baixo, perto da fonte (a haste fica no solo) */
     const livre=([x,y])=>!sb.comps.some(c=>Math.hypot(c.x-x,c.y-y)<(key==='haste'||key==='bep'?40:60));
-    const spot=(key==='haste'?[[100,205],[70,215],[130,215]]:key==='bep'?[[45,192],[100,150]]:[]).concat(SPOTS).find(livre)||[185,112];
+    const spot=(key==='haste'?[[45,205],[130,215],[200,215]]:key==='bep'?[[95,192],[100,150]]:[]).concat(SPOTS).find(livre)||[185,112];
     sb.comps.push(C(pre+n,type,spot[0],spot[1],0,ex));selC=pre+n;msg=null;persist();render()};
   const addWire=(a,b)=>{sel=null;msg=null;if(a.split('.')[0]!==b.split('.')[0]||true){if(!sb.wires.some(w=>(w.a===a&&w.b===b)||(w.a===b&&w.b===a)))sb.wires.push(Object.assign(W(a,b),{cor}))}persist();render()};
   const render=()=>{
