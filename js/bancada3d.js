@@ -28,6 +28,8 @@ const TERM3D={
   dr:()=>[[-1.2,3.1,FRENTE+.05],[1.2,3.1,FRENTE+.05],[-1.2,-2.6,FRENTE+.05],[1.2,-2.6,FRENTE+.05]], /* .0 = entrada F, .1 = entrada N, .2 = saída F, .3 = saída N */
   btn:()=>[[-.85,-2.55,1.05],[.85,-2.55,1.05]],
   sw:()=>[[-.85,-2.75,1.0],[.85,-2.75,1.0]],
+  sw3:()=>[[-1.1,-2.75,1.0],[0,-2.75,1.0],[1.1,-2.75,1.0]],          /* paralelo (three-way): .0 = C (comum), .1 = 1, .2 = 2 */
+  sw4:()=>[[-.85,4.15,1.0],[.85,4.15,1.0],[-.85,-2.75,1.0],[.85,-2.75,1.0]], /* intermediário (four-way): .0/.1 = 1-2 em cima, .2/.3 = 3-4 embaixo */
   motor:()=>[[-1,2.75,3.25],[0,2.75,3.25],[1,2.75,3.25]],             /* caixa de ligação: .0 = 1, .1 = 2 (força), .2 = ⏚ (PE da carcaça) */
   bep:()=>[[-1.8,0,.95],[-.6,0,.95],[.6,0,.95],[1.8,0,.95]],          /* barra de cobre: 4 bornes unidos */
   haste:()=>[[0,.45,.85]],
@@ -222,16 +224,18 @@ function reletermico(c){const g=new THREE.Group(),bornes=bornesDe(c),{H,D,z0}=DI
 /* Interruptor simples de parede: espelho, tecla basculante e bloco de bornes L (fase) e R (retorno).
    A tecla inclina pelo estado c.closed (o toque relata acionou; em acionarPeca, flipSwitch inverte). */
 const TECLA={on:-.3,off:.3,z:.6};
-function interruptor(c){const g=new THREE.Group(),bornes=bornesDe(c);
+function interruptor(c){const g=new THREE.Group(),bornes=bornesDe(c),fileiras=[...new Set(bornes.map(b=>b.y))];
   const espelho=new THREE.Mesh(new THREE.BoxGeometry(3.4,4.4,.5),mat(PAL.espelho));espelho.position.set(0,.7,.25);g.add(espelho);
   const moldura=new THREE.Mesh(new THREE.BoxGeometry(2.4,3.2,.12),mat(PAL.cavidade));moldura.position.set(0,.7,.52);g.add(moldura);
   const pino=new THREE.Group();pino.position.set(0,.7,TECLA.z);g.add(pino);
   const tecla=new THREE.Mesh(new THREE.BoxGeometry(2.1,2.9,.45),mat(PAL.tecla));tecla.position.z=.2;pino.add(tecla);
   const marca=new THREE.Mesh(new THREE.BoxGeometry(.9,.18,.06),mat(PAL.marca));marca.position.set(0,1.05,.45);pino.add(marca);
-  const adesivo=rotulo(c.lab||c.id,2.2,.8,{fundo:'#2f4a6e',cor:'#f8fafc',esc:.62});adesivo.position.set(0,3.4,.52);g.add(adesivo);
-  const bloco=new THREE.Mesh(new THREE.BoxGeometry(3,1.2,.9),mat(PAL.cavidade));bloco.position.set(0,-2.75,.45);g.add(bloco);
+  const tipo={sw:'',sw3:' · paralelo',sw4:' · intermed.'}[c.type]||'',topo=Math.max(...fileiras);
+  const adesivo=rotulo((c.lab||c.id)+tipo,tipo?3.4:2.2,.8,{fundo:'#2f4a6e',cor:'#f8fafc',esc:.6});adesivo.position.set(0,topo>0?topo+2.35:3.4,.52);g.add(adesivo);
+  /* um bloco de bornes por fileira; plaquetas por fora (abaixo da fileira de baixo, acima da de cima) */
+  fileiras.forEach(y=>{const n=bornes.filter(b=>b.y===y).length,bl=new THREE.Mesh(new THREE.BoxGeometry(Math.max(3,n*1.1+.8),1.2,.9),mat(PAL.cavidade));bl.position.set(0,y,.45);g.add(bl)});
   poeParafusos(g,bornes);
-  bornes.forEach((b,k)=>plaqueta(g,nomeBorne(c,k),b.x,-3.95,.55));
+  bornes.forEach((b,k)=>plaqueta(g,nomeBorne(c,k),b.x,b.y>0?b.y+1.2:b.y-1.2,.55));
   return {g,bornes,corpo:[espelho,moldura,tecla],extra:{pino}}}
 /* Motor monofásico: carcaça azul aletada deitada sobre pés, tampas, eixo com faixa amarela que GIRA quando o motor
    está ligado (res.lamp[id], 0 a 1: velocidade proporcional) e caixa de ligação em cima com os bornes 1, 2 e ⏚. */
@@ -292,7 +296,7 @@ function poeNivel(p,nivel,inclina){const e=p.extra,{fundo,topo}=CAIXA;e.agua.sca
   const yPera=Math.max(fundo+1.5,fundo+.25+nivel-.1),ponto=new THREE.Vector3(.9,topo-.1,.6),fim=new THREE.Vector3(.9,yPera,.9);
   e.pera.position.copy(fim);e.pera.rotation.z=inclina;
   const dir=fim.clone().sub(ponto),comp=dir.length();e.cabo.scale.y=comp;e.cabo.position.copy(ponto).addScaledVector(dir,.5);e.cabo.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.normalize())}
-const CONSTRUTOR={src:fonte,fuse:disjuntor,lamp:lampada,dr,btn:botoeira,kc:contatora,ft:reletermico,sw:interruptor,motor:motorEl,bep,haste,boia:boiaEl};
+const CONSTRUTOR={src:fonte,fuse:disjuntor,lamp:lampada,dr,btn:botoeira,kc:contatora,ft:reletermico,sw:interruptor,sw3:interruptor,sw4:interruptor,motor:motorEl,bep,haste,boia:boiaEl};
 
 /* ---------- caminho da energia em 3D (faixa no alto do mesmo canvas) ----------
    Poste com transformador → ramal → medidor na fachada → quadro → circuito (lâmpada), na mesma linguagem visual da
@@ -539,7 +543,7 @@ function atualizar(ctx){
     if(c.type==='boia'){const alvo=c.vazia?CAIXA.vazia:CAIXA.cheia,inc=c.vazia?.55:-.6;if(p.nivel===undefined){p.nivel=alvo;p.inc=inc;poeNivel(p,alvo,inc)}
       else if(p.nivel!==alvo){const n0=p.nivel,i0=p.inc;p.nivel=alvo;p.inc=inc;anima(450,k=>poeNivel(p,n0+(alvo-n0)*k,i0+(inc-i0)*k))}}
     if(c.type==='motor')p.gira=Math.max(0,Math.min(1,res.lamp[c.id]||0));
-    if(c.type==='sw'){const alvo=c.closed?TECLA.on:TECLA.off;if(p.tec!==alvo){const pi=p.extra.pino,de=p.tec===undefined?alvo:pi.rotation.x;p.tec=alvo;anima(120,k=>{pi.rotation.x=de+(alvo-de)*k})}}
+    if(c.type==='sw'||c.type==='sw3'||c.type==='sw4'){const alvo=(c.type==='sw'?c.closed:c.pos)?TECLA.on:TECLA.off;if(p.tec!==alvo){const pi=p.extra.pino,de=p.tec===undefined?alvo:pi.rotation.x;p.tec=alvo;anima(120,k=>{pi.rotation.x=de+(alvo-de)*k})}}
     if(c.type==='btn'){const alvo=c.pressed?BOTAO.afunda:0;if(p.emb!==alvo){const de=p.extra.embolo.position.z,para=BOTAO.z+alvo;p.emb=alvo;anima(90,k=>{p.extra.embolo.position.z=de+(para-de)*k})}}
     if(c.type==='dr'){p.extra.visor.material.color.setHex(c.trip?PAL.desarmado:PAL.armado);p.extra.visor.material.emissive.setHex(c.trip?0x6b1a12:0x0f4a24)}
     if(c.type==='src'){p.extra.led.material.color.setHex(c.trip?0xe24c3f:0x43b05c);p.extra.led.material.emissive.setHex(c.trip?0x7a1d12:0x1f7a36);
