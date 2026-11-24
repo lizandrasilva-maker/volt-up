@@ -23,7 +23,7 @@ Padroniza o visual e a construção das peças 3D da bancada (`js/bancada3d.js`)
 5. **Canvas persistente.** A cena nasce uma vez por bancada (`montar`), é reencaixada a cada redesenho (`atualizar`) e liberada em `destruir` (contrato de `VISTA3D` em `js/fases.js`). Abrir outra bancada 3D (`ctx.bancada` diferente) monta uma cena nova. Desenho sob demanda: só há laço de quadros enquanto houver animação.
 6. **Câmera enquadra a bancada.** `enquadra()` calcula a caixa das peças da fase e põe a câmera em 3/4 frontal-superior com folga; não fixe posição de câmera por fase.
 
-**Peças já implementadas:** fonte 1F+N, disjuntor (`fuse`), DR bipolar (`dr`, Quadro Novo), botoeiras (`btn`, BL e BD), contatora (`kc`), relé térmico (`ft`), interruptor simples (`sw`: espelho, tecla basculante que inclina com `c.closed`, bornes L e R) e lâmpada sem PE. Fases do jogo que já abrem em 3D: Primeiro Circuito, Série ou Paralelo e Quadro Novo (Cap. 2). Laboratórios (menu, com `?3d=1`): "Laboratório 3D", "Botoeiras 3D" e "Contatora 3D".
+**Peças já implementadas:** fonte 1F+N, disjuntor (`fuse`), DR bipolar (`dr`, Quadro Novo), botoeiras (`btn`, BL e BD), contatora (`kc`), relé térmico (`ft`), interruptor simples (`sw`: espelho, tecla basculante que inclina com `c.closed`, bornes L e R), motor monofásico (`motor`: eixo gira com `res.lamp[id]`), BEP (`bep`), haste (`haste`) e lâmpada sem PE. Fases do jogo que já abrem em 3D: Primeiro Circuito, Série ou Paralelo e Quadro Novo (Cap. 2) e Partida Direta (Cap. 3). BEP e haste têm bornes sem nome no 2D: na 3D o nome é `⏚`. Laboratórios (menu, com `?3d=1`): "Laboratório 3D", "Botoeiras 3D" e "Contatora 3D".
 
 7. **Botão 🧊 3D sem flag.** Aparece em toda bancada cujas peças estão em `VISTA3D.suporta`; o Three.js só é baixado no primeiro toque. `?3d=1` apenas abre direto em 3D e mostra os laboratórios.
 9. **Caminho da energia em 3D (`montaFaixa()`).** Na vista 3D, a faixa poste → transformador → ramal → medidor → quadro → circuito é desenhada no alto do MESMO canvas (viewport de cima, cena e câmera próprias; nunca um segundo contexto WebGL). Estado: `on` (alguma carga em `res.lamp` > 0,04: pontos de luz correm pelos cabos, LED do medidor pisca, lâmpada acende), `short` (`ctx.curto`: cabos com `matCurto`) ou parado. Legendas iguais às de `entrada()` no SVG, com a rede escolhida. Toque, raycast e projeção usam só a área da bancada (`areaBancada()`). No 2D a faixa continua em SVG.
@@ -125,7 +125,7 @@ Os três polos de potência da contatora (`1/L1`, `3/L2`, `5/L3`) e o motor trif
 - Afunda **0,3** (os 0,12 da especificação original × 2,4, a escala do módulo no MVP) enquanto `c.pressed` for verdadeiro e volta quando ele cai (dirigido pelo estado, nunca pelo `pointerdown` da cena).
 - Bornes no bloco de contato abaixo da caixa, com plaquetas `3`/`4` (BL) ou `1`/`2` (BD); adesivo colorido `BL · I LIGA` / `BD · O DESLIGA` acima.
 
-### D. Motor monofásico
+### D. Motor monofásico — implementado
 - Bloco fora do trilho (2,6 de comprimento) sobre base com pés aparafusados.
 - Carcaça aletada azul `#2B6CB0` (aletas com `InstancedMesh` ou perfil extrudado), tampas arredondadas com grade de ventilação.
 - **Eixo com faixa contrastante** (branca/amarela) que gira quando `res.lamp[id] > 0.04` (velocidade proporcional ao valor de 0 a 1).
