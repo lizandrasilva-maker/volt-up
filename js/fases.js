@@ -176,7 +176,8 @@ function acionarPeca(c,lx,depois){
   else if(c.type==='sw3'||c.type==='sw4'){c.pos=c.pos?0:1;SW_FLIP=c.id}
   else if(c.type==='foto')c.noite=!c.noite;
   else if(c.type==='boia')c.vazia=!c.vazia;
-  else if(c.type==='dr'){c.trip=!c.trip;c.porFuga=false}
+  /* DR: o botão T ('test') simula a fuga e desarma (não rearma); o toque no corpo arma e desarma */
+  else if(c.type==='dr'){if(lx==='test')c.trip=true;else c.trip=!c.trip;c.porFuga=false}
   else if(c.type==='ft')c.trip=!c.trip;
   else if(c.type==='btn'){c.pressed=true;const id=BANCADA_ID;setTimeout(()=>{c.pressed=false;if(id===BANCADA_ID&&document.querySelector('.bench'))depois&&depois()},700)}
 }

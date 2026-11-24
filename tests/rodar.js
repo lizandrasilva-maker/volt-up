@@ -121,6 +121,7 @@ let pistas={};
      confere('Contrato da bancada (2D/3D)',c.semSvg===true,'com a vista 3D ligada, o centro da bancada vira a vaga do canvas (sem SVG)');
      confere('Contrato da bancada (2D/3D)',c.fios3d==='B.0-F.0:fase,F.1-S1.0:fase'&&c.djDesligou===true&&c.tirou===1,'as intenções da vista 3D mudam o st igual ao SVG (ligar, arrastar, acionar, tirar)',c.fios3d);
      confere('Contrato da bancada (2D/3D)',c.mesmoCanvas===true&&c.montagens===1&&c.atualizacoes>=5,'o canvas nasce uma vez e é reencaixado a cada redesenho',c.montagens+' montagem, '+c.atualizacoes+' atualizações');
+     confere('Contrato da bancada (2D/3D)',c.drTeste===true,'DR: acionou(id, \'test\') desarma e não rearma; o toque no corpo rearma');
      confere('Contrato da bancada (2D/3D)',c.saiu===true&&c.destruiu===1&&c.liberou===true,'ao sair da bancada, a cena 3D é destruída uma vez');}
     {const r=t.rede||{};
      confere('Rede elétrica',r.chuveiro127===true,'em 127 V a conta do chuveiro de 5500 W dá 43 A, e o erro comum vira 25 A');
@@ -166,6 +167,10 @@ let pistas={};
      confere(C,b.fios3d===3&&b.acesa===true,'toque-toque e arrastar fio na 3D ligam fonte → DJ → lâmpada → neutro, e a lâmpada acende');
      confere(C,b.djDesligou===true&&b.apagou===true&&b.religou===true,'tocar no disjuntor gira a alavanca: desliga (lâmpada apaga) e religa');
      confere(C,b.curto===true&&b.tirouCurto===true,'curto depois do disjuntor: DJ desarma, fios piscam e a faísca aparece; tocar no fio tira');
+     confere(C,b.term3d===true,'TERM3D: cada peça tem na 3D os mesmos bornes que terms(c) no motor.js');
+     confere(C,b.materiais-b.materiaisAntes<=2&&b.materiais<b.malhasAgora*0.6,'materiais em cache: 3 fios acrescentam no máximo 2 materiais (fase e neutro) e peças repetidas dividem os seus',(b.materiais-b.materiaisAntes)+' novos; '+b.materiais+' materiais / '+b.malhasAgora+' malhas');
+     confere(C,b.contorno==='#070c16','contorno anime com o --contorno do jogo',b.contorno);
+     confere(C,b.corFase===true&&b.corNeutro===true&&b.terraListrado===true,'cores dos fios vêm da tabela CORES do 2D; o terra é listrado nas duas cores dela');
      confere(C,b.mesmoCanvas===true,'o mesmo canvas é reencaixado a cada redesenho (1 montagem)');
      confere(C,b.aprovou3d===true&&b.aprovouSvg===true&&b.equivalente===true&&b.svgVoltou===true,'mesmos gestos na 3D e no SVG deixam a bancada no mesmo estado',b.st3d+' / '+b.stSvg);
      confere(C,b.liberou===true,'ao sair da bancada, o WebGL é liberado');}

@@ -236,6 +236,7 @@ try{
    falsa.ctx.ctl.acionou('F',0);ci.djDesligou=falsa.ctx.st.comps.find(c=>c.id==='F').trip===true;
    falsa.ctx.ctl.tirouFio(0);ci.tirou=falsa.ctx.st.wires.length;
    ci.mesmoCanvas=document.getElementById('cv3d')===cv1&&cv1.isConnected;ci.montagens=falsa.montou;ci.atualizacoes=falsa.atualizou;
+   {const dr={type:'dr',trip:false};acionarPeca(dr,'test');const t1=dr.trip;acionarPeca(dr,'test');const t2=dr.trip;acionarPeca(dr,0);ci.drTeste=t1===true&&t2===true&&dr.trip===false&&dr.porFuga===false}
    showMap();ci.saiu=!cv1.isConnected;R.contrato=ci;
    /* a cena é liberada logo depois do redesenho (MutationObserver): confere no próximo ciclo e reescreve o resultado */
    setTimeout(()=>{R.contrato.destruiu=falsa.destruiu;R.contrato.liberou=VISTA3D.no===null;VISTA3D.vista=null;VISTA3D.ligada=false;VISTA3D.flag=false;document.getElementById('out').textContent=JSON.stringify(R,null,1)},0);}

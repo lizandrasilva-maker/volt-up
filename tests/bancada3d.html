@@ -11,6 +11,8 @@
 /* Bancada 3D (MVP): monta a cena com WebGL e faz os mesmos gestos pela 3D (toques no canvas, com raycast)
    e pelo SVG. Os dois caminhos têm de deixar a bancada no mesmo estado. Rode com: node tests/rodar.js */
 const R={};
+/* cores esperadas: as da tabela CORES do 2D, com var(--x) resolvida pelo CSS */
+const coresDoFioCSS=k=>(CORES[k].c.match(/var\(--[\w-]+\)|#[0-9a-f]{3,8}\b/gi)).map(x=>x.startsWith('var(')?getComputedStyle(document.documentElement).getPropertyValue(x.slice(4,-1)).trim():x);
 (async()=>{try{
   S.mode='moderado';S.char='aprendiz';S.vista={moderado:'real'};
   VISTA3D.flag=true;VISTA3D.ligada=true;
@@ -30,9 +32,15 @@ const R={};
   const toque=id=>{const p=typeof id==='number'?D.telaFio(id):D.tela(id);pe('pointerdown',p,cv());pe('pointerup',p)};
   const arrasta=(a,b)=>{const p=D.tela(a),q=D.tela(b);pe('pointerdown',p,cv());pe('pointermove',{x:(p.x+q.x)/2,y:(p.y+q.y)/2+20});pe('pointermove',q);pe('pointerup',q)};
   const canvas1=cv();
+  R.materiaisAntes=D.materiais();
+  R.term3d=BANCADA.st.comps.every(c=>D.bornesTERM3D(c)===terms(c).length);
+  R.contorno=D.contorno();
+  cor('terra');toque('B.0');toque('L1.0');R.terraListrado=J(D.corFio(0))===J(coresDoFioCSS('terra'));toque(0);cor('fase');
   toque('B.0');toque('DJ.0');                   /* fase: fonte → disjuntor (toque-toque) */
   arrasta('DJ.1','L1.0');                        /* fase: disjuntor → lâmpada (arrastando o fio) */
   cor('neutro');toque('L1.1');toque('B.1');      /* neutro: lâmpada → fonte */
+  R.corFase=J(D.corFio(0))===J(coresDoFioCSS('fase'));R.corNeutro=J(D.corFio(2))===J(coresDoFioCSS('neutro'));
+  R.materiais=D.materiais();R.malhasAgora=D.contagem();
   R.fios3d=D.fios();R.acesa=D.brilho('L1')>0.5;
   toque('DJ');R.djDesligou=BANCADA.st.comps.find(c=>c.id==='DJ').trip===true&&D.alavanca('DJ')>0;R.apagou=D.brilho('L1')<0.05;
   toque('DJ');R.religou=D.brilho('L1')>0.5&&D.alavanca('DJ')<0;
