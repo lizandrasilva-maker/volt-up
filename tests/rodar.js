@@ -223,6 +223,8 @@ let pistas={};
      {const g=b.girar||{};
       confere(C,g.arrastoGira===true&&g.toqueAciona===true,'arrastar começando em cima de uma peça gira a vista (não aciona); o toque parado continua acionando');
       confere(C,g.botao===true&&g.ligou===true&&g.semMontar===true&&g.voltaMontar===true,'botão 🔄 Girar: com ele ligado nenhum toque monta nem aciona; desligado, a montagem volta');}
+     confere(C,b.aguarda===true,'o jogo já começa a baixar a 3D ao abrir; enquanto baixa, a bancada mostra "Carregando" no lugar do 2D');
+     {const u=b.desfazer||{};confere(C,u.inicio===true&&u.desfez===true&&u.refez===true&&u.limpar===true&&u.fases===true&&u.ctrlZ===true&&u.ctrlY===true,'desfazer e refazer: ligar fio, Limpar fios e fases da fonte voltam e avançam pelos botões ↶ ↷ e por Ctrl+Z / Ctrl+Y',JSON.stringify(u));}
      confere(C,(b.rolagem||{}).ok===true,'tocar numa peça com a bancada no fim da página não faz a tela subir (a rolagem fica onde estava)',JSON.stringify(b.rolagem));
      {const pc=b.pontos||{};
       confere(C,pc.inicio===true&&pc.completo===true&&pc.sobra===true,'pontos de conexão: cada borne do circuito tem anel e contador ligados/esperados (0/1 → verde ao completar, laranja com fio a mais)');

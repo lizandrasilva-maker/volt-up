@@ -58,11 +58,12 @@ function missao(goal,real,nota,rotulo){return '<div class="goal"><span class="gi
 /* cc = bancada de corrente contínua (pilhas): sem a faixa do poste e com o aviso do modelo CC */
 /* v3 = a vista 3D vai ocupar o centro da bancada: no lugar do SVG fica só a vaga onde o <canvas> é reencaixado */
 /* p3 = esta bancada pode ser vista em 3D: aparece o botão para alternar entre 2D e 3D */
-function benchWrap(svg,id,zm,cc,v3,p3){const m=/^<svg[^>]*class="(\w*)/.exec(svg),est=m?(m[1]==='curto'?'short':m[1]):'',R=vistaReal();
+/* aguarda = a 3D ainda está baixando: a vaga mostra "Carregando" no tamanho da cena (sem piscar o 2D antes) */
+function benchWrap(svg,id,zm,cc,v3,p3,aguarda){const m=/^<svg[^>]*class="(\w*)/.exec(svg),est=m?(m[1]==='curto'?'short':m[1]):'',R=vistaReal();
   const b3=p3?'<button class="btn vbtn" data-3d="'+(v3?'0':'1')+'" aria-label="'+(v3?'Voltar à bancada 2D':'Ver a bancada em 3D')+'">'+(v3?'🔌 2D':'🧊 3D')+'</button>':'';
   const gi=v3?'<button class="btn vbtn" data-girar aria-pressed="'+!!VISTA3D.girar+'" aria-label="'+(VISTA3D.girar?'Parar de girar e voltar a montar':'Girar a vista com o dedo')+'">'+(VISTA3D.girar?'✋ Montar':'🔄 Girar')+'</button>':'';
-  const ctl=!zm?'':v3?'<div class="bctl">'+gi+b3+'</div>':'<div class="bctl"><span class="bctl-esq"><button class="btn vbtn" data-vista="'+(R?'simb':'real')+'" aria-label="'+(R?'Ver o diagrama multifilar':'Ver as peças reais')+'">'+(R?'📐 Multifilar':'🔌 Real')+'</button>'+b3+'</span>'+zm.ui()+'</div>';
-  return '<div class="benchwrap">'+(cc||v3?'':entrada(est))+'<div class="bench'+(v3?' bench3d':'')+'"'+(id?' id="'+id+'"':'')+'>'+(v3?'<div class="vaga3d" data-vaga3d></div>':svg)+ctl+'</div>'+(cc?avisoCC():avisoModelo())+'</div>'}
+  const ctl=!zm||aguarda?'':v3?'<div class="bctl">'+gi+b3+'</div>':'<div class="bctl"><span class="bctl-esq"><button class="btn vbtn" data-vista="'+(R?'simb':'real')+'" aria-label="'+(R?'Ver o diagrama multifilar':'Ver as peças reais')+'">'+(R?'📐 Multifilar':'🔌 Real')+'</button>'+b3+'</span>'+zm.ui()+'</div>';
+  return '<div class="benchwrap">'+(cc||v3?'':entrada(est))+'<div class="bench'+(v3?' bench3d':'')+'"'+(id?' id="'+id+'"':'')+'>'+(aguarda?'<div class="vaga3d"><div class="carrega3d'+(cc?' cc':'')+'" role="status">🧊 Carregando a bancada 3D…</div></div>':v3?'<div class="vaga3d" data-vaga3d></div>':svg)+ctl+'</div>'+(cc?avisoCC():avisoModelo())+'</div>'}
 
 /* ---------- Vista 3D persistente ----------
    A tela é redesenhada com innerHTML a cada ação; o <canvas> WebGL não pode nascer de novo a cada toque.
@@ -71,6 +72,8 @@ function benchWrap(svg,id,zm,cc,v3,p3){const m=/^<svg[^>]*class="(\w*)/.exec(svg
    VISTA3D.vista é registrada por js/bancada3d.js: {aceita(st), montar(no,ctx), atualizar(ctx), destruir()}.
    ctx = {st, res, sel, curto, cor, editavel, ctl}; ctl é o contrato de intenções (abaixo). */
 const VISTA3D={vista:null,ligada:false,no:null,montagens:0,flag:false,carga:null,erro:null,redesenha:null,girar:false};
+/* a página tem a importmap do Three.js (o jogo tem; páginas de teste do 2D não): só então a 3D baixa sozinha */
+VISTA3D.baixavel=!!document.querySelector('script[type="importmap"]');
 /* ?3d=1 liga a vista 3D neste aparelho (fica guardado, inclusive depois do login); ?3d=0 desliga.
    Sem o flag, nada de 3D é baixado: o SVG segue sendo a bancada. */
 try{const q=new URLSearchParams(location.search).get('3d');if(q==='1')localStorage.setItem('volt-3d','1');if(q==='0')localStorage.removeItem('volt-3d');
@@ -93,7 +96,9 @@ function carrega3D(){
     .then(()=>{const r=VISTA3D.redesenha;if(r&&r.id===BANCADA_ID&&app.querySelector('.bench'))r.f()});
   return VISTA3D.carga;
 }
-if(VISTA3D.flag)carrega3D();
+/* 3D é o padrão: baixa o Three.js em segundo plano logo que o jogo abre, para a bancada já abrir em 3D */
+if(VISTA3D.flag||(VISTA3D.ligada&&VISTA3D.baixavel)){const vai=()=>carrega3D();
+  if('requestIdleCallback' in window)requestIdleCallback(vai,{timeout:2500});else setTimeout(vai,800)}
 /* estado da bancada aberta (inspeção e testes de equivalência 2D × 3D) */
 const BANCADA={st:null};
 /* Laboratório 3D (MVP): fonte, disjuntor e lâmpada. Fica fora dos capítulos; aparece no menu só com ?3d=1. */
@@ -216,6 +221,21 @@ function pontosDaMontagem(pid,st){if(typeof TESTE_SOL==='undefined')return null;
     if(!s.every(([a,b])=>existe(a)&&existe(b))||!st.comps.every(c=>s.some(([a,b])=>a.split('.')[0]===c.id||b.split('.')[0]===c.id)))continue;
     const n={};s.forEach(([a,b])=>{n[a]=(n[a]||0)+1;n[b]=(n[b]||0)+1});return n}
   return null}
+/* Desfazer/refazer da montagem: cada passo guarda os fios e o estado que um fio muda (fases da fonte, proteção
+   desarmada por curto, lâmpada queimada). Posição de interruptor e botoeira não entra: é teste, não montagem. */
+const CAMPOS_HIST=['fases','trip','broken','queima','show'];
+function historico(st){const antes=[],depois=[];
+  const foto=()=>JSON.stringify({w:st.wires,c:st.comps.map(c=>[c.id,CAMPOS_HIST.map(k=>c[k]===undefined?null:c[k])])});
+  const volta=f=>{const o=JSON.parse(f);st.wires=o.w;o.c.forEach(([id,vs])=>{const c=st.comps.find(x=>x.id===id);if(c)CAMPOS_HIST.forEach((k,i)=>{if(vs[i]===null)delete c[k];else c[k]=vs[i]})})};
+  return {marca(){antes.push(foto());if(antes.length>80)antes.shift();depois.length=0},
+    desfaz(){if(!antes.length)return false;depois.push(foto());volta(antes.pop());return true},
+    refaz(){if(!depois.length)return false;antes.push(foto());volta(depois.pop());return true},
+    podeDesfazer:()=>antes.length>0,podeRefazer:()=>depois.length>0}}
+function botoesHist(h){return '<button class="btn ghost icone" id="desf" aria-label="Desfazer" title="Desfazer (Ctrl+Z)"'+(h.podeDesfazer()?'':' disabled')+'>↶</button>'+
+  '<button class="btn ghost icone" id="refz" aria-label="Refazer" title="Refazer (Ctrl+Y)"'+(h.podeRefazer()?'':' disabled')+'>↷</button>'}
+/* atalhos no computador: Ctrl+Z desfaz, Ctrl+Y ou Ctrl+Shift+Z refaz (os botões da tela aberta) */
+window.addEventListener('keydown',e=>{if(!(e.ctrlKey||e.metaKey)||/^(INPUT|TEXTAREA)$/.test((e.target&&e.target.tagName)||''))return;const k=(e.key||'').toLowerCase();
+  const id=k==='y'||(k==='z'&&e.shiftKey)?'refz':k==='z'?'desf':null;const b=id&&document.getElementById(id);if(b&&!b.disabled){e.preventDefault();b.click()}});
 let BANCADA_ID=0;
 function acionarPeca(c,lx,depois){
   /* disjuntor: o toque liga e desliga (depois de um curto, religa; se o curto continuar, desarma de novo).
@@ -248,33 +268,33 @@ function runBuild(p,task){
     const q=Object.entries(res.lampadas).find(([,l])=>l.queima);
     if(q){st.__vQueima=q[1].V;const c=st.comps.find(x=>x.id===q[0]);Object.assign(c,{broken:true,show:true,queima:true});msg=task.check(st,Math.max(1,tries))}
     else if(res.eventos.includes('curto')){curto={fios:CC.fiosDoCurto(st,res),onde,quem:null,nome:''};msg=task.check(st,Math.max(1,tries))}};
-  const zm=benchZoom();let drawn=false,verPlanta=false;BANCADA_ID++;
+  const zm=benchZoom();let drawn=false,verPlanta=false;BANCADA_ID++;const hist=historico(st);
   /* contrato de intenções: o que cada gesto faz nesta fase (vale igual para o SVG e para a vista 3D) */
   const ctl={
     tocouBorne:a=>{if(won)return;if(sel===null)sel=a;else if(sel===a)sel=null;else{addWire(sel,a);return}render()},
     arrastouFio:(a,b)=>{if(won)return;if(b&&b!==a)addWire(a,b);else render()},
     acionou:(id,lado)=>{const c=st.comps.find(x=>x.id===id);if(!c)return;
       /* fonte: configurar 1F+N, 2F+N ou 3F+N */
-      if(c.type==='src'&&typeof lado==='string'&&lado.startsWith('fases:')){aplicaFases(st,c,+lado.slice(6));sel=null;msg=null;render();return}
+      if(c.type==='src'&&typeof lado==='string'&&lado.startsWith('fases:')){if(nFases(c)!==+lado.slice(6))hist.marca();aplicaFases(st,c,+lado.slice(6));sel=null;msg=null;render();return}
       acionarPeca(c,lado,render);msg=null;checa(c.id);render()},
-    tirouFio:i=>{if(won||!st.wires[i])return;st.wires.splice(i,1);msg=null;render()}
+    tirouFio:i=>{if(won||!st.wires[i])return;hist.marca();st.wires.splice(i,1);msg=null;render()}
   };
   const bancadaId=BANCADA_ID;BANCADA.st=st;
   const pontos=pontosDaMontagem(p.id,st);/* leve e moderado: contador ligados/esperados; full: só o anel */
   const render=()=>{
-    const r=resolve(st.comps,st.wires),R=vistaReal(),v3=quer3D(st),p3=pode3D(st),yAntes=benchY;
+    const r=resolve(st.comps,st.wires),R=vistaReal(),v3=quer3D(st),p3=pode3D(st),yAntes=benchY,aguarda=!v3&&p3&&VISTA3D.ligada&&VISTA3D.baixavel&&!VISTA3D.vista&&!VISTA3D.erro;
     VISTA3D.redesenha={id:bancadaId,f:render};
-    if(p3&&VISTA3D.ligada&&!VISTA3D.vista&&!VISTA3D.erro)carrega3D();/* 3D é o padrão: baixa o Three.js na primeira bancada */
+    if(p3&&VISTA3D.ligada&&VISTA3D.baixavel&&!VISTA3D.vista&&!VISTA3D.erro)carrega3D();/* 3D é o padrão: baixa o Three.js na primeira bancada */
     const help='Toque em dois '+(R?'parafusos':'pontos ⚪')+' para ligar um fio.'+(L()?' Toque no fio para tirar.':'');
     const pl=typeof PLANTAS!=='undefined'&&PLANTAS[p.id];
     frame(p,missao(task.goal,task.real)+
       /* fases com projeto: a planta de fiação abre e fecha acima da bancada */
       (pl?'<button class="btn planta-btn" id="vplanta" aria-expanded="'+verPlanta+'">📄 '+(verPlanta?'Fechar a planta':'Ver a planta do projeto')+'</button>'+(verPlanta?plantaHTML(pl):''):'')+
-      (won?'':palette(cor,cc?['pos','neg']:null))+benchWrap(v3?'':board(st,{res:r,sel,pickTerm:!won,pickWire:!won,toggle:true,real:R,vb:zm.vb(),curto}),'',zm,cc,v3,p3)+(cc?chipsCC(st,r):statusChips(st,r))+
+      (won?'':palette(cor,cc?['pos','neg']:null))+benchWrap(v3||aguarda?'':board(st,{res:r,sel,pickTerm:!won,pickWire:!won,toggle:true,real:R,vb:zm.vb(),curto}),'',zm,cc,v3||aguarda,p3,aguarda)+(cc?chipsCC(st,r):statusChips(st,r))+
       (msg?'<div class="fb '+(won?'good':'bad')+'">'+(won?pick(PRAISE[S.mode])+' ':'')+msg+(won&&L()&&!cc?'<br><small>Na vida real, só eletricista mexe na rede, e com tudo desligado.</small>':'')+'</div>':st.wires.length?'':'<p class="help">'+help+'</p>')+
-      (won?'<button class="btn main" id="end">Concluir ⚡</button>':'<div class="row"><button class="btn ghost" id="clr">Limpar fios</button><button class="btn main" id="chk">Verificar</button></div>'));
+      (won?'<button class="btn main" id="end">Concluir ⚡</button>':'<div class="row">'+botoesHist(hist)+'<button class="btn ghost" id="clr">Limpar fios</button><button class="btn main" id="chk">Verificar</button></div>'));
     const curtoAgora=curto,drawnAntes=drawn;keepScroll(drawn);drawn=true;curto=null;/* a animação do curto roda uma vez só */
-    if(!v3)zm.bind(app.querySelector('.bench'),app);
+    if(!v3&&!aguarda)zm.bind(app.querySelector('.bench'),app);
     /* modo teste: "Montar pra mim" monta o gabarito e já aprova (não sobra nada para verificar) */
     const ts=document.getElementById('tSol');if(ts)ts.onclick=()=>{st.wires=testeSol(p.id);st.comps.forEach(c=>{if(c.type==='fuse'||c.type==='src')c.trip=false;if(c.queima)Object.assign(c,{queima:false,broken:false,show:false})});sel=null;msg=null;verificar()};
     const vp=document.getElementById('vplanta');if(vp)vp.onclick=()=>{verPlanta=!verPlanta;render()};
@@ -286,10 +306,12 @@ function runBuild(p,task){
     /* a tela é redesenhada inteira: até a cena 3D voltar para a vaga, a página fica mais curta e o navegador puxa
        a rolagem para cima. Depois de encaixar a cena, devolve a rolagem de antes do toque (a bancada não "sobe"). */
     const reencaixa=()=>{if(drawnAntes&&Math.abs(window.scrollY-yAntes)>1){window.scrollTo(0,yAntes)}benchY=window.scrollY};
-    if(!(v3&&encaixa3D({st,res:r,sel,curto:curtoAgora,cor,editavel:!won,ctl,bancada:bancadaId,girar:!!VISTA3D.girar,cc,pontos,dica:S.mode==='full'?'ponto':'conta'})))
+    if(!aguarda&&!(v3&&encaixa3D({st,res:r,sel,curto:curtoAgora,cor,editavel:!won,ctl,bancada:bancadaId,girar:!!VISTA3D.girar,cc,pontos,dica:S.mode==='full'?'ponto':'conta'})))
       ligaSVGBancada(app.querySelector('.bench svg'),ctl,{zm,pos:t=>tpos(st.comps,t),centroX:id=>{const c=st.comps.find(x=>x.id===id);return R?RP(c)[0]:c.x}});
     reencaixa();
-    const c=document.getElementById('clr');if(c)c.onclick=()=>{st.wires=[];sel=null;msg=null;render()};
+    const c=document.getElementById('clr');if(c)c.onclick=()=>{if(st.wires.length)hist.marca();st.wires=[];sel=null;msg=null;render()};
+    const ds=document.getElementById('desf');if(ds)ds.onclick=()=>{if(won||!hist.desfaz())return;sel=null;msg=null;render()};
+    const rf=document.getElementById('refz');if(rf)rf.onclick=()=>{if(won||!hist.refaz())return;sel=null;msg=null;render()};
     const k=document.getElementById('chk');if(k)k.onclick=verificar;
     const e=document.getElementById('end');if(e)e.onclick=()=>finish(p,Math.max(1,4-tries),3);
   };
@@ -299,7 +321,7 @@ function runBuild(p,task){
     /* comandos: um toque no LIGA / pulsador e a caixa vazia, para o motor girar e a luz do relé acender */
     st.comps.forEach(c=>{if(c.type==='ft'||c.type==='dr')c.trip=false;if(c.type==='boia')c.vazia=true;if(c.type==='foto')c.noite=true});
     st.comps.filter(c=>c.type==='btn'&&!c.nf).slice(0,1).forEach(c=>{c.pressed=true;solve(st.comps,st.wires);c.pressed=false;solve(st.comps,st.wires)});msg=cc&&task.sucesso?task.sucesso(st):'Testei todas as posições dos interruptores e conferi as cores: aprovado!';S.xp+=tries===1?30:15;save()}render()};
-  const addWire=(a,b)=>{sel=null;msg=null;if(!st.wires.some(w=>(w.a===a&&w.b===b)||(w.a===b&&w.b===a))){st.wires.push(Object.assign(W(a,b),{cor}));checa(b)}render()};
+  const addWire=(a,b)=>{sel=null;msg=null;if(!st.wires.some(w=>(w.a===a&&w.b===b)||(w.a===b&&w.b===a))){hist.marca();st.wires.push(Object.assign(W(a,b),{cor}));checa(b)}render()};
   render();
 }
 

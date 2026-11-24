@@ -17,6 +17,8 @@ const coresDoFioCSS=k=>(CORES[k].c.match(/var\(--[\w-]+\)|#[0-9a-f]{3,8}\b/gi)).
   S.mode='moderado';S.char='aprendiz';S.vista={moderado:'real'};
   /* a montagem abre em 3D por padrão; quem escolhe 2D fica no 2D neste aparelho */
   R.padrao3d=VISTA3D.ligada===true;escolhe3D(false);R.lembra2d=localStorage.getItem('volt-vista')==='2d'&&VISTA3D.ligada===false;escolhe3D(true);
+  /* enquanto a 3D baixa, a vaga mostra "Carregando" (nada do 2D piscando antes) */
+  {const h=benchWrap('<svg class=""></svg>','',{ui:()=>'',vb:()=>''},false,true,true,true);R.aguarda=h.includes('carrega3d')&&!h.includes('<svg')&&VISTA3D.baixavel===true;}
   VISTA3D.flag=true;VISTA3D.ligada=true;
   await carrega3D();
   R.carregou=!!VISTA3D.vista;R.erro=VISTA3D.erro;
@@ -252,6 +254,16 @@ const coresDoFioCSS=k=>(CORES[k].c.match(/var\(--[\w-]+\)|#[0-9a-f]{3,8}\b/gi)).
    const bg=document.querySelector('[data-girar]');g.botao=!!bg;if(bg)bg.click();g.ligou=VISTA3D.girar===true&&document.querySelector('[data-girar]').getAttribute('aria-pressed')==='true';
    const n=BANCADA.st.wires.length,t1=dj().trip;toque('B.0');toque('DJ.0');toque('DJ');g.semMontar=BANCADA.st.wires.length===n&&dj().trip===t1;
    document.querySelector('[data-girar]').click();toque('B.0');toque('DJ.0');g.voltaMontar=VISTA3D.girar===false&&BANCADA.st.wires.length===n+1;}
+  /* ---- Desfazer / refazer: fios, limpar e fases da fonte ---- */
+  {const u=R.desfazer={},n=()=>BANCADA.st.wires.length,bt=id=>document.getElementById(id);S.mode='moderado';VISTA3D.ligada=true;VISTA3D.girar=false;runBuild(LAB3D,comARede(LAB3D.dados.moderado));
+   u.inicio=bt('desf').disabled&&bt('refz').disabled;
+   cor('fase');toque('B.0');toque('DJ.0');toque('DJ.1');toque('L1.0');const dois=n()===2;
+   bt('desf').click();u.desfez=dois&&n()===1&&!bt('refz').disabled;bt('refz').click();u.refez=n()===2&&bt('refz').disabled;
+   bt('clr').click();bt('desf').click();u.limpar=n()===2;
+   toque('B');D.seletorFases().querySelector('[data-f="3"]').click();const tres=nFases(BANCADA.st.comps.find(c=>c.type==='src'))===3;
+   bt('desf').click();u.fases=tres&&nFases(BANCADA.st.comps.find(c=>c.type==='src'))===1&&n()===2;
+   bt('clr').click();const zero=n()===0;window.dispatchEvent(new KeyboardEvent('keydown',{key:'z',ctrlKey:true,bubbles:true,cancelable:true}));u.ctrlZ=zero&&n()===2;
+   window.dispatchEvent(new KeyboardEvent('keydown',{key:'y',ctrlKey:true,bubbles:true,cancelable:true}));u.ctrlY=n()===0;}
   /* ---- Rolagem: tocar no disjuntor com a bancada no fim da página não puxa a tela para cima ---- */
   {S.mode='moderado';VISTA3D.ligada=true;VISTA3D.girar=false;runBuild(LAB3D,comARede(LAB3D.dados.moderado));
    window.scrollTo(0,1e6);await new Promise(r=>setTimeout(r,50));const y0=window.scrollY;
