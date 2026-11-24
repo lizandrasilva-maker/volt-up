@@ -1,8 +1,8 @@
 /* Nuvem (Supabase): login e progresso salvo online.
    A chave abaixo é a "publishable": foi feita para ficar no navegador. Quem protege os dados
    são as regras de segurança (RLS) no banco. A chave secreta nunca entra neste repositório. */
-const NUVEM_URL='https://pmhkzxkygvpeyckhnipz.supabase.co';
-const NUVEM_CHAVE='sb_publishable_qiO9FVmYX_-4ziGQI19jCQ_pAJzWnzl';
+const NUVEM_URL='https://jgsyvjpygusebawsqyjs.supabase.co';
+const NUVEM_CHAVE='sb_publishable_GbRr4CEgf5hJP2I_ZELYxQ_9qzmVk7L';
 const ALUNO_DOMINIO='@aluno.volt-up.app'; // login por código: <codigo>@aluno.volt-up.app
 const nuvem=(window.supabase&&window.supabase.createClient)?window.supabase.createClient(NUVEM_URL,NUVEM_CHAVE):null;
 
