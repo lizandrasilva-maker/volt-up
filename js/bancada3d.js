@@ -22,7 +22,7 @@ const LARG_DIN={fuse:DIN.W,dr:2*DIN.W,kc:3*DIN.W,ft:2*DIN.W,ri:2*DIN.W};/* largu
    a 65% da profundidade e frontal elevado. São um pouco mais altos que o módulo comum, para caber a serigrafia. */
 const ALT3N=9,DEGRAU=DIN.z0+DIN.D*.65,FAIXA_BORNE=2.4;
 /* peças de trilho: o fio entra pelo topo/base do nicho do borne (atrás do parafuso), com terminal tubular */
-const VERTICAL={fuse:1,dr:1,kc:1,ft:1,ri:1};
+const VERTICAL={fuse:1,dr:1,kc:1,ft:1,ri:1,btn:1,motor:1};/* + botoeira (bloco de contato) e motor (caixa de ligação aberta) */
 const FRENTE=DIN.z0+DIN.D;/* face frontal dos módulos DIN */
 const TERM3D={
   /* fonte: índices do motor.js .0 = L1, .1 = N, .2 = L2, .3 = L3; na régua, da esquerda para a direita, L1 L2 L3 N (como no 2D) */
@@ -31,11 +31,11 @@ const TERM3D={
   fuse:()=>[[0,3.1,DIN.z0+DIN.D+.05],[0,-2.6,DIN.z0+DIN.D+.05]],      /* .0 = entrada (topo), .1 = saída (base) */
   lamp:()=>[[-1.35,-1.35,.7],[1.35,-1.35,.7]],                        /* .0 = X1, .1 = X2 */
   dr:()=>[[-1.2,3.1,FRENTE+.05],[1.2,3.1,FRENTE+.05],[-1.2,-2.6,FRENTE+.05],[1.2,-2.6,FRENTE+.05]], /* .0 = entrada F, .1 = entrada N, .2 = saída F, .3 = saída N */
-  btn:()=>[[-.85,-2.55,1.05],[.85,-2.55,1.05]],
+  btn:()=>[[-.85,-3.35,1.15],[.85,-3.35,1.15]],                       /* bloco de contato embaixo da moldura */
   sw:()=>[[-.85,-2.75,1.0],[.85,-2.75,1.0]],
   sw3:()=>[[-1.1,-2.75,1.0],[0,-2.75,1.0],[1.1,-2.75,1.0]],          /* paralelo (three-way): .0 = C (comum), .1 = 1, .2 = 2 */
   sw4:()=>[[-.85,4.15,1.0],[.85,4.15,1.0],[-.85,-2.75,1.0],[.85,-2.75,1.0]], /* intermediário (four-way): .0/.1 = 1-2 em cima, .2/.3 = 3-4 embaixo */
-  motor:()=>[[-1,2.75,3.25],[0,2.75,3.25],[1,2.75,3.25]],             /* caixa de ligação: .0 = 1, .1 = 2 (força), .2 = ⏚ (PE da carcaça) */
+  motor:()=>[[-1.45,2.7,3.05],[0,2.7,3.05],[1.45,2.7,3.05]],             /* caixa de ligação: .0 = 1, .1 = 2 (força), .2 = ⏚ (PE da carcaça) */
   bep:()=>[[-1.8,0,.95],[-.6,0,.95],[.6,0,.95],[1.8,0,.95]],          /* barra de cobre: 4 bornes unidos */
   haste:()=>[[0,.45,.85]],
   boia:()=>[[-.85,-4.35,1.0],[.85,-4.35,1.0]],                        /* régua da boia: .0 = 1, .1 = 2 (fecha com a caixa vazia) */                                           /* conector no topo da haste */                           /* .0 = L (entrada da fase), .1 = R (retorno) */                      /* .0/.1 = contato (NA 3-4 na BL, NF 1-2 na BD) */
@@ -57,8 +57,8 @@ const bornesDe=c=>(TERM3D[c.type]?TERM3D[c.type](c):[]).map(p=>new THREE.Vector3
 const PAL={corpoDIN:0xE6E9EF,frenteDIN:0xD5DAE2,trilho:0x9AA5B4,cavidade:0x1F2933,zinco:0xCBD5E1,fenda:0x3A4048,
   fonte:0x7C8A99,fonteFrente:0x5D6B7A,lcd:0xC6D68A,regua:0x2A2F36,alavanca:0x2F4A6E,pontaAlavanca:0xE24C3F,
   painel:0x1D3550,soquete:0xD9DDE3,base:0xE6E9EF,teste:0xECC94B,armado:0x38A169,desarmado:0xE53E3E,
-  botoeiraBase:0x334155,liga:0x2F855A,desliga:0xC53030,janela:0x1F2933,emboloOff:0x94A3B8,emboloOn:0xF97316,rearme:0x3182CE,dial:0x2F4A6E,espelho:0xF1F3F6,tecla:0xE6E9EF,marca:0x2F855A,wago:0xDDE3EA,alavancaWago:0xF28C28,
-  motor:0x2B6CB0,motorTampa:0x245A94,eixo:0xCBD5E1,faixaEixo:0xECC94B,cobre:0xC87533,isolador:0x2A2F36,solo:0x6B4A2E,
+  botoeiraBase:0x334155,liga:0x2B8A3E,desliga:0xC92A2A,anelBot:0xADB5BD,blocoContato:0xE6E9EF,latao:0xD99B26,barraBEP:0xD98A2B,isoladorBEP:0xE8590C,janela:0x1F2933,emboloOff:0x94A3B8,emboloOn:0xF97316,rearme:0x3182CE,dial:0x2F4A6E,espelho:0xF1F3F6,tecla:0xE6E9EF,marca:0x2F855A,wago:0xCED4DA,alavancaWago:0xF76707,
+  motor:0x1864AB,motorTampa:0x245A94,eixo:0xCBD5E1,faixaEixo:0xECC94B,cobre:0xC87533,isolador:0x2A2F36,solo:0x6B4A2E,
   ceuDia:0xBFE0F7,ceuNoite:0x1B2740,sol:0xF4C430,lua:0xF2E6A0,estrela:0xFFFFFF,corpoFoto:0x8C96A3,placaFoto:0xD6DBE1,baseFoto:0x59616B,sensor:0xC0392B,
   suportePilha:0x2B3036,pilha:0x3B4252,pilhaQuente:0xC0392B,polo:0xC9A227,
   fioPreto:0x1A1D21,fioBranco:0xEEF1F4,fioVermelho:0xC0392B,riOff:0x94A3B8,riOn:0xF97316,
@@ -133,10 +133,10 @@ function plaqueta(g,txt,x,y,z){const larg=Math.max(1.1,.62*txt.length+.5);
 /* parafuso Phillips rebaixado: poço escuro, arruela metálica, cabeça abaulada e fenda em cruz girada 25° */
 let GEO_P=null;const geoParafuso=()=>GEO_P||(GEO_P={poco:new THREE.CylinderGeometry(.6,.6,.3,20),arruela:new THREE.TorusGeometry(.44,.07,8,22),
   cabeca:new THREE.SphereGeometry(.4,18,10,0,Math.PI*2,0,Math.PI/2),fenda:new THREE.BoxGeometry(.58,.09,.07)});
-function parafuso(){const g=new THREE.Group(),G=geoParafuso();
+function parafuso(metal){const g=new THREE.Group(),G=geoParafuso(),cm=metal||PAL.zinco;
   const poco=new THREE.Mesh(G.poco,mat(PAL.poco));poco.rotation.x=Math.PI/2;poco.position.z=-.12;g.add(poco);
-  const arr=new THREE.Mesh(G.arruela,mat(PAL.zinco));arr.position.z=.04;g.add(arr);
-  const cab=new THREE.Mesh(G.cabeca,mat(PAL.zinco));cab.scale.set(1,.5,1);cab.rotation.x=Math.PI/2;cab.position.z=.04;g.add(cab);
+  const arr=new THREE.Mesh(G.arruela,mat(cm));arr.position.z=.04;g.add(arr);
+  const cab=new THREE.Mesh(G.cabeca,mat(cm));cab.scale.set(1,.5,1);cab.rotation.x=Math.PI/2;cab.position.z=.04;g.add(cab);
   [0,Math.PI/2].forEach(a=>{const f=new THREE.Mesh(G.fenda,mat(PAL.fenda));f.rotation.z=a+.44;f.position.z=.22;g.add(f)});
   return g}
 /* carcaça em 3 níveis: base antracite com trava DIN, degraus dos bornes (com divisórias entre eles) e frontal elevado
@@ -155,7 +155,7 @@ function carcaca3(g,W,bornes){const H=ALT3N,{z0,D}=DIN,mal=[],fb=FAIXA_BORNE,hf=
 function serigrafia(g,txt,nome,x,y){const m=rotulo(txt,'auto',.8,{cor:PAL.serig,esc:.7});m.position.set(x,y,DEGRAU+.03);m.userData.plaqueta=nome;g.add(m);return m}
 /* etiqueta de identificação (tag): branca com borda fina, só o código funcional da peça */
 function tag(g,txt,x,y,z){const m=rotulo(txt,'auto',.85,{fundo:'#ffffff',cor:PAL.serig,borda:PAL.tagBorda,esc:.62});m.position.set(x,y,z);g.add(m);return m}
-function poeParafusos(g,bornes){bornes.forEach(b=>{const p=parafuso();p.position.copy(b);g.add(p)})}
+function poeParafusos(g,bornes,metal){bornes.forEach(b=>{const p=parafuso(metal);p.position.copy(b);g.add(p)})}
 function fonte(c){const g=new THREE.Group(),bornes=bornesDe(c);
   const caixa=new THREE.Mesh(new THREE.BoxGeometry(6,10,2.4),mat(PAL.fonte));caixa.position.z=1.2;g.add(caixa);
   const frente=new THREE.Mesh(new THREE.BoxGeometry(5.2,6,.2),mat(PAL.fonteFrente));frente.position.set(0,1.4,2.5);g.add(frente);
@@ -217,24 +217,26 @@ function lampada(c){const g=new THREE.Group(),bornes=bornesDe(c);
   poeParafusos(g,bornes);
   bornes.forEach((b,k)=>plaqueta(g,nomeBorne(c,k),b.x,-2.75,.95));
   return {g,bornes,corpo:[base,soq,bulbo],extra:{bulbo,brilho}}}
-/* Botoeira em caixa: BL liga (NA, êmbolo verde saliente) e BD desliga (NF, cogumelo vermelho).
-   O êmbolo afunda pelo ESTADO c.pressed (os 700 ms de acionarPeca), nunca pelo toque local: 2D e 3D iguais.
-   Afunda 0,3 (os 0,12 da especificação original × 2,4, a escala do módulo no MVP). */
+/* Botoeira (skill de painel): moldura quadrada antracite com 4 parafusos nos cantos, anel frontal metálico chanfrado e
+   atuador cilíndrico fosco (vermelho no DESLIGA, verde no LIGA). Embaixo, o bloco de contato com a faixa NC (vermelha)
+   ou NO (verde) e os números dos bornes serigrafados; o fio entra por baixo, com ponteira.
+   O atuador afunda pelo ESTADO c.pressed (os 700 ms de acionarPeca), nunca pelo toque local: 2D e 3D iguais. */
 const BOTAO={afunda:-.3,z:1.45};
 function botoeira(c){const g=new THREE.Group(),bornes=bornesDe(c),nf=!!c.nf,cor=nf?PAL.desliga:PAL.liga;
-  const base=new THREE.Mesh(new THREE.BoxGeometry(3.4,3.4,1.2),mat(PAL.botoeiraBase));base.position.set(0,.6,.6);g.add(base);
-  [[-1.35,-.75],[1.35,-.75],[-1.35,1.95],[1.35,1.95]].forEach(([x,y])=>{const p=new THREE.Mesh(new THREE.CylinderGeometry(.2,.2,.12,12),mat(PAL.zinco));p.rotation.x=Math.PI/2;p.position.set(x,y,1.24);g.add(p)});
-  const anel=new THREE.Mesh(new THREE.TorusGeometry(1.12,.2,10,32),mat(PAL.zinco));anel.position.set(0,.6,1.32);g.add(anel);/* anel de retenção */
-  const colar=new THREE.Mesh(new THREE.CylinderGeometry(.98,.98,.5,24),mat(PAL.cavidade));colar.rotation.x=Math.PI/2;colar.position.set(0,.6,1.45);g.add(colar);
-  const embolo=new THREE.Group();embolo.position.set(0,.6,BOTAO.z);g.add(embolo);const partes=[];
-  if(nf){const haste=new THREE.Mesh(new THREE.CylinderGeometry(.62,.62,.7,20),mat(cor));haste.rotation.x=Math.PI/2;haste.position.z=.35;embolo.add(haste);
-    const cog=new THREE.Mesh(new THREE.SphereGeometry(1.2,24,12,0,Math.PI*2,0,Math.PI/2),mat(cor));cog.scale.y=.5;cog.rotation.x=Math.PI/2;cog.position.z=.65;embolo.add(cog);partes.push(haste,cog)}
-  else{const bot=new THREE.Mesh(new THREE.CylinderGeometry(.85,.85,1,24),mat(cor));bot.rotation.x=Math.PI/2;bot.position.z=.5;embolo.add(bot);partes.push(bot)}
-  const adesivo=rotulo((c.lab||c.id)+(nf?' · O DESLIGA':' · I LIGA'),3.8,.85,{fundo:nf?'#C53030':'#2F855A',cor:'#f8fafc',esc:.6});adesivo.position.set(0,2.85,.62);g.add(adesivo);
-  const bloco=new THREE.Mesh(new THREE.BoxGeometry(3,1.3,1),mat(PAL.cavidade));bloco.position.set(0,-2.55,.5);g.add(bloco);/* bloco de contato */
+  const base=new THREE.Mesh(new RoundedBoxGeometry(3.6,3.6,1.2,2,.25),mat(PAL.base3n));base.position.set(0,.6,.6);g.add(base);
+  [[-1.35,-.75],[1.35,-.75],[-1.35,1.95],[1.35,1.95]].forEach(([x,y])=>{const p=parafuso();p.scale.setScalar(.42);p.position.set(x,y,1.22);g.add(p)});
+  const anel=new THREE.Mesh(new THREE.CylinderGeometry(1.22,1.42,.36,32),mat(PAL.anelBot));anel.rotation.x=Math.PI/2;anel.position.set(0,.6,1.38);g.add(anel);/* anel chanfrado */
+  const colar=new THREE.Mesh(new THREE.CylinderGeometry(.98,.98,.45,24),mat(PAL.cavidade));colar.rotation.x=Math.PI/2;colar.position.set(0,.6,1.5);g.add(colar);
+  const embolo=new THREE.Group();embolo.position.set(0,.6,BOTAO.z);g.add(embolo);
+  const bot=new THREE.Mesh(new THREE.CylinderGeometry(.86,.86,1,28),mat(cor));bot.rotation.x=Math.PI/2;bot.position.z=.5;embolo.add(bot);
+  const adesivo=rotulo((c.lab||c.id)+(nf?' · O DESLIGA':' · I LIGA'),'auto',.85,{fundo:nf?'#C92A2A':'#2B8A3E',cor:'#f8fafc',esc:.6});adesivo.position.set(0,2.95,.62);g.add(adesivo);
+  /* bloco de contato acoplado: faixa colorida NC/NO e números dos bornes */
+  const bloco=new THREE.Mesh(new RoundedBoxGeometry(3.2,2.3,1.1,2,.15),mat(PAL.blocoContato));bloco.position.set(0,-2.85,.55);g.add(bloco);
+  const faixa=rotulo(nf?'NC':'NO',2.9,.5,{fundo:nf?'#C92A2A':'#2B8A3E',cor:'#f8fafc',esc:.8});faixa.position.set(0,-1.95,1.11);g.add(faixa);
+  const div=new THREE.Mesh(new THREE.BoxGeometry(.12,1.2,.35),mat(PAL.frenteDIN));div.position.set(0,-3.35,1.2);g.add(div);/* divisória entre os bornes */
   poeParafusos(g,bornes);
-  bornes.forEach((b,k)=>plaqueta(g,nomeBorne(c,k),b.x,-3.75,.55));
-  return {g,bornes,corpo:[base,colar,...partes],extra:{embolo}}}
+  bornes.forEach((b,k)=>{const m=rotulo(nomeBorne(c,k),'auto',.8,{cor:PAL.serig,esc:.7});m.position.set(b.x,-2.45,1.11);m.userData.plaqueta=nomeBorne(c,k);g.add(m)});
+  return {g,bornes,corpo:[base,colar,bot,bloco],extra:{embolo}}}
 /* Contatora (3 módulos, 3 níveis, como a real): em cima 1L1, 13NO e A1; embaixo 2T1, 14NO e A2, com a marcação
    serigrafada no degrau. Frontal com o indicador I | O: com c.on (bobina energizada) o êmbolo recua e fica laranja.
    Não é acionável à mão (só a bobina liga a contatora): o toque no corpo não muda nada. */
@@ -282,29 +284,39 @@ function interruptor(c){const g=new THREE.Group(),bornes=bornesDe(c),fileiras=[.
   poeParafusos(g,bornes);
   bornes.forEach((b,k)=>plaqueta(g,nomeBorne(c,k),b.x,b.y>0?b.y+1.2:b.y-1.2,.55));
   return {g,bornes,corpo:[espelho,moldura,tecla],extra:{pino}}}
-/* Motor monofásico: carcaça azul aletada deitada sobre pés, tampas, eixo com faixa amarela que GIRA quando o motor
-   está ligado (res.lamp[id], 0 a 1: velocidade proporcional) e caixa de ligação em cima com os bornes 1, 2 e ⏚. */
+/* Motor monofásico (skill de painel): carcaça azul industrial com aletas longitudinais, tampas com parafusos, pés, eixo
+   com chaveta amarela que GIRA quando o motor está ligado (res.lamp[id], 0 a 1) e caixa de ligação ABERTA em cima, com
+   pinos de latão bem espaçados (1, 2 e PE); o fio desce pela abertura e as letras ficam na borda da frente, livres. */
 function motorEl(c){const g=new THREE.Group(),bornes=bornesDe(c),zc=1.9;
   const carc=new THREE.Mesh(new THREE.CylinderGeometry(1.8,1.8,4.6,28),mat(PAL.motor));carc.rotation.z=Math.PI/2;carc.position.set(0,0,zc);g.add(carc);
-  const aleta=new THREE.BoxGeometry(4.2,.16,.5);for(let i=0;i<10;i++){const a=i/10*Math.PI*2,m=new THREE.Mesh(aleta,mat(PAL.motorTampa));m.position.set(0,Math.cos(a)*1.85,zc+Math.sin(a)*1.85);m.rotation.x=-a;g.add(m)}
-  [-2.45,2.45].forEach(x=>{const t=new THREE.Mesh(new THREE.CylinderGeometry(1.6,1.75,.35,28),mat(PAL.motorTampa));t.rotation.z=Math.PI/2;t.position.set(x,0,zc);g.add(t)});
+  const aleta=new THREE.BoxGeometry(4.2,.16,.5);for(let i=0;i<12;i++){const a=i/12*Math.PI*2,m=new THREE.Mesh(aleta,mat(PAL.motorTampa));m.position.set(0,Math.cos(a)*1.85,zc+Math.sin(a)*1.85);m.rotation.x=-a;g.add(m)}
+  [-2.45,2.45].forEach(x=>{const t=new THREE.Mesh(new THREE.CylinderGeometry(1.6,1.75,.35,28),mat(PAL.motorTampa));t.rotation.z=Math.PI/2;t.position.set(x,0,zc);g.add(t);
+    for(let k=0;k<4;k++){const a=k/4*Math.PI*2+Math.PI/4,p=new THREE.Mesh(new THREE.CylinderGeometry(.13,.13,.2,8),mat(PAL.zinco));p.rotation.z=Math.PI/2;p.position.set(x+Math.sign(x)*.2,Math.cos(a)*1.3,zc+Math.sin(a)*1.3);g.add(p)}});
   const grade=new THREE.Mesh(new THREE.CylinderGeometry(1.2,1.2,.1,24),mat(PAL.cavidade));grade.rotation.z=Math.PI/2;grade.position.set(-2.66,0,zc);g.add(grade);
-  /* eixo: gira em torno de X; a faixa amarela deixa a rotação visível */
+  /* eixo: gira em torno de X; a chaveta amarela deixa a rotação visível */
   const eixo=new THREE.Group();eixo.position.set(3,0,zc);g.add(eixo);
   const haste=new THREE.Mesh(new THREE.CylinderGeometry(.32,.32,1.4,16),mat(PAL.eixo));haste.rotation.z=Math.PI/2;haste.position.x=.7;eixo.add(haste);
-  const faixa=new THREE.Mesh(new THREE.BoxGeometry(1.2,.12,.7),mat(PAL.faixaEixo));faixa.position.x=.75;eixo.add(faixa);
+  const faixa=new THREE.Mesh(new THREE.BoxGeometry(1.1,.14,.22),mat(PAL.faixaEixo));faixa.position.set(.8,.3,0);eixo.add(faixa);/* chaveta */
   [-1.6,1.6].forEach(x=>{const p=new THREE.Mesh(new THREE.BoxGeometry(1.1,.5,3),mat(PAL.motorTampa));p.position.set(x,-2,zc);g.add(p)});/* pés */
-  const caixa=new THREE.Mesh(new THREE.BoxGeometry(3.4,1.3,2.6),mat(PAL.motorTampa));caixa.position.set(0,2.4,zc);g.add(caixa);
-  const placa=rotulo((c.lab||c.id)+' · 1~',2.6,.7,{fundo:'#f8fafc',cor:'#070c16',esc:.6});placa.position.set(0,.2,zc+1.85);g.add(placa);
-  poeParafusos(g,bornes);
-  bornes.forEach((b,k)=>plaqueta(g,nomeBorne(c,k),b.x,b.y+1.15,b.z+.2));
-  return {g,bornes,corpo:[carc,caixa],extra:{eixo}}}
-/* BEP: barra de cobre sobre dois isoladores, 4 parafusos (todos o mesmo ponto: equipotencialização) */
+  /* caixa de ligação aberta: fundo, paredes e placa de bornes com pinos de latão (porca sextavada) */
+  const fundo=new THREE.Mesh(new THREE.BoxGeometry(4.5,1.6,2.4),mat(PAL.motorTampa));fundo.position.set(0,2.35,zc-.2);g.add(fundo);
+  const placaB=new THREE.Mesh(new THREE.BoxGeometry(4.2,1,.2),mat(PAL.isolador));placaB.position.set(0,2.7,2.85);g.add(placaB);
+  const borda=new THREE.Mesh(new THREE.BoxGeometry(4.5,.45,.25),mat(PAL.motorTampa));borda.position.set(0,1.8,3.05);g.add(borda);
+  const prensa=new THREE.Mesh(new THREE.CylinderGeometry(.32,.38,.45,14),mat(PAL.cavidade));prensa.rotation.z=Math.PI/2;prensa.position.set(2.45,2.35,zc);g.add(prensa);/* prensa-cabo */
+  const porca=new THREE.CylinderGeometry(.36,.36,.22,6),pino=new THREE.CylinderGeometry(.13,.13,.5,10);
+  bornes.forEach(b=>{const n=new THREE.Mesh(porca,mat(PAL.latao));n.rotation.x=Math.PI/2;n.position.copy(b).add(new THREE.Vector3(0,0,-.05));g.add(n);
+    const p=new THREE.Mesh(pino,mat(PAL.latao));p.rotation.x=Math.PI/2;p.position.copy(b).add(new THREE.Vector3(0,0,.15));g.add(p)});
+  const placa=rotulo((c.lab||c.id)+' · 1~','auto',.7,{fundo:'#f8fafc',cor:'#070c16',esc:.6});placa.position.set(0,.1,zc+2.2);g.add(placa);/* na frente das aletas */
+  /* letras na borda da frente da caixa, abaixo dos pinos (o fio entra por cima) */
+  bornes.forEach((b,k)=>{const t=nomeBorne(c,k)==='⏚'?'PE':nomeBorne(c,k),m=rotulo(t,'auto',.62,{cor:'#f8fafc',esc:.72});m.position.set(b.x,1.8,3.19);m.userData.plaqueta=nomeBorne(c,k);g.add(m)});
+  return {g,bornes,corpo:[carc,fundo,placaB],extra:{eixo}}}
+/* BEP (skill de painel): barra de cobre sobre dois isoladores laranja nas pontas, parafusos de latão alinhados
+   (os 4 bornes do solver: todos o mesmo ponto, equipotencialização) */
 function bep(c){const g=new THREE.Group(),bornes=bornesDe(c);
-  [-2.1,2.1].forEach(x=>{const i=new THREE.Mesh(new THREE.CylinderGeometry(.3,.35,.6,14),mat(PAL.isolador));i.rotation.x=Math.PI/2;i.position.set(x,0,.3);g.add(i)});
-  const barra=new THREE.Mesh(new THREE.BoxGeometry(5,.9,.35),mat(PAL.cobre));barra.position.set(0,0,.75);g.add(barra);
-  const lab=rotulo('BEP ⏚',2.4,.75,{fundo:'#f8fafc',cor:'#070c16',esc:.6});lab.position.set(0,1.15,.62);g.add(lab);
-  poeParafusos(g,bornes);
+  [-2.55,2.55].forEach(x=>{const i=new THREE.Mesh(new THREE.CylinderGeometry(.34,.4,.7,6),mat(PAL.isoladorBEP));i.rotation.x=Math.PI/2;i.position.set(x,0,.35);g.add(i)});
+  const barra=new THREE.Mesh(new RoundedBoxGeometry(5.8,.95,.38,2,.08),mat(PAL.barraBEP));barra.position.set(0,0,.75);g.add(barra);
+  tag(g,'BEP ⏚',0,1.15,.62);
+  poeParafusos(g,bornes,PAL.latao);
   return {g,bornes,corpo:[barra],extra:{}}}
 /* Haste de aterramento cravada no solo, com o conector no topo (de onde sai o condutor até o BEP) */
 function haste(c){const g=new THREE.Group(),bornes=bornesDe(c);
@@ -506,7 +518,7 @@ const DICA={falta:0x5CE1E6,ok:0x43B05C,sobra:0xFF6B3D};
 function matDica(est){const C=cache(),k='dica:'+est;if(!C.mat.has(k))C.mat.set(k,semContorno(new THREE.MeshBasicMaterial({color:DICA[est]})));return C.mat.get(k)}
 function poeDicas(ctx){(E.dicas||[]).forEach(m=>{E.scene.remove(m);if(m.userData.propria)m.geometry.dispose()});E.dicas=[];E.estadoDicas={};
   const esp=ctx.pontos;if(!esp||ctx.editavel===false)return;
-  if(!E.geoDica)E.geoDica=new THREE.TorusGeometry(.8,.11,8,28);
+  if(!E.geoDica)E.geoDica=new THREE.TorusGeometry(.64,.075,8,28);/* justo no poço do parafuso: anéis vizinhos não se encostam */
   const n={};ctx.st.wires.forEach(w=>[w.a,w.b].forEach(t=>{n[t]=(n[t]||0)+1}));
   Object.entries(esp).forEach(([t,q])=>{const B=E.bornes[t];if(!B)return;const k=n[t]||0,est=k<q?'falta':k===q?'ok':'sobra';
     const anel=new THREE.Mesh(E.geoDica,matDica(est));anel.position.copy(B).add(new THREE.Vector3(0,0,.12));E.scene.add(anel);E.dicas.push(anel);
@@ -515,7 +527,9 @@ function poeDicas(ctx){(E.dicas||[]).forEach(m=>{E.scene.remove(m);if(m.userData
       /* contador para dentro da peça (as plaquetas com o nome ficam por fora) */
       const dir=saida(t).dir,r=rotulo(txt,1.35,.72,{fundo:'#'+new THREE.Color(DICA[est]).getHexString(),cor:'#0b1220',esc:.72});
       /* nas peças de trilho a serigrafia fica por fora e o frontal por dentro: o contador vai ao lado do parafuso */
-      const vert=VERTICAL[E.pecas[t.split('.')[0]].c.type];r.position.copy(B).add(vert?new THREE.Vector3(1.05,0,.8):new THREE.Vector3(1.05,-dir*1.0,.8));r.userData.propria=true;r.renderOrder=2;E.scene.add(r);E.dicas.push(r)}
+      /* motor: acima e à direita do pino, fora da caixa de ligação (os pinos ficam perto uns dos outros) */
+      const tp=E.pecas[t.split('.')[0]].c.type,vert=VERTICAL[tp];if(tp==='motor')r.scale.setScalar(.8);
+      r.position.copy(B).add(tp==='motor'?new THREE.Vector3(.62,1.15,.8):vert?new THREE.Vector3(1.05,0,.8):new THREE.Vector3(1.05,-dir*1.0,.8));r.userData.propria=true;r.renderOrder=2;E.scene.add(r);E.dicas.push(r)}
     E.estadoDicas[t]=est+(txt?' '+txt:'')})}
 function saida(id){const T=E.bornes[id],p=E.pecas[id.split('.')[0]],cx=p.caixa,c=cx.getCenter(new THREE.Vector3()),dir=T.y>=c.y?1:-1;
   return {T,dir,borda:dir>0?cx.max.y+FIO.margem:cx.min.y-FIO.margem}}
@@ -634,10 +648,12 @@ function desenhaFios(st){
 }
 /* Emenda com conector Wago: quando 2 ou mais fios chegam ao mesmo borne, eles se juntam num conector de alavancas
    (uma alavanca laranja por fio, mais uma para o fio que segue até o borne), no ponto em que os caminhos se separam. */
+/* corpo do Wago: cinza translúcido (dá para ver o fio entrando) */
+function matWago(){const C=cache();if(!C.mat.has('wago'))C.mat.set('wago',new THREE.MeshToonMaterial({color:PAL.wago,gradientMap:tons(),transparent:true,opacity:.82}));return C.mat.get('wago')}
 function poeWagos(st){(E.wagos||[]).forEach(w=>{E.scene.remove(w);w.traverse(o=>{if(o.geometry)o.geometry.dispose()})});E.wagos=[];
   const conta={};st.wires.forEach(w=>[w.a,w.b].forEach(t=>{if(E.bornes[t])conta[t]=(conta[t]||0)+1}));
   Object.entries(conta).filter(([,n])=>n>=2).forEach(([t,n])=>{const s=saida(t),T=s.T,vias=n+1,g=new THREE.Group();
-    const corpo=new THREE.Mesh(new THREE.BoxGeometry(.55*vias+.2,.75,.85),mat(PAL.wago));g.add(corpo);
+    const corpo=new THREE.Mesh(new THREE.BoxGeometry(.55*vias+.2,.75,.85),matWago());g.add(corpo);
     for(let i=0;i<vias;i++){const al=new THREE.Mesh(new THREE.BoxGeometry(.38,.3,.62),mat(PAL.alavancaWago));al.position.set((i-(vias-1)/2)*.55,.5,0);g.add(al)}
     const ev=entrada(t,s);g.position.set(T.x,s.borda,ev?ev.z:T.z+FIO.frente);g.userData={wago:t,vias};E.scene.add(g);E.wagos.push(g)})}
 /* curto: os fios do caminho trocam para o material de curto (pulsa) e a faísca estala onde o curto fechou */

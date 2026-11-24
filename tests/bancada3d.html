@@ -106,7 +106,7 @@ const coresDoFioCSS=k=>(CORES[k].c.match(/var\(--[\w-]+\)|#[0-9a-f]{3,8}\b/gi)).
    bt.em3d=!!document.querySelector('.bench3d canvas');bt.term3d=BANCADA.st.comps.every(c=>D.bornesTERM3D(c)===terms(c).length);
    /* plaquetas: uma por borne, com o nome do 2D, inclinadas para a câmera e com altura legível */
    const todas=['B','DJ','BD','BL','L1'].flatMap(id=>D.plaquetas(id));
-   bt.plaquetas=J(D.plaquetas('BL').map(p=>p.t))==='["3","4"]'&&J(D.plaquetas('BD').map(p=>p.t))==='["1","2"]'&&todas.length===10&&todas.every(p=>p.incl<0&&p.alt>=1);
+   bt.plaquetas=J(D.plaquetas('BL').map(p=>p.t))==='["3","4"]'&&J(D.plaquetas('BD').map(p=>p.t))==='["1","2"]'&&todas.length===10&&todas.every(p=>p.incl<=0&&p.alt>=.8);/* plaqueta inclinada ou serigrafia plana na peça, sempre legível */
    bt.nomes2D=['B','DJ','L1','BL'].every(id=>{const c=peca(id);return terms(c).every((_,k)=>D.nomeBorne(id,k)===REAL_TERMS[c.type][k].n)});
    cor('fase');toque('B.0');toque('DJ.0');toque('DJ.1');toque('BD.0');toque('BD.1');toque('BL.0');
    /* arraste de BL.1 até L1.0: o badge acompanha o dedo com origem → alvo e some ao soltar */
