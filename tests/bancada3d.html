@@ -64,6 +64,32 @@ const coresDoFioCSS=k=>(CORES[k].c.match(/var\(--[\w-]+\)|#[0-9a-f]{3,8}\b/gi)).
   R.aprovouSvg=/aprovado/i.test(verificar());
   const stSvg=assinatura(BANCADA.st);
   R.equivalente=st3d===stSvg;R.st3d=st3d;R.stSvg=stSvg;
+  /* ---- DR na Quadro Novo (Cap. 2, nível Leve): a mesma fase em 3D e no SVG ---- */
+  {S.mode='leve';const pq=phaseById('quadronovo'),tq=()=>comARede(pq.dados.leve),dr=()=>BANCADA.st.comps.find(c=>c.id==='DR');
+   const sig=st=>J({fios:st.wires.map(w=>w.a+'-'+w.b+':'+w.cor),dr:st.comps.find(c=>c.id==='DR').trip===true,dg:st.comps.find(c=>c.id==='DG').trip===true});
+   const fb=()=>(document.querySelector('.fb')||{}).textContent||'';
+   VISTA3D.ligada=true;runBuild(pq,tq());const q=R.quadro={};
+   q.em3d=!!document.querySelector('.bench3d canvas');q.term3d=BANCADA.st.comps.every(c=>D.bornesTERM3D(c)===terms(c).length);
+   cor('fase');toque('B.0');toque('DG.0');toque('DG.1');toque('DR.0');toque('DR.2');toque('L1.0');
+   cor('neutro');toque('B.1');toque('DR.1');toque('DR.3');toque('L1.1');
+   q.acesa=D.brilho('L1')>0.5&&D.visorDR('DR')==='armado';
+   /* botão T: acionou(DR, 'test') desarma; as duas alavancas caem juntas e o visor fica vermelho */
+   {const p=D.telaTeste('DR');pe('pointerdown',p,cv());pe('pointerup',p)}
+   q.teste=dr().trip===true&&D.alavanca('DR')>0&&D.visorDR('DR')==='desarmado'&&D.brilho('L1')<0.05;
+   {const p=D.telaTeste('DR');pe('pointerdown',p,cv());pe('pointerup',p)}q.testeNaoRearma=dr().trip===true;
+   toque('DR');q.rearmou=dr().trip===false&&D.alavanca('DR')<0&&D.brilho('L1')>0.5;
+   /* fuga: o neutro da lâmpada volta por fora do DR e ele desarma sozinho (regra do solver) */
+   toque('L1.1');toque('B.1');q.fuga=dr().trip===true&&dr().porFuga===true&&D.visorDR('DR')==='desarmado';
+   toque(5);toque('DR');q.semFuga=dr().trip===false&&BANCADA.st.wires.length===5;
+   q.aprovou3d=/aprovado/i.test(verificar());const s3=sig(BANCADA.st);
+   VISTA3D.ligada=false;runBuild(pq,tq());
+   const tap=t=>{svg().querySelector('[data-t="'+t+'"]').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));window.dispatchEvent(new PointerEvent('pointerup'))};
+   const aciona=id=>svg().querySelector('[data-sw="'+id+'"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));
+   cor('fase');tap('B.0');tap('DG.0');tap('DG.1');tap('DR.0');tap('DR.2');tap('L1.0');
+   cor('neutro');tap('B.1');tap('DR.1');tap('DR.3');tap('L1.1');
+   aciona('DR');aciona('DR');tap('L1.1');tap('B.1');
+   svg().querySelector('[data-w="5"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));aciona('DR');
+   q.aprovouSvg=/aprovado/i.test(verificar());q.equivalente=s3===sig(BANCADA.st);q.s3=s3;q.ss=sig(BANCADA.st);}
   /* sair da bancada libera o WebGL */
   showMap();await new Promise(r=>setTimeout(r,0));R.liberou=VISTA3D.no===null;
 }catch(e){R.ERRO=e.message+' '+(e.stack||'')}

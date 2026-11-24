@@ -20,7 +20,10 @@ Padroniza o visual e a construção das peças 3D da bancada (`js/bancada3d.js`)
    Nunca calcule lógica elétrica em `bancada3d.js`. Regra nova de peça (ex.: o que `'test'` faz) entra em `acionarPeca` (`js/fases.js`), não na cena.
 3. **Estado dirige a animação.** Toda animação segue o estado depois de `atualizar(ctx)`: `c.trip`, `c.on`, `c.pressed`, `c.closed`, `res.lamp[id]`, `ctx.curto`. Não anime no `pointerdown` local (ex.: a botoeira afunda porque `c.pressed` ficou verdadeiro pelos 700 ms do `acionarPeca`, não porque o dedo encostou).
 4. **Cache e memória no celular.** Materiais e texturas estáticos vêm do cache compartilhado (`mat()`, `textura()`, `rotulo()` com cache por texto). Geometrias dinâmicas de fio (`TubeGeometry`) são descartadas com `.dispose()` ao reconstruir; materiais do cache nunca são descartados por peça, só em `destruir()`.
-5. **Canvas persistente.** A cena nasce uma vez (`montar`), é reencaixada a cada redesenho (`atualizar`) e liberada em `destruir` (contrato de `VISTA3D` em `js/fases.js`). Desenho sob demanda: só há laço de quadros enquanto houver animação.
+5. **Canvas persistente.** A cena nasce uma vez por bancada (`montar`), é reencaixada a cada redesenho (`atualizar`) e liberada em `destruir` (contrato de `VISTA3D` em `js/fases.js`). Abrir outra bancada 3D (`ctx.bancada` diferente) monta uma cena nova. Desenho sob demanda: só há laço de quadros enquanto houver animação.
+6. **Câmera enquadra a bancada.** `enquadra()` calcula a caixa das peças da fase e põe a câmera em 3/4 frontal-superior com folga; não fixe posição de câmera por fase.
+
+**Peças já implementadas:** fonte 1F+N, disjuntor (`fuse`), DR bipolar (`dr`, Quadro Novo) e lâmpada sem PE. Ao incluir uma peça, acrescente o tipo em `VISTA3D.suporta` (`js/fases.js`).
 
 ---
 

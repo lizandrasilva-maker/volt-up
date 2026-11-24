@@ -16,17 +16,20 @@ const cssVar=(n,padrao)=>{try{return getComputedStyle(document.documentElement).
 /* ---------- bornes: posição local de cada borne, com os MESMOS índices de terms(c) no motor.js ----------
    O construtor de cada peça lê esta tabela para pôr os parafusos; nenhuma peça define borne por conta própria. */
 const DIN={W:2.4,H:8,D:4.6,z0:.75};/* módulo DIN estilizado (1 módulo = 2,4) sobre o trilho de 0,75 */
+const LARG_DIN={fuse:DIN.W,dr:2*DIN.W};/* largura de cada peça de trilho: disjuntor 1 módulo, DR bipolar 2 */
+const FRENTE=DIN.z0+DIN.D;/* face frontal dos módulos DIN */
 const TERM3D={
   src:()=>[[-1.25,-3.6,3.3],[1.25,-3.6,3.3]],                         /* .0 = L1, .1 = N */
   fuse:()=>[[0,3.1,DIN.z0+DIN.D+.05],[0,-2.6,DIN.z0+DIN.D+.05]],      /* .0 = entrada (topo), .1 = saída (base) */
-  lamp:()=>[[-1.35,-1.35,.7],[1.35,-1.35,.7]]                         /* .0 = X1, .1 = X2 */
+  lamp:()=>[[-1.35,-1.35,.7],[1.35,-1.35,.7]],                        /* .0 = X1, .1 = X2 */
+  dr:()=>[[-1.2,3.1,FRENTE+.05],[1.2,3.1,FRENTE+.05],[-1.2,-2.6,FRENTE+.05],[1.2,-2.6,FRENTE+.05]] /* .0 = entrada F, .1 = entrada N, .2 = saída F, .3 = saída N */
 };
 const bornesDe=c=>(TERM3D[c.type]?TERM3D[c.type](c):[]).map(p=>new THREE.Vector3(...p));
 
 /* ---------- paleta (skill voltup-3d-anime) ---------- */
 const PAL={corpoDIN:0xE6E9EF,frenteDIN:0xD5DAE2,trilho:0x9AA5B4,cavidade:0x1F2933,zinco:0xCBD5E1,fenda:0x3A4048,
   fonte:0x7C8A99,fonteFrente:0x5D6B7A,lcd:0xC6D68A,regua:0x2A2F36,alavanca:0x2F4A6E,pontaAlavanca:0xE24C3F,
-  painel:0x1D3550,soquete:0xD9DDE3,base:0xE6E9EF};
+  painel:0x1D3550,soquete:0xD9DDE3,base:0xE6E9EF,teste:0xECC94B,armado:0x38A169,desarmado:0xE53E3E};
 
 /* ---------- cache compartilhado (materiais e texturas estáticos) ----------
    Peças iguais usam o mesmo material; só o que muda com o estado (LED, bulbo, visor) tem material próprio.
@@ -104,6 +107,22 @@ function disjuntor(c){const g=new THREE.Group(),bornes=bornesDe(c),{W,H,D,z0}=DI
   const curva=rotulo('C10',1.4,.6,{cor:'#2f4a6e'});curva.position.set(0,-3.55,z0+D+.01);g.add(curva);
   poeParafusos(g,bornes);
   return {g,bornes,corpo:[corpo,frente,alav,ponta],extra:{pino}}}
+/* DR bipolar (2 módulos): alavanca dupla acoplada (as duas caem juntas), botão T de teste e visor armado/desarmado.
+   O botão T relata acionou(id, 'test'); o que o teste faz (desarmar) está em acionarPeca. */
+function dr(c){const g=new THREE.Group(),bornes=bornesDe(c),{H,D,z0}=DIN,W=LARG_DIN.dr;
+  const corpo=new THREE.Mesh(new THREE.BoxGeometry(W,H,D),mat(PAL.corpoDIN));corpo.position.z=z0+D/2;g.add(corpo);
+  /* recorte frontal em degrau */
+  const frente=new THREE.Mesh(new THREE.BoxGeometry(W*.92,H*.5,.7),mat(PAL.frenteDIN));frente.position.set(0,.1,FRENTE+.35);g.add(frente);
+  const pino=new THREE.Group();pino.position.set(0,.5,FRENTE+.7);g.add(pino);
+  const alavancas=[-.85,.85].map(x=>{const a=new THREE.Mesh(new THREE.BoxGeometry(.9,2,.8),mat(PAL.alavanca));a.position.set(x,1,0);pino.add(a);return a});
+  const barra=new THREE.Mesh(new THREE.BoxGeometry(2.6,.45,.86),mat(PAL.pontaAlavanca));barra.position.y=1.75;pino.add(barra);
+  const teste=new THREE.Mesh(new THREE.BoxGeometry(1.1,.7,.36),mat(PAL.teste));teste.position.set(1.35,-1.25,FRENTE+.88);teste.userData.lado='test';g.add(teste);
+  const lt=rotulo('T',.6,.6,{cor:'#1b1a10'});lt.position.set(1.35,-1.25,FRENTE+1.07);g.add(lt);
+  const visor=new THREE.Mesh(new THREE.BoxGeometry(1.1,.6,.12),matUnico(PAL.armado,{emissive:0x0f4a24}));visor.position.set(-1.2,-1.25,FRENTE+.75);g.add(visor);
+  const lab=rotulo((c.lab||c.id)+' 30mA',3.6,.8,{cor:'#2f4a6e'});lab.position.set(0,-3.5,FRENTE+.01);g.add(lab);
+  [['L',-1.2,4.2],['N',1.2,4.2],['L',-1.2,-1.7],['N',1.2,-1.7]].forEach(([t,x,y])=>{const l=rotulo(t,.8,.8,{cor:t==='N'?'#3a7fb8':'#c0392b'});l.position.set(x,y,FRENTE+.01);g.add(l)});
+  poeParafusos(g,bornes);
+  return {g,bornes,corpo:[corpo,frente,...alavancas,barra,teste,visor],extra:{pino,visor,teste}}}
 /* trilho DIN 35 mm (perfil "chapéu"), extrudado ao longo de X */
 function trilho(x0,x1,y){const s=new THREE.Shape(),P=[[-1.35,0],[1.35,0],[1.35,.65],[1.75,.65],[1.75,.75],[1.25,.75],[1.25,.1],[-1.25,.1],[-1.25,.75],[-1.75,.75],[-1.75,.65],[-1.35,.65]];
   s.moveTo(...P[0]);P.slice(1).forEach(p=>s.lineTo(...p));s.closePath();
@@ -121,7 +140,7 @@ function lampada(c){const g=new THREE.Group(),bornes=bornesDe(c);
   poeParafusos(g,bornes);
   [['X1',0],['X2',1]].forEach(([t,k])=>{const l=rotulo(t,1.4,.8,{cor:'#eef2f7'});l.position.set(bornes[k].x,-2.6,.62);g.add(l)});
   return {g,bornes,corpo:[base,soq,bulbo],extra:{bulbo,brilho}}}
-const CONSTRUTOR={src:fonte,fuse:disjuntor,lamp:lampada};
+const CONSTRUTOR={src:fonte,fuse:disjuntor,lamp:lampada,dr};
 
 /* ---------- estado da cena (uma bancada 3D por vez) ---------- */
 let E=null;
@@ -149,13 +168,16 @@ function montar(no,ctx){
   E.sel=new THREE.Mesh(new THREE.TorusGeometry(.85,.14,10,32),anel);E.sel.visible=false;scene.add(E.sel);
   E.faisca=sprite(texturaBrilho('faisca',['rgba(255,255,255,1)','rgba(255,160,60,.8)']),6);E.faisca.visible=false;scene.add(E.faisca);
   construir(ctx.st);
+  /* caixa que envolve as peças desta bancada: a câmera enquadra o que existe (cada fase tem um arranjo) */
+  E.caixa=new THREE.Box3();Object.values(E.pecas).forEach(p=>E.caixa.expandByObject(p.g));
   controls.addEventListener('change',pede);
   no.addEventListener('pointerdown',aoTocar,true);/* captura: decide antes do OrbitControls */
   E.ro=new ResizeObserver(()=>{if(dimensiona())pede()});E.ro.observe(no);
 }
 function construir(st){
-  const fus=st.comps.filter(c=>c.type==='fuse');
-  if(fus.length){const xs=fus.map(c=>pos2d(c).x);E.scene.add(trilho(Math.min(...xs)-3.5,Math.max(...xs)+3.5,pos2d(fus[0]).y))}
+  /* um trilho para cada linha de peças DIN (mesmo y), cobrindo a largura de todas */
+  const linhas={};st.comps.filter(c=>LARG_DIN[c.type]).forEach(c=>{const y=pos2d(c).y;(linhas[y]=linhas[y]||[]).push(c)});
+  Object.entries(linhas).forEach(([y,cs])=>{const x0=Math.min(...cs.map(c=>pos2d(c).x-LARG_DIN[c.type]/2)),x1=Math.max(...cs.map(c=>pos2d(c).x+LARG_DIN[c.type]/2));E.scene.add(trilho(x0-1.5,x1+1.5,+y))});
   /* esfera de toque compartilhada (invisível, maior que o parafuso) */
   const toque=semContorno(new THREE.MeshBasicMaterial({colorWrite:false,depthWrite:false}));cache().unicos.push(toque);const geoToque=new THREE.SphereGeometry(1.2,10,8);
   st.comps.forEach(c=>{const f=CONSTRUTOR[c.type];if(!f)return;
@@ -166,7 +188,12 @@ function construir(st){
 }
 /* tamanho do canvas acompanha a largura da bancada (4:3, até 520 px de altura) */
 function dimensiona(){const w=Math.max(260,Math.round(E.no.clientWidth||E.no.parentElement&&E.no.parentElement.clientWidth||340)),h=Math.round(Math.min(w*.78,520));
-  if(w===E.tamanho[0]&&h===E.tamanho[1])return false;E.tamanho=[w,h];E.renderer.setSize(w,h);E.camera.aspect=w/h;E.camera.updateProjectionMatrix();return true}
+  if(w===E.tamanho[0]&&h===E.tamanho[1])return false;E.tamanho=[w,h];E.renderer.setSize(w,h);E.camera.aspect=w/h;E.camera.updateProjectionMatrix();enquadra();return true}
+/* põe a câmera em 3/4 frontal-superior, longe o bastante para caber todas as peças com folga (reenquadra quando o tamanho muda) */
+function enquadra(){if(!E.caixa||E.caixa.isEmpty())return;const tam=E.caixa.getSize(new THREE.Vector3()),c=E.caixa.getCenter(new THREE.Vector3());
+  const meia=Math.tan(E.camera.fov*Math.PI/360),d=Math.max(tam.y*1.25,tam.x*1.15/E.camera.aspect)/2/meia+tam.z;
+  E.camera.position.copy(c).addScaledVector(new THREE.Vector3(.13,.2,1).normalize(),d);E.controls.target.copy(c);
+  E.controls.minDistance=d*.45;E.controls.maxDistance=d*1.6;E.controls.update()}
 
 /* ---------- desenho sob demanda: só há laço enquanto alguma animação está rodando ---------- */
 function pede(){if(E&&!E.pedido)E.pedido=requestAnimationFrame(quadro)}
@@ -203,7 +230,9 @@ function animaCurto(curto){
 function atualizar(ctx){
   if(!E)return;E.ctx=ctx;const st=ctx.st,res=ctx.res||{lamp:{}};
   st.comps.forEach(c=>{const p=E.pecas[c.id];if(!p)return;
-    if(c.type==='fuse'){const alvo=c.trip?.5:-.5;if(p.ang!==alvo){const de=p.extra.pino.rotation.x;p.ang=alvo;anima(180,k=>{p.extra.pino.rotation.x=de+(alvo-de)*k})}else p.extra.pino.rotation.x=alvo}
+    /* disjuntor e DR: a alavanca (no DR, as duas acopladas) cai quando c.trip */
+    if(c.type==='fuse'||c.type==='dr'){const alvo=c.trip?.5:-.5;if(p.ang!==alvo){const de=p.extra.pino.rotation.x;p.ang=alvo;anima(180,k=>{p.extra.pino.rotation.x=de+(alvo-de)*k})}else p.extra.pino.rotation.x=alvo}
+    if(c.type==='dr'){p.extra.visor.material.color.setHex(c.trip?PAL.desarmado:PAL.armado);p.extra.visor.material.emissive.setHex(c.trip?0x6b1a12:0x0f4a24)}
     if(c.type==='src'){p.extra.led.material.color.setHex(c.trip?0xe24c3f:0x43b05c);p.extra.led.material.emissive.setHex(c.trip?0x7a1d12:0x1f7a36);
       trocaTexto(p.extra.visor,c.trip?'PROT':(typeof rede==='function'?rede().V:220)+' V~')}
     if(c.type==='lamp'){const b=Math.max(0,Math.min(1,res.lamp[c.id]||0));p.brilho=b;
@@ -222,7 +251,7 @@ function alvoEm(x,y){const r=E.cv.getBoundingClientRect();if(!r.width)return nul
   const p=new THREE.Vector2((x-r.left)/r.width*2-1,-((y-r.top)/r.height)*2+1);E.raycaster.setFromCamera(p,E.camera);
   const it=E.raycaster.intersectObjects(E.hits,false);if(!it.length)return null;
   const t=it.find(i=>i.object.userData.t);if(t)return {t:t.object.userData.t};/* borne tem prioridade (área de toque maior) */
-  const u=it[0].object.userData;return u.peca?{peca:u.peca}:u.w!==undefined?{w:u.w}:null}
+  const u=it[0].object.userData;return u.peca?{peca:u.peca,lado:u.lado}:u.w!==undefined?{w:u.w}:null}
 function pontoNoPlano(x,y){const r=E.cv.getBoundingClientRect(),p=new THREE.Vector2((x-r.left)/r.width*2-1,-((y-r.top)/r.height)*2+1);
   E.raycaster.setFromCamera(p,E.camera);const q=new THREE.Vector3();return E.raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,0,1),-3),q)?q:null}
 function aoTocar(e){
@@ -237,7 +266,7 @@ function aoTocar(e){
     if(ev.type==='pointercancel')return;
     if(arrastando){const fim=alvoEm(ev.clientX,ev.clientY);ctl.arrastouFio(alvo.t,fim&&fim.t||null);return}
     if(alvo.t){if(ed)ctl.tocouBorne(alvo.t)}
-    else if(alvo.peca)ctl.acionou(alvo.peca,0);
+    else if(alvo.peca)ctl.acionou(alvo.peca,alvo.lado||0);
     else if(alvo.w!==undefined&&ed)ctl.tirouFio(alvo.w)};
   window.addEventListener('pointermove',move);window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up);
 }
@@ -261,6 +290,8 @@ const debug={
   corFio:i=>{const f=E.fios.find(m=>m.userData.w===i);return f?f.material.userData.cores:null},
   tela:id=>E.bornes[id]?naTela(E.bornes[id]):naTela(E.pecas[id].corpo[0].getWorldPosition(new THREE.Vector3())),
   telaFio:i=>{const f=E.fios.find(m=>m.userData.w===i);return naTela(f.geometry.parameters.path.getPoint(.5))},
+  telaTeste:id=>naTela(E.pecas[id].extra.teste.getWorldPosition(new THREE.Vector3())),
+  visorDR:id=>E.pecas[id].extra.visor.material.color.getHex()===PAL.desarmado?'desarmado':'armado',
   brilho:id=>E.pecas[id].brilho||0,
   alavanca:id=>E.pecas[id].ang,
   fios:()=>E.fios.length,

@@ -75,8 +75,9 @@ const VISTA3D={vista:null,ligada:false,no:null,montagens:0,flag:false,carga:null
 try{const q=new URLSearchParams(location.search).get('3d');if(q==='1')localStorage.setItem('volt-3d','1');if(q==='0')localStorage.removeItem('volt-3d');
   VISTA3D.flag=localStorage.getItem('volt-3d')==='1'}catch(e){}
 VISTA3D.ligada=VISTA3D.flag;
-/* peças que a vista 3D já desenha (MVP): fonte 1F+N, disjuntor e lâmpada sem PE. As outras bancadas ficam no SVG. */
-VISTA3D.suporta=st=>st.comps.every(c=>(c.type==='src'&&nFases(c)===1)||c.type==='fuse'||(c.type==='lamp'&&c.pe!==true));
+/* peças que a vista 3D já desenha: fonte 1F+N, disjuntor, DR e lâmpada sem PE (Laboratório 3D e Quadro Novo).
+   As outras bancadas ficam no SVG. */
+VISTA3D.suporta=st=>st.comps.every(c=>(c.type==='src'&&nFases(c)===1)||c.type==='fuse'||c.type==='dr'||(c.type==='lamp'&&c.pe!==true));
 function quer3D(st){return !!(VISTA3D.flag&&VISTA3D.ligada&&VISTA3D.vista&&VISTA3D.vista.aceita(st))}
 function pode3D(st){return VISTA3D.flag&&!VISTA3D.erro&&(VISTA3D.vista?VISTA3D.vista.aceita(st):VISTA3D.suporta(st))}
 /* baixa o Three.js e js/bancada3d.js só quando a 3D é pedida (import dinâmico, com o three da importmap do index.html).
@@ -103,7 +104,9 @@ const LAB3D={id:'lab3d',nome:'Laboratório 3D',sub:'Fonte, disjuntor e lâmpada'
       return null}}]))};
 function encaixa3D(ctx){
   const vaga=app.querySelector('[data-vaga3d]');if(!vaga||!VISTA3D.vista)return false;
-  if(!VISTA3D.no){VISTA3D.no=document.createElement('div');VISTA3D.no.className='cena3d';VISTA3D.vista.montar(VISTA3D.no,ctx);VISTA3D.montagens++}
+  /* a cena pertence à bancada que a criou: abrir outra bancada 3D (outra fase, "jogar de novo") monta uma cena nova */
+  if(VISTA3D.no&&VISTA3D.noBancada!==ctx.bancada)solta3D();
+  if(!VISTA3D.no){VISTA3D.no=document.createElement('div');VISTA3D.no.className='cena3d';VISTA3D.noBancada=ctx.bancada;VISTA3D.vista.montar(VISTA3D.no,ctx);VISTA3D.montagens++}
   vaga.replaceWith(VISTA3D.no);VISTA3D.vista.atualizar(ctx);return true;
 }
 function solta3D(){if(!VISTA3D.no)return;try{VISTA3D.vista.destruir()}catch(e){}VISTA3D.no=null}
@@ -224,7 +227,7 @@ function runBuild(p,task){
     app.querySelectorAll('[data-cor]').forEach(b=>b.onclick=()=>{cor=b.dataset.cor;render()});
     app.querySelectorAll('[data-3d]').forEach(b=>b.onclick=()=>{VISTA3D.ligada=b.dataset['3d']==='1';if(VISTA3D.ligada&&!VISTA3D.vista)carrega3D();sel=null;render()});
     /* centro da bancada: a vista 3D (se ligada) ou o SVG; as duas falam com o mesmo ctl */
-    if(!(v3&&encaixa3D({st,res:r,sel,curto:curtoAgora,cor,editavel:!won,ctl})))
+    if(!(v3&&encaixa3D({st,res:r,sel,curto:curtoAgora,cor,editavel:!won,ctl,bancada:bancadaId})))
       ligaSVGBancada(app.querySelector('.bench svg'),ctl,{zm,pos:t=>tpos(st.comps,t),centroX:id=>{const c=st.comps.find(x=>x.id===id);return R?RP(c)[0]:c.x}});
     const c=document.getElementById('clr');if(c)c.onclick=()=>{st.wires=[];sel=null;msg=null;render()};
     const k=document.getElementById('chk');if(k)k.onclick=verificar;
