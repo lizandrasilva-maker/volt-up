@@ -28,7 +28,8 @@ const TERM3D={
   sw:()=>[[-.85,-2.75,1.0],[.85,-2.75,1.0]],
   motor:()=>[[-1,2.75,3.25],[0,2.75,3.25],[1,2.75,3.25]],             /* caixa de ligação: .0 = 1, .1 = 2 (força), .2 = ⏚ (PE da carcaça) */
   bep:()=>[[-1.8,0,.95],[-.6,0,.95],[.6,0,.95],[1.8,0,.95]],          /* barra de cobre: 4 bornes unidos */
-  haste:()=>[[0,.45,.85]],                                           /* conector no topo da haste */                           /* .0 = L (entrada da fase), .1 = R (retorno) */                      /* .0/.1 = contato (NA 3-4 na BL, NF 1-2 na BD) */
+  haste:()=>[[0,.45,.85]],
+  boia:()=>[[-.85,-4.35,1.0],[.85,-4.35,1.0]],                        /* régua da boia: .0 = 1, .1 = 2 (fecha com a caixa vazia) */                                           /* conector no topo da haste */                           /* .0 = L (entrada da fase), .1 = R (retorno) */                      /* .0/.1 = contato (NA 3-4 na BL, NF 1-2 na BD) */
   /* contatora: .0/.1 = A1/A2 (bobina, no degrau recuado), .2/.3 = 1-2 (potência), .4/.5 = 13-14 (selo) */
   kc:()=>[[-2.4,3.1,FRENTE-RECUO+.05],[-2.4,-2.6,FRENTE-RECUO+.05],[0,3.1,FRENTE+.05],[0,-2.6,FRENTE+.05],[2.4,3.1,FRENTE+.05],[2.4,-2.6,FRENTE+.05]],
   /* relé térmico: .0/.1 = 1-2 (força), .2/.3 = 95-96 (NF de comando) */
@@ -41,7 +42,8 @@ const PAL={corpoDIN:0xE6E9EF,frenteDIN:0xD5DAE2,trilho:0x9AA5B4,cavidade:0x1F293
   fonte:0x7C8A99,fonteFrente:0x5D6B7A,lcd:0xC6D68A,regua:0x2A2F36,alavanca:0x2F4A6E,pontaAlavanca:0xE24C3F,
   painel:0x1D3550,soquete:0xD9DDE3,base:0xE6E9EF,teste:0xECC94B,armado:0x38A169,desarmado:0xE53E3E,
   botoeiraBase:0x334155,liga:0x2F855A,desliga:0xC53030,janela:0x1F2933,emboloOff:0x94A3B8,emboloOn:0xF97316,rearme:0x3182CE,dial:0x2F4A6E,espelho:0xF1F3F6,tecla:0xE6E9EF,marca:0x2F855A,
-  motor:0x2B6CB0,motorTampa:0x245A94,eixo:0xCBD5E1,faixaEixo:0xECC94B,cobre:0xC87533,isolador:0x2A2F36,solo:0x6B4A2E};
+  motor:0x2B6CB0,motorTampa:0x245A94,eixo:0xCBD5E1,faixaEixo:0xECC94B,cobre:0xC87533,isolador:0x2A2F36,solo:0x6B4A2E,
+  caixaAgua:0x1F4F86,tampa:0x2A66A8,agua:0x5AA9E6,aguaCorte:0x8CC8F2,pera:0xEEF3F7,caboBoia:0x1F2328};
 
 /* ---------- cache compartilhado (materiais e texturas estáticos) ----------
    Peças iguais usam o mesmo material; só o que muda com o estado (LED, bulbo, visor) tem material próprio.
@@ -56,6 +58,8 @@ function mat(cor){const C=cache(),k='toon:'+cor;if(!C.mat.has(k))C.mat.set(k,new
 /* material toon só desta peça (muda de cor ou brilho com o estado) */
 function matUnico(cor,extra){const m=new THREE.MeshToonMaterial(Object.assign({color:new THREE.Color(cor),gradientMap:tons()},extra||{}));cache().unicos.push(m);return m}
 const semContorno=m=>{m.userData.outlineParameters=SEM_CONTORNO;return m};
+/* toon de dupla face (peças em corte, como a caixa d'água): mostra o lado de dentro */
+function matDupla(cor){const C=cache(),k='toon2:'+cor;if(!C.mat.has(k))C.mat.set(k,new THREE.MeshToonMaterial({color:new THREE.Color(cor),gradientMap:tons(),side:THREE.DoubleSide}));return C.mat.get(k)}
 function canvasTexto(larg,alt,txt,o){const px=128,cv=document.createElement('canvas');cv.width=Math.round(larg*px);cv.height=Math.round(alt*px);pintaTexto(cv,txt,o);return cv}
 function pintaTexto(cv,txt,o){const g=cv.getContext('2d');g.clearRect(0,0,cv.width,cv.height);if(o.fundo){g.fillStyle=o.fundo;g.fillRect(0,0,cv.width,cv.height)}
   if(o.borda){const lw=Math.round(cv.height*.09);g.lineWidth=lw;g.strokeStyle=o.borda;g.strokeRect(lw/2,lw/2,cv.width-lw,cv.height-lw)}
@@ -259,7 +263,34 @@ function haste(c){const g=new THREE.Group(),bornes=bornesDe(c);
   const lab=rotulo((c.lab||c.id)+' · haste',2.4,.7,{fundo:'#f8fafc',cor:'#070c16',esc:.6});lab.position.set(1.9,-1,.62);g.add(lab);
   poeParafusos(g,bornes);
   return {g,bornes,corpo:[vara,conector,solo],extra:{}}}
-const CONSTRUTOR={src:fonte,fuse:disjuntor,lamp:lampada,dr,btn:botoeira,kc:contatora,ft:reletermico,sw:interruptor,motor:motorEl,bep,haste};
+/* Boia de nível na caixa d'água em corte: meia carcaça (vista por dentro), seção da água cujo nível sobe e desce,
+   e a pera pendurada pelo cabo. Vazia (c.vazia): a pera tomba para baixo e o contato 1-2 fecha (a bomba liga);
+   cheia: a pera flutua e o contato abre. O toque relata acionou(id): em acionarPeca isso enche ou esvazia a caixa. */
+const CAIXA={fundo:-2.1,topo:3.7,raio:2.2,cheia:4.6,vazia:.9};
+function boiaEl(c){const g=new THREE.Group(),bornes=bornesDe(c),{fundo,topo,raio}=CAIXA,h=topo-fundo,yc=(topo+fundo)/2;
+  const casca=new THREE.Mesh(new THREE.CylinderGeometry(raio+.15,raio-.15,h,32,1,true,Math.PI/2,Math.PI),matDupla(PAL.caixaAgua));casca.position.set(0,yc,.6);g.add(casca);
+  const base=new THREE.Mesh(new THREE.CylinderGeometry(raio-.15,raio-.15,.25,32,1,false,Math.PI/2,Math.PI),mat(PAL.caixaAgua));base.position.set(0,fundo+.12,.6);g.add(base);
+  const tampa=new THREE.Mesh(new THREE.CylinderGeometry(raio+.35,raio+.25,.4,32),mat(PAL.tampa));tampa.position.set(0,topo+.2,.6);g.add(tampa);
+  /* água: seção (face do corte) + volume atrás; a altura muda com o nível */
+  const agua=new THREE.Group();agua.position.set(0,fundo+.25,.6);g.add(agua);
+  const vol=new THREE.Mesh(new THREE.CylinderGeometry(raio-.2,raio-.25,1,32,1,false,Math.PI/2,Math.PI),mat(PAL.agua));vol.position.y=.5;agua.add(vol);
+  const corte=new THREE.Mesh(new THREE.BoxGeometry(2*(raio-.22),1,.06),mat(PAL.aguaCorte));corte.position.set(0,.5,.02);agua.add(corte);
+  /* pera e o cabo que desce da tampa */
+  const pera=new THREE.Group();g.add(pera);
+  const corpo=new THREE.Mesh(new THREE.SphereGeometry(.55,18,14),mat(PAL.pera));corpo.scale.set(1,1.55,1);corpo.position.y=-.75;pera.add(corpo);
+  const cabo=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,1,8),mat(PAL.caboBoia));g.add(cabo);
+  const fora=new THREE.Mesh(new THREE.TubeGeometry(caminho([new THREE.Vector3(.9,topo+.4,.6),new THREE.Vector3(.9,topo+1,.6),new THREE.Vector3(raio+.9,topo+1,.6),new THREE.Vector3(raio+.9,-3.6,.6),new THREE.Vector3(.85,-3.6,.6)]),40,.09,6,false),mat(PAL.caboBoia));g.add(fora);
+  const bloco=new THREE.Mesh(new THREE.BoxGeometry(3,1.2,.9),mat(PAL.cavidade));bloco.position.set(0,-4.35,.45);g.add(bloco);
+  const adesivo=rotulo((c.lab||c.id)+' · boia',2.6,.75,{fundo:'#2f4a6e',cor:'#f8fafc',esc:.6});adesivo.position.set(0,topo+1.05,.62);g.add(adesivo);
+  poeParafusos(g,bornes);
+  bornes.forEach((b,k)=>plaqueta(g,nomeBorne(c,k),b.x,-5.55,.55));
+  return {g,bornes,corpo:[casca,tampa,vol,corte,corpo],extra:{agua,pera,cabo}}}
+/* põe o nível da água e a pera (k de 0 a 1 entre o estado anterior e o novo) */
+function poeNivel(p,nivel,inclina){const e=p.extra,{fundo,topo}=CAIXA;e.agua.scale.y=nivel;
+  const yPera=Math.max(fundo+1.5,fundo+.25+nivel-.1),ponto=new THREE.Vector3(.9,topo-.1,.6),fim=new THREE.Vector3(.9,yPera,.9);
+  e.pera.position.copy(fim);e.pera.rotation.z=inclina;
+  const dir=fim.clone().sub(ponto),comp=dir.length();e.cabo.scale.y=comp;e.cabo.position.copy(ponto).addScaledVector(dir,.5);e.cabo.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.normalize())}
+const CONSTRUTOR={src:fonte,fuse:disjuntor,lamp:lampada,dr,btn:botoeira,kc:contatora,ft:reletermico,sw:interruptor,motor:motorEl,bep,haste,boia:boiaEl};
 
 /* ---------- caminho da energia em 3D (faixa no alto do mesmo canvas) ----------
    Poste com transformador → ramal → medidor na fachada → quadro → circuito (lâmpada), na mesma linguagem visual da
@@ -458,6 +489,9 @@ function atualizar(ctx){
     if(c.type==='ft'){p.extra.visor.material.color.setHex(c.trip?PAL.desarmado:PAL.armado);p.extra.visor.material.emissive.setHex(c.trip?0x6b1a12:0x0f4a24);p.extra.rearme.position.z=FRENTE+(c.trip?1.05:.75)}
     /* interruptor: a tecla inclina para ligado ou desligado (c.closed) */
     /* motor: gira enquanto alimentado (res.lamp[id] de 0 a 1 vira a velocidade do eixo) */
+    /* boia: caixa vazia (contato fechado) ou cheia (aberto); a água sobe ou desce e a pera tomba ou flutua */
+    if(c.type==='boia'){const alvo=c.vazia?CAIXA.vazia:CAIXA.cheia,inc=c.vazia?.55:-.6;if(p.nivel===undefined){p.nivel=alvo;p.inc=inc;poeNivel(p,alvo,inc)}
+      else if(p.nivel!==alvo){const n0=p.nivel,i0=p.inc;p.nivel=alvo;p.inc=inc;anima(450,k=>poeNivel(p,n0+(alvo-n0)*k,i0+(inc-i0)*k))}}
     if(c.type==='motor')p.gira=Math.max(0,Math.min(1,res.lamp[c.id]||0));
     if(c.type==='sw'){const alvo=c.closed?TECLA.on:TECLA.off;if(p.tec!==alvo){const pi=p.extra.pino,de=p.tec===undefined?alvo:pi.rotation.x;p.tec=alvo;anima(120,k=>{pi.rotation.x=de+(alvo-de)*k})}}
     if(c.type==='btn'){const alvo=c.pressed?BOTAO.afunda:0;if(p.emb!==alvo){const de=p.extra.embolo.position.z,para=BOTAO.z+alvo;p.emb=alvo;anima(90,k=>{p.extra.embolo.position.z=de+(para-de)*k})}}
@@ -548,6 +582,7 @@ const debug={
   emboloAlvo:id=>E.pecas[id].emb||0,
   tecla:id=>E.pecas[id].tec,
   motorGira:id=>E.pecas[id].gira||0,
+  nivel:id=>E.pecas[id].nivel,
   emboloKC:id=>({on:!!E.pecas[id].on,cor:E.pecas[id].extra.embolo.material.color.getHexString()}),
   visorFT:id=>E.pecas[id].extra.visor.material.color.getHex()===PAL.desarmado?'disparado':'armado',
   livre:()=>!!E.livre,

@@ -188,6 +188,24 @@ const coresDoFioCSS=k=>(CORES[k].c.match(/var\(--[\w-]+\)|#[0-9a-f]{3,8}\b/gi)).
    aciona('BL');await espera(800);aciona('BD');await espera(800);
    m.aprovouSvg=/aprovado/i.test(verificar());m.equivalente=s3===sig(BANCADA.st);m.s3=s3;m.ss=sig(BANCADA.st);
    VISTA3D.ligada=true;m.niveis=['leve','full'].map(md=>{S.mode=md;S.seen[md+':partida:cena']=1;runBuild(pp,comARede(pp.dados[md]));return !!document.querySelector('.bench3d canvas')}).every(Boolean);S.mode='moderado';}
+  /* ---- Lote B (boia de nível): Caixa d'Água (Cap. 3) em 3D, montada pelo gabarito ---- */
+  {const x=R.caixa={};S.mode='moderado';const pc=phaseById('caixa'),tc=()=>comARede(pc.dados.moderado),peca=id=>BANCADA.st.comps.find(c=>c.id===id);
+   const sig=st=>J({fios:st.wires.map(w=>w.a+'-'+w.b+':'+w.cor),vazia:!!st.comps.find(c=>c.id==='BO').vazia,k:!!st.comps.find(c=>c.id==='K').on});
+   const GAB=testeSol('caixa');
+   VISTA3D.ligada=true;S.seen['moderado:caixa:cena']=1;runBuild(pc,tc());
+   x.em3d=!!document.querySelector('.bench3d canvas');x.term3d=BANCADA.st.comps.every(c=>D.bornesTERM3D(c)===terms(c).length);
+   x.plaquetas=J(D.plaquetas('BO').map(p=>p.t))==='["1","2"]';
+   let ca='';GAB.forEach(w=>{if(w.cor!==ca){cor(w.cor);ca=w.cor}toque(w.a);toque(w.b)});
+   x.vaziaLiga=peca('BO').vazia===true&&D.motorGira('M')>0.5&&D.nivel('BO')<2;
+   toque('BO');x.encheu=peca('BO').vazia===false&&D.motorGira('M')<0.05&&D.nivel('BO')>3;
+   toque('BO');x.esvaziou=peca('BO').vazia===true&&D.motorGira('M')>0.5&&D.nivel('BO')<2;
+   x.aprovou3d=/aprovado/i.test(verificar());const s3=sig(BANCADA.st);
+   VISTA3D.ligada=false;runBuild(pc,tc());
+   const tap=t=>{svg().querySelector('[data-t="'+t+'"]').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));window.dispatchEvent(new PointerEvent('pointerup'))};
+   const aciona=id=>svg().querySelector('[data-sw="'+id+'"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));
+   ca='';GAB.forEach(w=>{if(w.cor!==ca){cor(w.cor);ca=w.cor}tap(w.a);tap(w.b)});aciona('BO');aciona('BO');
+   x.aprovouSvg=/aprovado/i.test(verificar());x.equivalente=s3===sig(BANCADA.st);x.s3=s3;x.ss=sig(BANCADA.st);
+   VISTA3D.ligada=true;x.niveis=['leve','full'].map(md=>{S.mode=md;S.seen[md+':caixa:cena']=1;runBuild(pc,comARede(pc.dados[md]));return !!document.querySelector('.bench3d canvas')}).every(Boolean);S.mode='moderado';}
   /* sair da bancada libera o WebGL */
   showMap();await new Promise(r=>setTimeout(r,0));R.liberou=VISTA3D.no===null;
 }catch(e){R.ERRO=e.message+' '+(e.stack||'')}
