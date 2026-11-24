@@ -117,18 +117,6 @@ input[type=text]{font:inherit;font-weight:800;width:100%;min-height:52px;padding
 .goal .gtx small{color:var(--muted);font-weight:700}
 .goal .real .rchip{background:var(--panel);font-size:12px}
 .benchwrap{display:flex;flex-direction:column}
-.benchwrap .entrada{border-radius:14px 14px 0 0;border-bottom:0}
-/* faixa poste → medidor → quadro → circuito */
-.ecabo-o{fill:none;stroke:#05080d;stroke-width:5}
-.ecabo{fill:none;stroke:#3a4048;stroke-width:3}
-.eflow{fill:none;stroke:#ffe680;stroke-width:2;stroke-dasharray:3 9;stroke-linecap:round;animation:eflow .7s linear infinite}
-@keyframes eflow{to{stroke-dashoffset:-12}}
-.esc{fill:none;stroke:var(--fase);stroke-width:3;animation:blink .35s 4}
-.elcd{fill:var(--lcdink);font:900 6.4px ui-monospace,Consolas,monospace;letter-spacing:.06em}
-.etxt{fill:#46505b;font:900 5.5px var(--body)}
-.eled{fill:#7a2a24}.eled.pisca{fill:#ff5a4a;animation:eled .6s steps(2) infinite}
-@keyframes eled{50%{fill:#7a2a24}}
-.benchwrap .bench{border-radius:0 0 18px 18px}
 /* aviso fixo: bancada é modelo qualitativo, sem valores reais */
 .modelo{margin:6px 2px 0;font-size:12.5px;color:var(--muted)}
 .modelo summary{cursor:pointer;font-weight:800;list-style-position:inside;padding:4px 2px}
@@ -283,7 +271,6 @@ input[type=text]{font:inherit;font-weight:800;width:100%;min-height:52px;padding
 .meter small{display:block;color:#d6dbe2;font-weight:800;font-size:12px;letter-spacing:.06em}
 .real{display:flex;flex-wrap:wrap;gap:6px}.rchip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 4px;border-radius:999px;background:var(--panel);border:2px solid var(--line);font-weight:800;font-size:13px}.rchip b{background:var(--amber);color:#1b1a10;border-radius:999px;padding:1px 8px;font-size:12px}
 body.leve .rchip{font-size:15px}
-.entrada{padding:4px 6px 0;border-radius:14px;background:var(--panel);border:2px solid var(--line)}.entrada svg{width:100%;height:auto;display:block}
 .help{font-size:.88em;color:var(--muted);font-weight:700}
 
 .result{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;padding-top:8px}
@@ -748,9 +735,12 @@ svg.curto{animation:shake .32s 2}
 .bctl-esq{display:flex;gap:6px;align-items:flex-end}
 .bench3d{padding:0;overflow:hidden;min-height:240px;background:#13283c}
 .bench3d .vaga3d{min-height:260px}
+/* etiqueta da rede (substitui a faixa do poste): canto de cima à esquerda da bancada, sem roubar espaço */
+.redechip{position:absolute;left:8px;top:8px;z-index:2;pointer-events:none;font:900 12px var(--body);letter-spacing:.02em;padding:4px 10px;border-radius:999px;background:color-mix(in srgb,var(--panel2) 90%,transparent);color:var(--muted);border:2px solid var(--contorno)}
+.redechip.on{background:var(--faixa);color:#1b1a10}
+.redechip.short{background:var(--fase);color:#fff}
 /* enquanto a 3D baixa: mesmo tamanho da cena (bancada + faixa do poste), para nada pular quando ela aparece */
-.carrega3d{aspect-ratio:1/1.11;max-height:680px;display:grid;place-items:center;color:var(--muted);font:800 14px var(--body)}
-.carrega3d.cc{aspect-ratio:1/.78}
+.carrega3d{aspect-ratio:1/1.05;max-height:680px;display:grid;place-items:center;color:var(--muted);font:800 14px var(--body)}
 @media (prefers-reduced-motion:no-preference){.carrega3d{animation:pisca3d 1.2s ease-in-out infinite alternate}@keyframes pisca3d{from{opacity:.45}to{opacity:1}}}
 .cena3d{position:relative;width:100%}
 .cena3d canvas{display:block;width:100%;height:auto;touch-action:none;-webkit-user-select:none;user-select:none;border-radius:0 0 16px 16px}

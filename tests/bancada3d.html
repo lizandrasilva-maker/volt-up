@@ -16,7 +16,7 @@ const coresDoFioCSS=k=>(CORES[k].c.match(/var\(--[\w-]+\)|#[0-9a-f]{3,8}\b/gi)).
 (async()=>{try{
   S.mode='moderado';S.char='aprendiz';S.vista={moderado:'real'};
   /* a montagem abre em 3D por padrão; quem escolhe 2D fica no 2D neste aparelho */
-  R.padrao3d=VISTA3D.ligada===true;escolhe3D(false);R.lembra2d=localStorage.getItem('volt-vista')==='2d'&&VISTA3D.ligada===false;escolhe3D(true);
+  R.padrao3d=VISTA3D.ligada===true&&VISTA3D.plano===false;escolheVista('plano');R.lembra2d=localStorage.getItem('volt-vista')==='plano'&&VISTA3D.ligada===true&&VISTA3D.plano===true;escolheVista('3d');
   /* enquanto a 3D baixa, a vaga mostra "Carregando" (nada do 2D piscando antes) */
   {const h=benchWrap('<svg class=""></svg>','',{ui:()=>'',vb:()=>''},false,true,true,true);R.aguarda=h.includes('carrega3d')&&!h.includes('<svg')&&VISTA3D.baixavel===true;}
   VISTA3D.flag=true;VISTA3D.ligada=true;
@@ -48,11 +48,12 @@ const coresDoFioCSS=k=>(CORES[k].c.match(/var\(--[\w-]+\)|#[0-9a-f]{3,8}\b/gi)).
   R.fioFino=D.raioFio()<=.15;R.ortogonal=D.ortogonal();R.pistas=D.pistas();
   toque('L1.1');R.realce=D.realcados()===1;toque('L1.1');R.realceSai=D.realcados()===3;
   R.fios3d=D.fios();R.acesa=D.brilho('L1')>0.5;
-  {const f=D.faixa();R.faixaOn=f.estado==='on'&&f.pontos>0&&f.cabos===3&&f.altura>0&&J(f.legendas)===J(['Trafo 13,8 kV→'+rede().V+' V','Medidor kWh','Quadro + DJ',rede().V+' V~ · '+rede().Hz+' Hz'])&&!document.querySelector('.benchwrap .entrada')}
-  toque('DJ');R.djDesligou=BANCADA.st.comps.find(c=>c.id==='DJ').trip===true&&D.alavanca('DJ')>0;R.apagou=D.brilho('L1')<0.05;R.faixaOff=D.faixa().estado===''&&D.faixa().pontos===0;
+  /* etiqueta da rede no canto (no lugar da faixa do poste): acende com a energia passando */
+  {const ch=document.querySelector('.bench3d .redechip');R.faixaOn=!!ch&&ch.classList.contains('on')&&ch.textContent.includes(rede().V+' V~ · '+rede().Hz+' Hz')&&D.faixa().altura===0&&!document.querySelector('.entrada')}
+  toque('DJ');R.djDesligou=BANCADA.st.comps.find(c=>c.id==='DJ').trip===true&&D.alavanca('DJ')>0;R.apagou=D.brilho('L1')<0.05;R.faixaOff=!document.querySelector('.redechip.on')&&!!document.querySelector('.redechip');
   toque('DJ');R.religou=D.brilho('L1')>0.5&&D.alavanca('DJ')<0;
   cor('fase');toque('DJ.1');toque('B.1');        /* curto depois do disjuntor: o DJ desarma */
-  R.curto=BANCADA.st.comps.find(c=>c.id==='DJ').trip===true&&D.curtoAtivo()&&D.faisca();R.faixaCurto=D.faixa().estado==='short';
+  R.curto=BANCADA.st.comps.find(c=>c.id==='DJ').trip===true&&D.curtoAtivo()&&D.faisca();R.faixaCurto=!!document.querySelector('.redechip.short');
   toque(3);R.tirouCurto=BANCADA.st.wires.length===3;   /* toca no fio do curto para tirar */
   toque('DJ');                                   /* religa */
   R.mesmoCanvas=cv()===canvas1&&VISTA3D.montagens===1;
@@ -62,7 +63,7 @@ const coresDoFioCSS=k=>(CORES[k].c.match(/var\(--[\w-]+\)|#[0-9a-f]{3,8}\b/gi)).
   /* ---- SVG, mesmos gestos ---- */
   VISTA3D.ligada=false;runBuild(LAB3D,task());
   const svg=()=>document.querySelector('.bench svg');
-  R.svgVoltou=!!svg()&&!document.querySelector('.bench3d')&&!!document.querySelector('.benchwrap .entrada');
+  R.svgVoltou=!!svg()&&!document.querySelector('.bench3d')&&!!document.querySelector('.bench .redechip');
   const tap=t=>{svg().querySelector('[data-t="'+t+'"]').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));window.dispatchEvent(new PointerEvent('pointerup'))};
   const aciona=id=>svg().querySelector('[data-sw="'+id+'"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));
   tap('B.0');tap('DJ.0');tap('DJ.1');tap('L1.0');cor('neutro');tap('L1.1');tap('B.1');
@@ -126,7 +127,7 @@ const coresDoFioCSS=k=>(CORES[k].c.match(/var\(--[\w-]+\)|#[0-9a-f]{3,8}\b/gi)).
    bt.aprovouSvg=/aprovado/i.test(verificar());bt.equivalente=s3===sig(BANCADA.st);bt.s3=s3;bt.ss=sig(BANCADA.st);}
   /* ---- Botão 3D sem ?3d=1 e modo 360° (Quadro Novo, nível Leve) ---- */
   {const v=R.v360={};S.mode='leve';const pq=phaseById('quadronovo');VISTA3D.flag=false;VISTA3D.ligada=false;
-   runBuild(pq,comARede(pq.dados.leve));const b=document.querySelector('[data-3d="1"]');v.botaoSemFlag=!!b&&!!document.querySelector('.bench svg');
+   runBuild(pq,comARede(pq.dados.leve));const b=document.querySelector('[data-modo="3d"]');v.botaoSemFlag=!!b&&!!document.querySelector('.bench svg');
    b.click();v.abriu=!!document.querySelector('.bench3d canvas');
    /* 360° sempre ligado: câmera livre desde o início, sem botão de modo, e montar continua funcionando */
    v.livre=D.azimute()[0]===-Infinity&&D.azimute()[1]===Infinity&&!document.querySelector('.cena3d .b360');
@@ -264,6 +265,16 @@ const coresDoFioCSS=k=>(CORES[k].c.match(/var\(--[\w-]+\)|#[0-9a-f]{3,8}\b/gi)).
    bt('desf').click();u.fases=tres&&nFases(BANCADA.st.comps.find(c=>c.type==='src'))===1&&n()===2;
    bt('clr').click();const zero=n()===0;window.dispatchEvent(new KeyboardEvent('keydown',{key:'z',ctrlKey:true,bubbles:true,cancelable:true}));u.ctrlZ=zero&&n()===2;
    window.dispatchEvent(new KeyboardEvent('keydown',{key:'y',ctrlKey:true,bubbles:true,cancelable:true}));u.ctrlY=n()===0;}
+  /* ---- 2D = as mesmas peças da 3D, de frente e paradas; Multifilar = diagrama SVG; e volta para a 3D ---- */
+  {const p2=R.plano={},bt=m=>document.querySelector('[data-modo="'+m+'"]');S.mode='moderado';escolheVista('3d');VISTA3D.girar=false;runBuild(LAB3D,comARede(LAB3D.dados.moderado));
+   const no0=VISTA3D.no;p2.botoes3d=!!bt('plano')&&!!document.querySelector('[data-girar]')&&!bt('multi');
+   bt('plano').click();const q=D.plano();p2.mesmaCena=VISTA3D.no===no0&&!!document.querySelector('.bench3d canvas')&&!document.querySelector('.bench svg');
+   p2.parado=q.plano===true&&q.gira===false&&q.frente===true&&q.fov<30;p2.botoes2d=!!bt('3d')&&!!bt('multi')&&!document.querySelector('[data-girar]');
+   const n=BANCADA.st.wires.length;cor('fase');toque('B.0');toque('DJ.0');p2.monta=BANCADA.st.wires.length===n+1;
+   p2.lembra=localStorage.getItem('volt-vista')==='plano';
+   bt('multi').click();p2.multi=!!document.querySelector('.bench svg')&&!document.querySelector('.bench3d')&&vistaReal()===false&&!!bt('plano')&&!!bt('3d');
+   bt('3d').click();p2.volta3d=!!document.querySelector('.bench3d canvas')&&D.plano().gira===true&&D.plano().plano===false;
+   S.vista={moderado:'real'};}
   /* ---- Rolagem: tocar no disjuntor com a bancada no fim da página não puxa a tela para cima ---- */
   {S.mode='moderado';VISTA3D.ligada=true;VISTA3D.girar=false;runBuild(LAB3D,comARede(LAB3D.dados.moderado));
    window.scrollTo(0,1e6);await new Promise(r=>setTimeout(r,50));const y0=window.scrollY;

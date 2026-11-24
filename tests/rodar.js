@@ -173,7 +173,7 @@ let pistas={};
      confere(C,b.corFase===true&&b.corNeutro===true&&b.terraListrado===true,'cores dos fios vêm da tabela CORES do 2D; o terra é listrado nas duas cores dela');
      confere(C,b.fioFino===true&&b.ortogonal===true&&b.pistas===3,'fios finos, em ângulo reto e cada um na sua pista (legíveis como diagrama)',b.pistas+' pistas');
      confere(C,b.realce===true&&b.realceSai===true,'realce do ponto elétrico: borne selecionado deixa cheios só os fios do mesmo potencial');
-     confere(C,b.faixaOn===true&&b.faixaOff===true&&b.faixaCurto===true,'caminho da energia em 3D (poste, trafo, medidor, quadro, circuito) no mesmo canvas: energia correndo quando ligado, parado quando desligado, cabos vermelhos no curto; legendas iguais às do 2D');
+     confere(C,b.faixaOn===true&&b.faixaOff===true&&b.faixaCurto===true,'etiqueta da rede no canto da bancada (no lugar da faixa do poste): tensão e frequência escolhidas, acende com energia passando, apagada desligado, vermelha no curto');
      confere(C,b.mesmoCanvas===true,'o mesmo canvas é reencaixado a cada redesenho (1 montagem)');
      confere(C,b.aprovou3d===true&&b.aprovouSvg===true&&b.equivalente===true&&b.svgVoltou===true,'mesmos gestos na 3D e no SVG deixam a bancada no mesmo estado',b.st3d+' / '+b.stSvg);
      {const q=b.quadro||{};
@@ -225,6 +225,9 @@ let pistas={};
       confere(C,g.botao===true&&g.ligou===true&&g.semMontar===true&&g.voltaMontar===true,'botão 🔄 Girar: com ele ligado nenhum toque monta nem aciona; desligado, a montagem volta');}
      confere(C,b.aguarda===true,'o jogo já começa a baixar a 3D ao abrir; enquanto baixa, a bancada mostra "Carregando" no lugar do 2D');
      {const u=b.desfazer||{};confere(C,u.inicio===true&&u.desfez===true&&u.refez===true&&u.limpar===true&&u.fases===true&&u.ctrlZ===true&&u.ctrlY===true,'desfazer e refazer: ligar fio, Limpar fios e fases da fonte voltam e avançam pelos botões ↶ ↷ e por Ctrl+Z / Ctrl+Y',JSON.stringify(u));}
+     {const p=b.plano||{};
+      confere(C,p.botoes3d===true&&p.mesmaCena===true&&p.parado===true&&p.botoes2d===true&&p.monta===true&&p.lembra===true,'2D: as mesmas peças da 3D (mesma cena), vistas de frente e paradas; montar funciona e a escolha fica guardada',JSON.stringify(p));
+      confere(C,p.multi===true&&p.volta3d===true,'do 2D dá para abrir o diagrama Multifilar (SVG) e voltar para a 3D girando',JSON.stringify(p));}
      confere(C,(b.rolagem||{}).ok===true,'tocar numa peça com a bancada no fim da página não faz a tela subir (a rolagem fica onde estava)',JSON.stringify(b.rolagem));
      {const pc=b.pontos||{};
       confere(C,pc.inicio===true&&pc.completo===true&&pc.sobra===true,'pontos de conexão: cada borne do circuito tem anel e contador ligados/esperados (0/1 → verde ao completar, laranja com fio a mais)');
