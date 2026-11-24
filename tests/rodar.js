@@ -191,7 +191,9 @@ let pistas={};
       confere(C,t.aprovou3d===true&&t.aprovouSvg===true&&t.svgApertou===true&&t.equivalente===true,'Botoeiras: mesmos gestos na 3D e no SVG, mesmo estado e aprovação',t.s3+' / '+t.ss);}
      {const v=b.v360||{};
       confere(C,v.botaoSemFlag===true&&v.abriu===true,'botão 🧊 3D aparece sem ?3d=1 nas bancadas compatíveis e abre a mesma instalação em 3D');
-      confere(C,v.livre===true&&v.naoMexe===true&&v.voltou===true&&v.montaDeNovo===true,'modo 360°: câmera livre e nenhum toque muda o circuito; "Montar" volta à câmera de trabalho e a montar');}
+      confere(C,v.livre===true&&v.montaLivre===true,'360° sempre ligado: câmera livre desde o início, sem botão de modo, e montar continua funcionando');}
+     {const t=b['traçado']||{};
+      confere(C,t.primeiro===true&&t.quadro===true&&t.partida===true,'fios não passam por trás de peça que não é deles (Primeiro Circuito, Quadro Novo, Partida Direta)',JSON.stringify(t));}
      {const k=b.contatora||{};
       confere(C,k.em3d===true&&k.term3d===true&&k.plaquetas===true,'contatora (A1 A2 1 2 13 14) e relé térmico (1 2 95 96) em 3D com os bornes e nomes do motor.js e do 2D');
       confere(C,k.fios===true&&k.liga===true&&k.selo===true&&k.desliga===true,'comando: LIGA energiza a bobina (êmbolo recua laranja), o selo 13-14 segura, DESLIGA derruba');
