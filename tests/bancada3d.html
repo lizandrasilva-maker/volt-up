@@ -252,6 +252,11 @@ const coresDoFioCSS=k=>(CORES[k].c.match(/var\(--[\w-]+\)|#[0-9a-f]{3,8}\b/gi)).
    const bg=document.querySelector('[data-girar]');g.botao=!!bg;if(bg)bg.click();g.ligou=VISTA3D.girar===true&&document.querySelector('[data-girar]').getAttribute('aria-pressed')==='true';
    const n=BANCADA.st.wires.length,t1=dj().trip;toque('B.0');toque('DJ.0');toque('DJ');g.semMontar=BANCADA.st.wires.length===n&&dj().trip===t1;
    document.querySelector('[data-girar]').click();toque('B.0');toque('DJ.0');g.voltaMontar=VISTA3D.girar===false&&BANCADA.st.wires.length===n+1;}
+  /* ---- Rolagem: tocar no disjuntor com a bancada no fim da página não puxa a tela para cima ---- */
+  {S.mode='moderado';VISTA3D.ligada=true;VISTA3D.girar=false;runBuild(LAB3D,comARede(LAB3D.dados.moderado));
+   window.scrollTo(0,1e6);await new Promise(r=>setTimeout(r,50));const y0=window.scrollY;
+   toque('DJ');await new Promise(r=>setTimeout(r,50));const y1=window.scrollY;toque('DJ');await new Promise(r=>setTimeout(r,50));
+   R.rolagem={y0,y1,y2:window.scrollY,ok:y0>0&&Math.abs(y1-y0)<=1&&Math.abs(window.scrollY-y0)<=1};}
   /* ---- Pontos de conexão: anel e contador ligados/esperados em cada borne do circuito ---- */
   {const pc=R.pontos={},p=phaseById('escada');S.mode='leve';S.seen['leve:escada:cena']=1;VISTA3D.ligada=true;VISTA3D.girar=false;runBuild(p,comARede(p.dados.leve));
    const sol=testeSol('escada'),esp={};sol.forEach(w=>[w.a,w.b].forEach(t=>{esp[t]=(esp[t]||0)+1}));
@@ -305,6 +310,28 @@ const coresDoFioCSS=k=>(CORES[k].c.match(/var\(--[\w-]+\)|#[0-9a-f]{3,8}\b/gi)).
     VISTA3D.ligada=false;runBuild(p,comARede(p.dados.moderado));monta('impulso','moderado',tap);aciona('P1');await espera(800);aciona('P2');await espera(800);
     h.aprovouSvg=/aprovado/i.test(verificar());h.equivalente=s3===sig(BANCADA.st);h.s3=s3;h.ss=sig(BANCADA.st);h.niveis=niveis('impulso');}
    S.mode='moderado';VISTA3D.ligada=true;}
+  /* ---- Lote E: pilha (bancada CC) — Pilha e Lanterna, pelo gabarito, na 3D e no SVG ---- */
+  {const e5=R.loteE={},p=phaseById('lanterna'),peca=id=>BANCADA.st.comps.find(c=>c.id===id);
+   const tap=t=>{svg().querySelector('[data-t="'+t+'"]').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));window.dispatchEvent(new PointerEvent('pointerup'))};
+   const monta=(sol,t)=>{let ca='';sol.forEach(w=>{if(w.cor!==ca){cor(w.cor);ca=w.cor}t(w.a);t(w.b)})};
+   const sig=st=>J({fios:st.wires.map(w=>w.a+'-'+w.b+':'+w.cor),lamp:st.comps.filter(c=>c.type==='lamp').map(c=>!!c.broken)});
+   VISTA3D.girar=false;S.mode='leve';S.seen['leve:lanterna:cena']=1;VISTA3D.ligada=true;runBuild(p,comARede(p.dados.leve));
+   e5.em3d=!!document.querySelector('.bench3d canvas');e5.term3d=BANCADA.st.comps.every(c=>D.bornesTERM3D(c)===terms(c).length);
+   e5.plaquetas=J(D.plaquetas('P1').map(x=>x.t))===J(['+','−']);e5.semFaixa=D.faixa().altura===0&&!document.querySelector('.benchwrap .entrada');
+   e5.pontos=Object.keys(D.dicas()).length===6;/* P1 + e −, P2 + e −, L1 X1 e X2 */
+   monta(testeSol('lanterna'),toque);e5.acende=D.brilho('L1')>0.5;e5.coresCC=D.corFio(0)!==null;
+   e5.aprovou3d=/aprovad|acend|lanterna/i.test(verificar())&&document.querySelector('#end')!==null;const s3=sig(BANCADA.st);
+   VISTA3D.ligada=false;runBuild(p,comARede(p.dados.leve));monta(testeSol('lanterna'),tap);
+   e5.aprovouSvg=(verificar(),document.querySelector('#end')!==null);e5.equivalente=s3===sig(BANCADA.st);e5.s3=s3;e5.ss=sig(BANCADA.st);
+   /* curto: fio direto do + ao − da pilha: ela esquenta (vermelha) */
+   VISTA3D.ligada=true;runBuild(p,comARede(p.dados.leve));cor('pos');toque('P1.0');toque('P1.1');e5.curto=D.pilhaQuente('P1')===true;
+   /* full: 3 pilhas em série no S1 → 4,5 V queima a lâmpada; tocar nela troca por uma nova */
+   S.mode='full';S.seen['full:lanterna:cena']=1;runBuild(p,comARede(p.dados.full));
+   monta([{a:'P1.1',b:'P2.0',cor:'neg'},{a:'P2.1',b:'P3.0',cor:'neg'},{a:'P1.0',b:'S1.0',cor:'pos'},{a:'S1.1',b:'L1.0',cor:'pos'},{a:'L1.1',b:'P3.1',cor:'neg'}],toque);
+   toque('S1');e5.queima=peca('L1').broken===true&&D.queimada('L1')===true&&D.brilho('L1')<0.05;
+   toque('S1');toque('L1');e5.troca=/* abre o S1 antes de trocar: com 4,5 V a lâmpada nova queimaria de novo */!peca('L1').broken&&D.queimada('L1')===false;
+   e5.niveis=['leve','moderado','full'].map(md=>{S.mode=md;S.seen[md+':lanterna:cena']=1;runBuild(p,comARede(p.dados[md]));return !!document.querySelector('.bench3d canvas')}).every(Boolean);
+   S.mode='moderado';}
   /* sair da bancada libera o WebGL */
   showMap();await new Promise(r=>setTimeout(r,0));R.liberou=VISTA3D.no===null;
 }catch(e){R.ERRO=e.message+' '+(e.stack||'')}
