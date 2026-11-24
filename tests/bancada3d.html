@@ -44,10 +44,11 @@ const coresDoFioCSS=k=>(CORES[k].c.match(/var\(--[\w-]+\)|#[0-9a-f]{3,8}\b/gi)).
   R.fioFino=D.raioFio()<=.15;R.ortogonal=D.ortogonal();R.pistas=D.pistas();
   toque('L1.1');R.realce=D.realcados()===1;toque('L1.1');R.realceSai=D.realcados()===3;
   R.fios3d=D.fios();R.acesa=D.brilho('L1')>0.5;
-  toque('DJ');R.djDesligou=BANCADA.st.comps.find(c=>c.id==='DJ').trip===true&&D.alavanca('DJ')>0;R.apagou=D.brilho('L1')<0.05;
+  {const f=D.faixa();R.faixaOn=f.estado==='on'&&f.pontos>0&&f.cabos===3&&f.altura>0&&J(f.legendas)===J(['Trafo 13,8 kV→'+rede().V+' V','Medidor kWh','Quadro + DJ',rede().V+' V~ · '+rede().Hz+' Hz'])&&!document.querySelector('.benchwrap .entrada')}
+  toque('DJ');R.djDesligou=BANCADA.st.comps.find(c=>c.id==='DJ').trip===true&&D.alavanca('DJ')>0;R.apagou=D.brilho('L1')<0.05;R.faixaOff=D.faixa().estado===''&&D.faixa().pontos===0;
   toque('DJ');R.religou=D.brilho('L1')>0.5&&D.alavanca('DJ')<0;
   cor('fase');toque('DJ.1');toque('B.1');        /* curto depois do disjuntor: o DJ desarma */
-  R.curto=BANCADA.st.comps.find(c=>c.id==='DJ').trip===true&&D.curtoAtivo()&&D.faisca();
+  R.curto=BANCADA.st.comps.find(c=>c.id==='DJ').trip===true&&D.curtoAtivo()&&D.faisca();R.faixaCurto=D.faixa().estado==='short';
   toque(3);R.tirouCurto=BANCADA.st.wires.length===3;   /* toca no fio do curto para tirar */
   toque('DJ');                                   /* religa */
   R.mesmoCanvas=cv()===canvas1&&VISTA3D.montagens===1;
@@ -57,7 +58,7 @@ const coresDoFioCSS=k=>(CORES[k].c.match(/var\(--[\w-]+\)|#[0-9a-f]{3,8}\b/gi)).
   /* ---- SVG, mesmos gestos ---- */
   VISTA3D.ligada=false;runBuild(LAB3D,task());
   const svg=()=>document.querySelector('.bench svg');
-  R.svgVoltou=!!svg()&&!document.querySelector('.bench3d');
+  R.svgVoltou=!!svg()&&!document.querySelector('.bench3d')&&!!document.querySelector('.benchwrap .entrada');
   const tap=t=>{svg().querySelector('[data-t="'+t+'"]').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));window.dispatchEvent(new PointerEvent('pointerup'))};
   const aciona=id=>svg().querySelector('[data-sw="'+id+'"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));
   tap('B.0');tap('DJ.0');tap('DJ.1');tap('L1.0');cor('neutro');tap('L1.1');tap('B.1');
