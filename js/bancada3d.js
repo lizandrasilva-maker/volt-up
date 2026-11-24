@@ -16,7 +16,7 @@ const cssVar=(n,padrao)=>{try{return getComputedStyle(document.documentElement).
 /* ---------- bornes: posição local de cada borne, com os MESMOS índices de terms(c) no motor.js ----------
    O construtor de cada peça lê esta tabela para pôr os parafusos; nenhuma peça define borne por conta própria. */
 const DIN={W:2.4,H:8,D:4.6,z0:.75};/* módulo DIN estilizado (1 módulo = 2,4) sobre o trilho de 0,75 */
-const LARG_DIN={fuse:DIN.W,dr:2*DIN.W,kc:3*DIN.W,ft:2*DIN.W};/* largura de cada peça de trilho: disjuntor 1 módulo, DR e relé térmico 2, contatora 3 */
+const LARG_DIN={fuse:DIN.W,dr:2*DIN.W,kc:3*DIN.W,ft:2*DIN.W,ri:2*DIN.W};/* largura de cada peça de trilho: disjuntor 1 módulo, DR e relé térmico 2, contatora 3 */
 const RECUO=.7;/* degrau recuado da bobina da contatora (A1/A2) */
 const FRENTE=DIN.z0+DIN.D;/* face frontal dos módulos DIN */
 const TERM3D={
@@ -37,7 +37,11 @@ const TERM3D={
   /* contatora: .0/.1 = A1/A2 (bobina, no degrau recuado), .2/.3 = 1-2 (potência), .4/.5 = 13-14 (selo) */
   kc:()=>[[-2.4,3.1,FRENTE-RECUO+.05],[-2.4,-2.6,FRENTE-RECUO+.05],[0,3.1,FRENTE+.05],[0,-2.6,FRENTE+.05],[2.4,3.1,FRENTE+.05],[2.4,-2.6,FRENTE+.05]],
   /* relé térmico: .0/.1 = 1-2 (força), .2/.3 = 95-96 (NF de comando) */
-  ft:()=>[[-1.2,3.1,FRENTE+.05],[-1.2,-2.6,FRENTE+.05],[1.2,3.1,FRENTE+.05],[1.2,-2.6,FRENTE+.05]]
+  ft:()=>[[-1.2,3.1,FRENTE+.05],[-1.2,-2.6,FRENTE+.05],[1.2,3.1,FRENTE+.05],[1.2,-2.6,FRENTE+.05]],
+  /* fotocélula: régua embaixo, .0 = L (fase), .1 = N, .2 = C (carga) */
+  foto:()=>[[-1.1,-3.2,1.0],[0,-3.2,1.0],[1.1,-3.2,1.0]],
+  /* relé de impulso: .0/.1 = A1/A2 (bobina, à esquerda), .2/.3 = 1-2 (contato, à direita) */
+  ri:()=>[[-1.2,3.1,FRENTE+.05],[-1.2,-2.6,FRENTE+.05],[1.2,3.1,FRENTE+.05],[1.2,-2.6,FRENTE+.05]]
 };
 const bornesDe=c=>(TERM3D[c.type]?TERM3D[c.type](c):[]).map(p=>new THREE.Vector3(...p));
 
@@ -47,6 +51,8 @@ const PAL={corpoDIN:0xE6E9EF,frenteDIN:0xD5DAE2,trilho:0x9AA5B4,cavidade:0x1F293
   painel:0x1D3550,soquete:0xD9DDE3,base:0xE6E9EF,teste:0xECC94B,armado:0x38A169,desarmado:0xE53E3E,
   botoeiraBase:0x334155,liga:0x2F855A,desliga:0xC53030,janela:0x1F2933,emboloOff:0x94A3B8,emboloOn:0xF97316,rearme:0x3182CE,dial:0x2F4A6E,espelho:0xF1F3F6,tecla:0xE6E9EF,marca:0x2F855A,wago:0xDDE3EA,alavancaWago:0xF28C28,
   motor:0x2B6CB0,motorTampa:0x245A94,eixo:0xCBD5E1,faixaEixo:0xECC94B,cobre:0xC87533,isolador:0x2A2F36,solo:0x6B4A2E,
+  ceuDia:0xBFE0F7,ceuNoite:0x1B2740,sol:0xF4C430,lua:0xF2E6A0,estrela:0xFFFFFF,corpoFoto:0x8C96A3,placaFoto:0xD6DBE1,baseFoto:0x59616B,sensor:0xC0392B,
+  fioPreto:0x1A1D21,fioBranco:0xEEF1F4,fioVermelho:0xC0392B,riOff:0x94A3B8,riOn:0xF97316,
   caixaAgua:0x1F4F86,tampa:0x2A66A8,agua:0x5AA9E6,aguaCorte:0x8CC8F2,pera:0xEEF3F7,caboBoia:0x1F2328};
 
 /* ---------- cache compartilhado (materiais e texturas estáticos) ----------
@@ -296,7 +302,51 @@ function poeNivel(p,nivel,inclina){const e=p.extra,{fundo,topo}=CAIXA;e.agua.sca
   const yPera=Math.max(fundo+1.5,fundo+.25+nivel-.1),ponto=new THREE.Vector3(.9,topo-.1,.6),fim=new THREE.Vector3(.9,yPera,.9);
   e.pera.position.copy(fim);e.pera.rotation.z=inclina;
   const dir=fim.clone().sub(ponto),comp=dir.length();e.cabo.scale.y=comp;e.cabo.position.copy(ponto).addScaledVector(dir,.5);e.cabo.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.normalize())}
-const CONSTRUTOR={src:fonte,fuse:disjuntor,lamp:lampada,dr,btn:botoeira,kc:contatora,ft:reletermico,sw:interruptor,sw3:interruptor,sw4:interruptor,motor:motorEl,bep,haste,boia:boiaEl};
+/* Fotocélula (relé fotoelétrico): corpo cinza com cúpula e a janela do sensor, preso numa placa; os 3 fios
+   (preto = L, branco = N, vermelho = C) descem até a régua. O céu atrás mostra se é dia (sol) ou noite (lua e
+   estrelas). O toque relata acionou(id): em acionarPeca isso troca dia e noite (c.noite). */
+const SENSOR={dia:0xE8F2FA,noite:0x3A4A66};
+function fotocelula(c){const g=new THREE.Group(),bornes=bornesDe(c),V=THREE.Vector3;
+  const ceu=new THREE.Mesh(new THREE.BoxGeometry(5.2,3.6,.2),mat(PAL.ceuDia));ceu.position.set(0,1.5,.1);g.add(ceu);
+  const sol=new THREE.Mesh(new THREE.SphereGeometry(.5,16,12),mat(PAL.sol));sol.position.set(1.75,2.55,.45);g.add(sol);
+  const lua=new THREE.Group();lua.position.set(1.75,2.55,.45);g.add(lua);
+  lua.add(new THREE.Mesh(new THREE.SphereGeometry(.45,16,12),mat(PAL.lua)));
+  const sombra=new THREE.Mesh(new THREE.SphereGeometry(.4,16,12),mat(PAL.ceuNoite));sombra.position.set(.24,.16,.12);lua.add(sombra);/* lua crescente */
+  const estrelas=new THREE.Group();g.add(estrelas);
+  [[-1.9,2.2],[-1.25,1.55],[-2.1,.75],[1.0,1.35]].forEach(([x,y])=>{const e=new THREE.Mesh(new THREE.SphereGeometry(.08,8,6),mat(PAL.estrela));e.position.set(x,y,.3);estrelas.add(e)});
+  const txt=rotuloVivo(1.9,.6,{cor:'#1d4a7a'});txt.position.set(-1.35,2.95,.22);g.add(txt);
+  const placa=new THREE.Mesh(new THREE.BoxGeometry(5.2,1.7,.3),mat(PAL.placaFoto));placa.position.set(0,-1.05,.15);g.add(placa);
+  const base=new THREE.Mesh(new THREE.BoxGeometry(2.8,.45,.7),mat(PAL.baseFoto));base.position.set(0,-.2,.6);g.add(base);
+  const corpo=new THREE.Mesh(new THREE.CylinderGeometry(1.1,1.1,1.8,24),mat(PAL.corpoFoto));corpo.position.set(0,.85,1.2);g.add(corpo);
+  const cupula=new THREE.Mesh(new THREE.SphereGeometry(1.1,24,12,0,Math.PI*2,0,Math.PI/2),mat(PAL.corpoFoto));cupula.position.set(0,1.75,1.2);g.add(cupula);
+  const janela=new THREE.Mesh(new THREE.CylinderGeometry(.62,.62,.2,20),matUnico(SENSOR.dia));janela.rotation.x=Math.PI/2;janela.position.set(0,1.7,2.25);g.add(janela);
+  const chip=new THREE.Mesh(new THREE.BoxGeometry(.5,.34,.08),mat(PAL.sensor));chip.position.set(0,1.7,2.38);g.add(chip);
+  const tensao=rotulo((typeof rede==='function'?rede().V:220)+'V~',1.4,.5,{cor:'#eef2f7'});tensao.position.set(0,.55,2.32);g.add(tensao);
+  const adesivo=rotulo((c.lab||c.id)+' · fotocélula',4,.75,{fundo:'#2f4a6e',cor:'#f8fafc',esc:.6});adesivo.position.set(0,3.75,.3);g.add(adesivo);
+  /* fios de saída até a régua */
+  [[-.4,PAL.fioPreto],[0,PAL.fioBranco],[.4,PAL.fioVermelho]].forEach(([x,cor],k)=>{const b=bornes[k];
+    const f=new THREE.Mesh(new THREE.TubeGeometry(caminho([new V(x,0,1.2),new V(x,-1.5,1.2),new V(b.x,-1.5,1.2),new V(b.x,-2.55,1.2)]),40,.1,6,false),mat(cor));g.add(f)});
+  const regua=new THREE.Mesh(new THREE.BoxGeometry(3.6,1.2,.9),mat(PAL.cavidade));regua.position.set(0,-3.2,.45);g.add(regua);
+  poeParafusos(g,bornes);
+  bornes.forEach((b,k)=>plaqueta(g,nomeBorne(c,k),b.x,-4.4,.55));
+  return {g,bornes,corpo:[ceu,placa,corpo,cupula,janela],extra:{ceu,sol,lua,estrelas,janela,txt}}}
+/* Relé de impulso (telerruptor, 2 módulos): à esquerda a bobina A1/A2 e a alavanca de comando manual, que sobe
+   quando o contato 1-2 está fechado; visor laranja com o contato fechado. Não é acionado à mão no jogo: cada pulso
+   na bobina inverte c.on (calculado pelo solver), e a peça só mostra o estado. */
+function releImpulso(c){const g=new THREE.Group(),bornes=bornesDe(c),{H,D,z0}=DIN,W=LARG_DIN.ri;
+  const corpo=new THREE.Mesh(new THREE.BoxGeometry(W,H,D),mat(PAL.corpoDIN));corpo.position.z=z0+D/2;g.add(corpo);
+  const frente=new THREE.Mesh(new THREE.BoxGeometry(W*.9,H*.46,.5),mat(PAL.frenteDIN));frente.position.set(0,.2,FRENTE+.25);g.add(frente);
+  const pino=new THREE.Group();pino.position.set(-1.1,.1,FRENTE+.5);g.add(pino);
+  const alav=new THREE.Mesh(new THREE.BoxGeometry(.9,1.8,.7),mat(PAL.alavanca));alav.position.y=.9;pino.add(alav);
+  const ponta=new THREE.Mesh(new THREE.BoxGeometry(.92,.45,.72),mat(PAL.teste));ponta.position.y=1.6;pino.add(ponta);
+  const nome=rotulo('RI',1.2,.7,{cor:'#2f4a6e'});nome.position.set(1.1,1.45,FRENTE+.51);g.add(nome);
+  const bob=rotulo((typeof rede==='function'?rede().V:220)+' V~',1.9,.55,{fundo:'#2f4a6e',cor:'#f8fafc',esc:.62});bob.position.set(1.1,.6,FRENTE+.51);g.add(bob);
+  const visor=new THREE.Mesh(new THREE.BoxGeometry(1.4,.55,.12),matUnico(PAL.riOff,{emissive:0x000000}));visor.position.set(1.1,-.3,FRENTE+.52);g.add(visor);
+  const lab=rotulo((c.lab||c.id)+' · impulso',3.6,.7,{cor:'#2f4a6e'});lab.position.set(0,-1.3,FRENTE+.51);g.add(lab);
+  poeParafusos(g,bornes);
+  bornes.forEach((b,k)=>plaqueta(g,nomeBorne(c,k),Math.sign(b.x)*(W/2+.7),b.y,b.z+.3));
+  return {g,bornes,corpo:[corpo,frente,alav,ponta,visor],extra:{pino,visor}}}
+const CONSTRUTOR={src:fonte,fuse:disjuntor,lamp:lampada,dr,btn:botoeira,kc:contatora,ft:reletermico,sw:interruptor,sw3:interruptor,sw4:interruptor,motor:motorEl,bep,haste,boia:boiaEl,foto:fotocelula,ri:releImpulso};
 
 /* ---------- caminho da energia em 3D (faixa no alto do mesmo canvas) ----------
    Poste com transformador → ramal → medidor na fachada → quadro → circuito (lâmpada), na mesma linguagem visual da
@@ -543,6 +593,12 @@ function atualizar(ctx){
     if(c.type==='boia'){const alvo=c.vazia?CAIXA.vazia:CAIXA.cheia,inc=c.vazia?.55:-.6;if(p.nivel===undefined){p.nivel=alvo;p.inc=inc;poeNivel(p,alvo,inc)}
       else if(p.nivel!==alvo){const n0=p.nivel,i0=p.inc;p.nivel=alvo;p.inc=inc;anima(450,k=>poeNivel(p,n0+(alvo-n0)*k,i0+(inc-i0)*k))}}
     if(c.type==='motor')p.gira=Math.max(0,Math.min(1,res.lamp[c.id]||0));
+    /* fotocélula: céu de dia (sol) ou de noite (lua e estrelas), janela do sensor escura de noite (c.noite) */
+    if(c.type==='foto'){const n=!!c.noite,e=p.extra;if(p.noite!==n){p.noite=n;e.ceu.material=mat(n?PAL.ceuNoite:PAL.ceuDia);e.sol.visible=!n;e.lua.visible=e.estrelas.visible=n;
+      e.janela.material.color.setHex(n?SENSOR.noite:SENSOR.dia);e.txt.userData.vivo.o.cor=n?'#e9edf3':'#1d4a7a';trocaTexto(e.txt,n?'NOITE':'DIA')}}
+    /* relé de impulso: a alavanca sobe e o visor fica laranja com o contato 1-2 fechado (c.on, do solver) */
+    if(c.type==='ri'){const on=!!c.on,alvo=on?-.5:.5,e=p.extra;if(p.angRI!==alvo){const de=p.angRI===undefined?alvo:e.pino.rotation.x;p.angRI=alvo;anima(150,k=>{e.pino.rotation.x=de+(alvo-de)*k})}
+      e.visor.material.color.setHex(on?PAL.riOn:PAL.riOff);e.visor.material.emissive.setHex(on?0x7a3a0a:0x000000)}
     if(c.type==='sw'||c.type==='sw3'||c.type==='sw4'){const alvo=(c.type==='sw'?c.closed:c.pos)?TECLA.on:TECLA.off;if(p.tec!==alvo){const pi=p.extra.pino,de=p.tec===undefined?alvo:pi.rotation.x;p.tec=alvo;anima(120,k=>{pi.rotation.x=de+(alvo-de)*k})}}
     if(c.type==='btn'){const alvo=c.pressed?BOTAO.afunda:0;if(p.emb!==alvo){const de=p.extra.embolo.position.z,para=BOTAO.z+alvo;p.emb=alvo;anima(90,k=>{p.extra.embolo.position.z=de+(para-de)*k})}}
     if(c.type==='dr'){p.extra.visor.material.color.setHex(c.trip?PAL.desarmado:PAL.armado);p.extra.visor.material.emissive.setHex(c.trip?0x6b1a12:0x0f4a24)}
@@ -684,6 +740,8 @@ const debug={
   motorGira:id=>E.pecas[id].gira||0,
   nivel:id=>E.pecas[id].nivel,
   emboloKC:id=>({on:!!E.pecas[id].on,cor:E.pecas[id].extra.embolo.material.color.getHexString()}),
+  noite:id=>{const e=E.pecas[id].extra;return {lua:e.lua.visible,sol:e.sol.visible,ceu:e.ceu.material.color.getHex()===PAL.ceuNoite,texto:e.txt.userData.vivo.txt}},
+  releImpulso:id=>{const p=E.pecas[id];return {alavanca:p.angRI,visor:p.extra.visor.material.color.getHex()===PAL.riOn?'fechado':'aberto'}},
   visorFT:id=>E.pecas[id].extra.visor.material.color.getHex()===PAL.desarmado?'disparado':'armado',
   faixa:()=>({estado:E.faixa.estado,legendas:E.faixa.legendas,altura:E.faixaH,pontos:E.faixa.pontos.filter(p=>p.visible).length,cabos:E.faixa.cabos.length}),
   badge:()=>({visivel:!E.badge.hidden,texto:E.badge.textContent}),

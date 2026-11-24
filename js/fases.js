@@ -77,7 +77,7 @@ try{const q=new URLSearchParams(location.search).get('3d');if(q==='1')localStora
 VISTA3D.ligada=VISTA3D.flag;
 /* peças que a vista 3D já desenha: fonte 1F+N, disjuntor, DR e lâmpada sem PE (Laboratório 3D e Quadro Novo).
    As outras bancadas ficam no SVG. */
-VISTA3D.suporta=st=>st.comps.every(c=>c.type==='src'||c.type==='fuse'||c.type==='dr'||c.type==='btn'||c.type==='kc'||c.type==='ft'||c.type==='sw'||c.type==='sw3'||c.type==='sw4'||c.type==='motor'||c.type==='bep'||c.type==='haste'||c.type==='boia'||(c.type==='lamp'&&c.pe!==true));
+VISTA3D.suporta=st=>st.comps.every(c=>c.type==='src'||c.type==='fuse'||c.type==='dr'||c.type==='btn'||c.type==='kc'||c.type==='ft'||c.type==='sw'||c.type==='sw3'||c.type==='sw4'||c.type==='foto'||c.type==='ri'||c.type==='motor'||c.type==='bep'||c.type==='haste'||c.type==='boia'||(c.type==='lamp'&&c.pe!==true));
 /* o botão 🧊 3D aparece em toda bancada cujas peças já existem em 3D, com ou sem ?3d=1 (o flag só abre direto em 3D
    e mostra os laboratórios). O Three.js é baixado no primeiro toque no botão. */
 function quer3D(st){return !!(VISTA3D.ligada&&VISTA3D.vista&&VISTA3D.vista.aceita(st))}
