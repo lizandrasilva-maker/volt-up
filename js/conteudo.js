@@ -2,7 +2,8 @@
 /* Fonte da bancada: L1 e N (1 fase + neutro, na tensão da rede escolhida em Configurações). Não tem PE: o terra vem da haste, pelo BEP. */
 const BAT=()=>C('B','src',45,125,0,{fases:1});
 /* Aterramento das missões com massa metálica: haste cravada no solo e BEP (barramento de equipotencialização principal). */
-const ATERRA=()=>[C('BEP','bep',95,192,0),C('H','haste',45,205,0)];
+/* BEP e haste um pouco abaixo da fonte: deixa um corredor livre para os fios que saem dos bornes dela */
+const ATERRA=()=>[C('BEP','bep',100,200,0),C('H','haste',40,215,0)];
 /* Liga o PE nas luminárias que têm borne de terra (pe:true, ex.: luminária metálica). O bocal simples não tem PE. */
 function withPE(st){const ls=st.comps.filter(c=>c.type==='lamp'&&c.pe===true);if(!ls.length)return autoColor(st);
   if(!st.comps.some(c=>c.type==='bep')){st.comps.push(...ATERRA());st.wires.push({a:'H.0',b:'BEP.0',cor:'terra'})}
@@ -173,9 +174,10 @@ function boiaCheck(st){
 }
 /* Cenários da fase Sobrecarga! (prever): partida direta montada, com ou sem selo. */
 function scPartida(semSelo,estado){
-  const st={comps:[BAT(),C('FT','ft',150,60,0),C('BD','btn',220,60,0,{nf:true}),C('BL','btn',290,60,0,{nf:false}),C('K','kc',160,170,0),C('M','motor',270,170,0),...ATERRA()],
-    wires:[W('B.0','FT.2'),W('FT.3','BD.0'),W('BD.1','BL.0'),W('BL.1','K.0'),W('K.1','B.1'),W('B.0','K.2'),W('K.3','FT.0'),W('FT.1','M.0'),W('M.1','B.1'),W('M.2','BEP.1'),W('BEP.0','H.0')]};
-  if(!semSelo)st.wires.push(W('BD.1','K.4'),W('K.5','K.0'));
+  /* mesmo painel da Partida Direta: relé térmico embaixo da contatora; 95-96 logo antes da bobina */
+  const st={comps:[BAT(),C('K','kc',150,85,0),C('FT','ft',150,190,0),C('BD','btn',230,55,0,{nf:true}),C('BL','btn',295,55,0,{nf:false}),C('M','motor',285,190,0),...ATERRA()],
+    wires:[W('B.0','BD.0'),W('BD.1','BL.0'),W('BL.1','FT.2'),W('FT.3','K.0'),W('K.1','B.1'),W('B.0','K.2'),W('K.3','FT.0'),W('FT.1','M.0'),W('M.1','B.1'),W('M.2','BEP.1'),W('BEP.0','H.0')]};
+  if(!semSelo)st.wires.push(W('BD.1','K.4'),W('K.5','FT.2'));
   autoColor(st);
   st.comps.forEach(c=>Object.assign(c,(estado||{})[c.id]||{}));
   return st;

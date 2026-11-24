@@ -465,7 +465,7 @@ const anima=(dur,passo)=>{if(reduz()){passo(1,performance.now());return}E.anim.p
    O fio sai do borne para a frente, corre pela face da peça até a borda (por cima ou por baixo, conforme o lado do
    borne), mergulha até perto da chapa e segue numa pista própria (altura e profundidade diferentes para cada fio),
    para fios paralelos não se sobreporem. Um tubo invisível mais grosso em volta mantém o toque fácil. */
-const FIO={raio:.13,toque:.5,canto:.45,frente:.45,margem:.35,pista:.3,prof:.09,z0:.85,pistas:7};
+const FIO={raio:.13,toque:.5,canto:.45,frente:.45,margem:.35,pista:.45,prof:.09,z0:.85,pistas:7,passo:.25,sep:.45};
 /* ---------- pontos de conexão (dica da montagem) ----------
    Anel em volta de cada parafuso que o circuito usa: azul-claro enquanto faltam condutores, verde quando tem o número
    certo, laranja quando tem fio a mais. Nos níveis leve e moderado, um contador "ligados/esperados" ao lado. */
@@ -491,38 +491,75 @@ function caminho(pts){const P=pts.filter((p,i)=>i===0||p.distanceTo(pts[i-1])>1e
     const ent=p.clone().addScaledVector(p.clone().sub(a).normalize(),-r),sai=p.clone().addScaledVector(b.clone().sub(p).normalize(),r);
     if(atual.distanceTo(ent)>1e-3)cp.add(new THREE.LineCurve3(atual,ent));cp.add(new THREE.QuadraticBezierCurve3(ent,p.clone(),sai));atual=sai}
   cp.add(new THREE.LineCurve3(atual,P[P.length-1].clone()));return cp}
-/* Caminho do fio sem passar por trás de nenhuma peça (caixas de todas as peças da bancada):
-   - os dois bornes saem para o mesmo lado: o corredor horizontal fica além das DUAS peças e, se cruzar outra peça,
-     vai se afastando até achar uma altura livre;
-   - saem para lados opostos: cada ponta usa o seu corredor, e os dois se ligam por uma coluna vertical livre ao lado
-     das peças (à esquerda ou à direita do destino ou da origem).
-   Fios diferentes ficam em pistas diferentes (altura e profundidade). */
+/* ---------- traçado dos fios: busca de caminho numa grade (A*) ----------
+   As peças são paredes: o fio NUNCA passa por cima nem por trás de uma peça. Anda na horizontal e na vertical, faz
+   quantas curvas precisar para contornar, paga por comprimento e por curva, paga MUITO para correr colado (a menos de
+   FIO.sep) num fio de outro ponto elétrico e pouco para cruzar. Onde cruza, faz um salto (arco), como no esquema.
+   Fios que dividem um borne são o mesmo ponto: podem correr juntos (eles se encontram no conector). */
 const caixas=()=>Object.values(E.pecas).map(p=>p.caixa);
-function livreH(y,x0,x1,cxs){const a=Math.min(x0,x1),b=Math.max(x0,x1);return cxs.every(c=>!(y>c.min.y-.1&&y<c.max.y+.1&&b>c.min.x&&a<c.max.x))}
-function livreV(x,y0,y1,cxs){const a=Math.min(y0,y1),b=Math.max(y0,y1);return cxs.every(c=>!(x>c.min.x-.1&&x<c.max.x+.1&&b>c.min.y&&a<c.max.y))}
-/* Busca, para cada fio, o caminho mais curto do tipo: sai da origem até um corredor perto dela (altura yA), anda até
-   uma coluna (xr), sobe ou desce até um corredor perto do destino (yB) e chega ao destino. Testa algumas alturas de
-   corredor em cada ponta e colunas nas bordas das peças; fica com a mais curta em que nenhum trecho passa por uma peça.
-   Se nada servir (bancada muito cheia), usa o caminho simples. */
-function rota(w,i){const a=saida(w.a),b=saida(w.b),A=a.T,B=b.T,V=THREE.Vector3,pista=i%FIO.pistas,folga=.45+pista*FIO.pista;
-  const zL=FIO.z0+pista*FIO.prof,zA=A.z+FIO.frente,zB=B.z+FIO.frente,cxs=caixas(),off=.7+pista*.25;
-  /* alturas de corredor: começam coladas na peça; o afastamento da pista (folga) é só preferência, para os fios
-     paralelos se separarem quando há espaço, sem bloquear o caminho quando a bancada está apertada */
-  const ys=p=>Array.from({length:42},(_,k)=>({y:p.borda+p.dir*(.35+k*.3),pref:Math.abs(.35+k*.3-folga)}));
-  const yAs=ys(a),yBs=ys(b);
-  const xs=[A.x,B.x,(A.x+B.x)/2];cxs.forEach(c=>xs.push(c.min.x-off,c.max.x+off));
-  let melhor=null,custo=Infinity;
-  for(const {y:yA,pref:pa} of yAs){if(!livreV(A.x,a.borda,yA,cxs))break;
-    for(const {y:yB,pref:pb} of yBs){if(!livreV(B.x,b.borda,yB,cxs))break;
-      for(const xr of xs){const c=Math.abs(yA-a.borda)+Math.abs(xr-A.x)+Math.abs(yA-yB)+Math.abs(B.x-xr)+Math.abs(yB-b.borda)+.8*(pa+pb);
-        if(c>=custo)continue;
-        if(livreH(yA,A.x,xr,cxs)&&livreV(xr,yA,yB,cxs)&&livreH(yB,xr,B.x,cxs)){custo=c;melhor=[yA,xr,yB]}}}}
-  rota.ultima={melhor,borda:[a.borda,b.borda],A:[A.x,A.y],B:[B.x,B.y],yAs,yBs,caixas:cxs.map(c=>[c.min.x,c.min.y,c.max.x,c.max.y].map(v=>+v.toFixed(2)))};
-  const pts=[A,new V(A.x,A.y,zA),new V(A.x,a.borda,zA),new V(A.x,a.borda,zL)];
-  if(melhor){const[yA,xr,yB]=melhor;pts.push(new V(A.x,yA,zL),new V(xr,yA,zL),new V(xr,yB,zL),new V(B.x,yB,zL))}
-  else{const y=a.dir===b.dir?(a.dir<0?Math.min(a.borda,b.borda):Math.max(a.borda,b.borda))+a.dir*folga:a.borda+a.dir*folga;pts.push(new V(A.x,y,zL),new V(B.x,y,zL))}
-  pts.push(new V(B.x,b.borda,zL),new V(B.x,b.borda,zB),new V(B.x,B.y,zB),B);
-  return caminho(pts)}
+const segH=(y,x0,x1,tag)=>({h:1,y,a:Math.min(x0,x1),b:Math.max(x0,x1),tag}),segV=(x,y0,y1,tag)=>({h:0,x,a:Math.min(y0,y1),b:Math.max(y0,y1),tag});
+/* soma de conflitos entre trechos (usada na inspeção dos testes): correr colado vale 200, cruzar vale pouco */
+function conflito(segs,occ,pontas){let p=0;
+  for(const s of segs){if(s.b-s.a<1e-3)continue;for(const o of occ){if(s.tag&&s.tag===o.tag)continue;if(pontas&&o.pontas&&o.pontas.some(t=>pontas.includes(t)))continue;
+    if(s.h===o.h){const d=s.h?Math.abs(s.y-o.y):Math.abs(s.x-o.x);if(d<FIO.sep&&Math.min(s.b,o.b)-Math.max(s.a,o.a)>.05)p+=200}
+    else{const H=s.h?s:o,Vt=s.h?o:s;if(Vt.x>H.a+.05&&Vt.x<H.b-.05&&H.y>Vt.a+.05&&H.y<Vt.b-.05)p+=1.2}}}
+  return p}
+const GR={passo:.25,margem:6,curva:6,colado:60,cruza:3,salto:.35,altoSalto:.35,limite:600000};
+/* grade da bancada: células de 0,25; as caixas das peças (com folga) ficam bloqueadas */
+function grade(){const cxs=caixas(),bx=new THREE.Box3();cxs.forEach(c=>bx.union(c));const g=GR.passo,m=GR.margem;
+  const x0=bx.min.x-m,y0=bx.min.y-m,W=Math.ceil((bx.max.x-bx.min.x+2*m)/g)+1,H=Math.ceil((bx.max.y-bx.min.y+2*m)/g)+1,bloq=new Uint8Array(W*H);
+  cxs.forEach(c=>{const i0=Math.max(0,Math.round((c.min.x-.1-x0)/g)),i1=Math.min(W-1,Math.round((c.max.x+.1-x0)/g)),j0=Math.max(0,Math.round((c.min.y-.1-y0)/g)),j1=Math.min(H-1,Math.round((c.max.y+.1-y0)/g));
+    for(let j=j0;j<=j1;j++)for(let i=i0;i<=i1;i++)bloq[j*W+i]=1});
+  return {x0,y0,W,H,bloq,ocup:new Map(),cx:x=>Math.round((x-x0)/g),cy:y=>Math.round((y-y0)/g),wx:i=>x0+i*g,wy:j=>y0+j*g}}
+/* ponto de partida na grade: a célula da borda do borne; se cair numa célula bloqueada, anda para fora até ficar livre */
+function celulaDe(G,x,y,dir){let i=Math.max(0,Math.min(G.W-1,G.cx(x))),j=Math.max(0,Math.min(G.H-1,G.cy(y)));while(G.bloq[j*G.W+i]&&j>0&&j<G.H-1)j+=dir;return {i,j}}
+/* custo extra de entrar numa célula andando na horizontal (o=0) ou vertical (o=1) */
+function custoCelula(G,c,o,pontas){const L=G.ocup.get(c);let p=0;
+  const viz=o===0?[c,c+G.W,c-G.W]:[c,c+1,c-1];/* a própria célula e as vizinhas do lado (0,25 de distância) */
+  for(const v of viz){const lv=G.ocup.get(v);if(lv&&lv.some(e=>e.o===o&&!e.p.some(t=>pontas.includes(t)))){p+=GR.colado;break}}
+  if(L&&L.some(e=>e.o!==o&&!e.p.some(t=>pontas.includes(t))))p+=GR.cruza;
+  return p}
+/* A* com estado (célula, direção): 0 +x, 1 −x, 2 +y, 3 −y; não volta para trás */
+function aEstrela(G,ini,fim,dIni,dFim,pontas){const {W,H,bloq}=G,DX=[1,-1,0,0],DY=[0,0,1,-1],OP=[1,0,3,2],N=W*H*4;
+  const gc=new Float32Array(N).fill(Infinity),de=new Int32Array(N).fill(-1),cF=fim.j*W+fim.i,h=c=>Math.abs((c%W)-fim.i)+Math.abs(((c/W)|0)-fim.j);
+  const hp=[],push=(f,s)=>{hp.push([f,s]);let k=hp.length-1;while(k){const q=(k-1)>>1;if(hp[q][0]<=hp[k][0])break;[hp[q],hp[k]]=[hp[k],hp[q]];k=q}},
+    pop=()=>{const t=hp[0],u=hp.pop();if(hp.length){hp[0]=u;let k=0;for(;;){const l=2*k+1,r=l+1;let m=k;if(l<hp.length&&hp[l][0]<hp[m][0])m=l;if(r<hp.length&&hp[r][0]<hp[m][0])m=r;if(m===k)break;[hp[m],hp[k]]=[hp[k],hp[m]];k=m}}return t};
+  const s0=(ini.j*W+ini.i)*4+dIni;gc[s0]=0;push(h(ini.j*W+ini.i),s0);let n=0;
+  while(hp.length&&n++<GR.limite){const [,st]=pop(),c=st>>2,d=st&3;
+    if(c===cF&&d===dFim){const cam=[];for(let x=st;x>=0;x=de[x])cam.push(x>>2);return cam.reverse()}
+    const i=c%W,j=(c/W)|0,g0=gc[st];
+    for(let nd=0;nd<4;nd++){if(nd===OP[d])continue;const ni=i+DX[nd],nj=j+DY[nd];if(ni<0||nj<0||ni>=W||nj>=H)continue;const nc=nj*W+ni;if(bloq[nc]&&nc!==cF)continue;
+      const g1=g0+1+(nd!==d?GR.curva:0)+custoCelula(G,nc,nd<2?0:1,pontas),ns=nc*4+nd;if(g1<gc[ns]){gc[ns]=g1;de[ns]=st;push(g1+h(nc),ns)}}}
+  return null}
+/* traça um fio: borne → borda (na frente da peça) → mergulha até a pista → caminho da grade → borda → borne */
+function traca(w,i,G){const a=saida(w.a),b=saida(w.b),A=a.T,B=b.T,V=THREE.Vector3,pontas=[w.a,w.b];
+  const zL=FIO.z0+(i%FIO.pistas)*FIO.prof,zA=A.z+FIO.frente,zB=B.z+FIO.frente;
+  const ci=celulaDe(G,A.x,a.borda,a.dir),cf=celulaDe(G,B.x,b.borda,b.dir);
+  const cam=aEstrela(G,ci,cf,a.dir>0?2:3,b.dir>0?3:2,pontas);
+  let mid;
+  if(cam){/* marca as células usadas (com a orientação do movimento) e guarda só os cantos */
+    for(let k=0;k<cam.length;k++){const c=cam[k],o=[];if(k>0)o.push(Math.abs(cam[k]-cam[k-1])===1?0:1);if(k<cam.length-1)o.push(Math.abs(cam[k+1]-cam[k])===1?0:1);
+      const L=G.ocup.get(c)||[];new Set(o).forEach(x=>L.push({o:x,p:pontas}));G.ocup.set(c,L)}
+    const cel=c=>({i:c%G.W,j:(c/G.W)|0}),ps=[cel(cam[0])];
+    for(let k=1;k<cam.length-1;k++){const p=cel(cam[k-1]),q=cel(cam[k]),r=cel(cam[k+1]);if((p.i===q.i)!==(q.i===r.i))ps.push(q)}
+    ps.push(cel(cam[cam.length-1]));
+    /* colunas da ponta ficam exatamente no x do borne (a grade arredonda até 0,125) */
+    mid=ps.map(p=>new V(p.i===ci.i?A.x:p.i===cf.i?B.x:G.wx(p.i),G.wy(p.j),zL))}
+  else{const y=a.borda+a.dir*.6;mid=[new V(A.x,y,zL),new V(B.x,y,zL)]}
+  return {n:(traca.n=(traca.n||0)+1),pontas,zL,mid,A,B,a,b,zA,zB,ultima:{celulas:cam?cam.length:0,cantos:mid.length}}}
+/* saltos: onde este fio cruza um fio já desenhado (de outro ponto elétrico), ele pula por cima num arco pequeno */
+function comSaltos(r,anteriores){const V=THREE.Vector3,out=[r.mid[0]],R=GR.salto;
+  const segs=[];anteriores.forEach(o=>{if(!o||o.pontas.some(t=>r.pontas.includes(t)))return;for(let k=0;k<o.mid.length-1;k++)segs.push([o.mid[k],o.mid[k+1]])});
+  for(let k=0;k<r.mid.length-1;k++){const P=r.mid[k],Q=r.mid[k+1],hz=Math.abs(P.y-Q.y)<1e-6,len=P.distanceTo(Q);if(len<1e-6)continue;
+    const u=Q.clone().sub(P).normalize(),xs=[];
+    segs.forEach(([C,D])=>{const vz=Math.abs(C.x-D.x)<1e-6;if(hz===!vz)return;/* só perpendiculares */
+      const X=hz?new V(C.x,P.y,P.z):new V(P.x,C.y,P.z),t=X.clone().sub(P).dot(u);
+      const dentroOutro=hz?(X.y>Math.min(C.y,D.y)+.05&&X.y<Math.max(C.y,D.y)-.05):(X.x>Math.min(C.x,D.x)+.05&&X.x<Math.max(C.x,D.x)-.05);
+      if(dentroOutro&&t>R+.3&&t<len-R-.3)xs.push(t)});
+    xs.sort((p,q)=>p-q).filter((t,n,l)=>n===0||t-l[n-1]>2*R+.2).forEach(t=>{const X=P.clone().addScaledVector(u,t),n=hz?new V(0,1,0):new V(-1,0,0);
+      out.push(X.clone().addScaledVector(u,-R),X.clone().addScaledVector(n,R).add(new V(0,0,GR.altoSalto)),X.clone().addScaledVector(u,R))});
+    out.push(Q)}
+  return out}
 function tubo(cur,raio,lados){return new THREE.TubeGeometry(cur,Math.max(32,Math.round(cur.getLength()*5)),raio,lados,false)}
 function listras(geo,comp){const rep=Math.max(2,Math.round(comp*1.2)),uv=geo.attributes.uv;for(let i=0;i<uv.count;i++)uv.setX(i,uv.getX(i)*rep)}
 /* fio provisório do arraste: reto e fino, do borne até o dedo */
@@ -533,8 +570,18 @@ function tiraFio(f){const h=f.userData.toque;if(h){E.hits.splice(E.hits.indexOf(
 function desenhaFios(st){
   const ass=st.wires.map(w=>w.a+'>'+w.b+':'+(w.cor||'')).join('|');if(ass===E.assinaturaFios)return;E.assinaturaFios=ass;
   E.fios.forEach(tiraFio);E.fios=[];
-  st.wires.forEach((w,i)=>{if(!E.bornes[w.a]||!E.bornes[w.b])return;const cor=w.cor||'fase',cur=rota(w,i);
-    const geo=tubo(cur,FIO.raio,8);listras(geo,cur.getLength());const m=new THREE.Mesh(geo,matFio(cor));m.userData={w:i,cor,a:w.a,rota:rota.ultima};
+  /* cada fio, na ordem, vê os anteriores na grade; depois os cruzamentos ganham o salto */
+  const ok=w=>E.bornes[w.a]&&E.bornes[w.b],rs=[],G=grade();
+  /* os trechos curtos de cada borne até a borda da peça são fixos: entram na grade antes, para ninguém correr colado neles */
+  st.wires.forEach(w=>{if(!ok(w))return;[w.a,w.b].forEach(t=>{const o=saida(t),i=G.cx(o.T.x),j0=G.cy(o.T.y),j1=G.cy(o.borda);if(i<0||i>=G.W)return;
+    for(let j=Math.max(0,Math.min(j0,j1));j<=Math.min(G.H-1,Math.max(j0,j1));j++){const c=j*G.W+i,L=G.ocup.get(c)||[];L.push({o:1,p:[w.a,w.b]});G.ocup.set(c,L)}})});
+  /* os fios mais curtos (com menos opção de caminho) são traçados primeiro; os longos contornam depois */
+  const dist=w=>{const p=E.bornes[w.a],q=E.bornes[w.b];return Math.abs(p.x-q.x)+Math.abs(p.y-q.y)};
+  st.wires.map((w,i)=>i).filter(i=>ok(st.wires[i])).sort((i,j)=>dist(st.wires[i])-dist(st.wires[j])).forEach(i=>{rs[i]=traca(st.wires[i],i,G)});
+  const ordem=rs.map((r,i)=>r?i:-1).filter(i=>i>=0).sort((i,j)=>rs[i].n-rs[j].n);
+  st.wires.forEach((w,i)=>{const r=rs[i];if(!r)return;const cor=w.cor||'fase',V=THREE.Vector3,antes=ordem.filter(j=>rs[j].n<r.n).map(j=>rs[j]);
+    const cur=caminho([r.A,new V(r.A.x,r.A.y,r.zA),new V(r.A.x,r.a.borda,r.zA),new V(r.A.x,r.a.borda,r.zL),...comSaltos(r,antes),new V(r.B.x,r.b.borda,r.zL),new V(r.B.x,r.b.borda,r.zB),new V(r.B.x,r.B.y,r.zB),r.B]);
+    const geo=tubo(cur,FIO.raio,8);listras(geo,cur.getLength());const m=new THREE.Mesh(geo,matFio(cor));m.userData={w:i,cor,a:w.a,rota:r.ultima};
     const h=new THREE.Mesh(tubo(cur,FIO.toque,6),E.matToque);h.userData.w=i;m.userData.toque=h;
     E.scene.add(m,h);E.fios.push(m);E.hits.push(h)});
   poeWagos(st);
@@ -712,6 +759,9 @@ const debug={
   realcados:()=>E.fios.filter(f=>!f.material.transparent).length,
   /* nenhum trecho do corredor (horizontal, junto à chapa) passa por dentro da caixa de uma peça que não é dele */
   /* trechos junto à chapa (z constante) que passam por dentro da caixa de uma peça que não é ponta do fio */
+  colados:()=>{const o=[];E.fios.forEach((f,i)=>E.fios.forEach((g,j)=>{if(j<=i)return;const wa=E.ctx.st.wires[f.userData.w],wb=E.ctx.st.wires[g.userData.w];
+    const ts=x=>{const s=[];x.geometry.parameters.path.curves.filter(c=>c.isLineCurve3&&Math.abs(c.v1.z-c.v2.z)<1e-6&&c.v1.z<2).forEach(c=>{if(Math.abs(c.v1.y-c.v2.y)<1e-6)s.push(segH(c.v1.y,c.v1.x,c.v2.x));else if(Math.abs(c.v1.x-c.v2.x)<1e-6)s.push(segV(c.v1.x,c.v1.y,c.v2.y))});return s};
+    const comum=[wa.a,wa.b].some(t=>t===wb.a||t===wb.b);if(!comum&&conflito(ts(f),ts(g))>=40){let det='';if(debug.detalhe)ts(f).forEach(x=>ts(g).forEach(y=>{if(!det&&conflito([x],[y])>=40)det=' '+JSON.stringify([x,y].map(z=>[z.h,+(z.h?z.y:z.x).toFixed(2),+z.a.toFixed(2),+z.b.toFixed(2)]))}));o.push(wa.a+'-'+wa.b+' com '+wb.a+'-'+wb.b+det)}}));return o},
   atravessados:()=>{const o=[];E.fios.forEach(f=>{const w=E.ctx.st.wires[f.userData.w],pontas=[w.a,w.b].map(t=>t.split('.')[0]);
     f.geometry.parameters.path.curves.filter(c=>c.isLineCurve3&&Math.abs(c.v1.z-c.v2.z)<1e-6&&c.v1.z<2).forEach(c=>Object.entries(E.pecas).forEach(([id,p])=>{if(pontas.includes(id))return;const cx=p.caixa;
       const x0=Math.min(c.v1.x,c.v2.x),x1=Math.max(c.v1.x,c.v2.x),y0=Math.min(c.v1.y,c.v2.y),y1=Math.max(c.v1.y,c.v2.y);
