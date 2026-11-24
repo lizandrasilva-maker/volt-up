@@ -41,6 +41,8 @@ const coresDoFioCSS=k=>(CORES[k].c.match(/var\(--[\w-]+\)|#[0-9a-f]{3,8}\b/gi)).
   cor('neutro');toque('L1.1');toque('B.1');      /* neutro: lâmpada → fonte */
   R.corFase=J(D.corFio(0))===J(coresDoFioCSS('fase'));R.corNeutro=J(D.corFio(2))===J(coresDoFioCSS('neutro'));
   R.materiais=D.materiais();R.malhasAgora=D.contagem();
+  R.fioFino=D.raioFio()<=.15;R.ortogonal=D.ortogonal();R.pistas=D.pistas();
+  toque('L1.1');R.realce=D.realcados()===1;toque('L1.1');R.realceSai=D.realcados()===3;
   R.fios3d=D.fios();R.acesa=D.brilho('L1')>0.5;
   toque('DJ');R.djDesligou=BANCADA.st.comps.find(c=>c.id==='DJ').trip===true&&D.alavanca('DJ')>0;R.apagou=D.brilho('L1')<0.05;
   toque('DJ');R.religou=D.brilho('L1')>0.5&&D.alavanca('DJ')<0;
