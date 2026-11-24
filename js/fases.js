@@ -57,8 +57,10 @@ function missao(goal,real,nota,rotulo){return '<div class="goal"><span class="gi
    O estado da faixa (energia passando ou curto) vem da classe que board() põe no <svg>. */
 /* cc = bancada de corrente contínua (pilhas): sem a faixa do poste e com o aviso do modelo CC */
 /* v3 = a vista 3D vai ocupar o centro da bancada: no lugar do SVG fica só a vaga onde o <canvas> é reencaixado */
-function benchWrap(svg,id,zm,cc,v3){const m=/^<svg[^>]*class="(\w*)/.exec(svg),est=m?(m[1]==='curto'?'short':m[1]):'',R=vistaReal();
-  const ctl=zm&&!v3?'<div class="bctl">'+'<button class="btn vbtn" data-vista="'+(R?'simb':'real')+'" aria-label="'+(R?'Ver o diagrama multifilar':'Ver as peças reais')+'">'+(R?'📐 Multifilar':'🔌 Real')+'</button>'+zm.ui()+'</div>':'';
+/* p3 = esta bancada pode ser vista em 3D: aparece o botão para alternar entre 2D e 3D */
+function benchWrap(svg,id,zm,cc,v3,p3){const m=/^<svg[^>]*class="(\w*)/.exec(svg),est=m?(m[1]==='curto'?'short':m[1]):'',R=vistaReal();
+  const b3=p3?'<button class="btn vbtn" data-3d="'+(v3?'0':'1')+'" aria-label="'+(v3?'Voltar à bancada 2D':'Ver a bancada em 3D')+'">'+(v3?'🔌 2D':'🧊 3D')+'</button>':'';
+  const ctl=!zm?'':v3?'<div class="bctl">'+b3+'</div>':'<div class="bctl"><span class="bctl-esq"><button class="btn vbtn" data-vista="'+(R?'simb':'real')+'" aria-label="'+(R?'Ver o diagrama multifilar':'Ver as peças reais')+'">'+(R?'📐 Multifilar':'🔌 Real')+'</button>'+b3+'</span>'+zm.ui()+'</div>';
   return '<div class="benchwrap">'+(cc?'':entrada(est))+'<div class="bench'+(v3?' bench3d':'')+'"'+(id?' id="'+id+'"':'')+'>'+(v3?'<div class="vaga3d" data-vaga3d></div>':svg)+ctl+'</div>'+(cc?avisoCC():avisoModelo())+'</div>'}
 
 /* ---------- Vista 3D persistente ----------
@@ -67,8 +69,38 @@ function benchWrap(svg,id,zm,cc,v3){const m=/^<svg[^>]*class="(\w*)/.exec(svg),e
    (atualizar). Quando a tela deixa de ter bancada 3D, ele é destruído (destruir).
    VISTA3D.vista é registrada por js/bancada3d.js: {aceita(st), montar(no,ctx), atualizar(ctx), destruir()}.
    ctx = {st, res, sel, curto, cor, editavel, ctl}; ctl é o contrato de intenções (abaixo). */
-const VISTA3D={vista:null,ligada:false,no:null,montagens:0};
-function quer3D(st){return !!(VISTA3D.ligada&&VISTA3D.vista&&VISTA3D.vista.aceita(st))}
+const VISTA3D={vista:null,ligada:false,no:null,montagens:0,flag:false,carga:null,erro:null,redesenha:null};
+/* ?3d=1 liga a vista 3D neste aparelho (fica guardado, inclusive depois do login); ?3d=0 desliga.
+   Sem o flag, nada de 3D é baixado: o SVG segue sendo a bancada. */
+try{const q=new URLSearchParams(location.search).get('3d');if(q==='1')localStorage.setItem('volt-3d','1');if(q==='0')localStorage.removeItem('volt-3d');
+  VISTA3D.flag=localStorage.getItem('volt-3d')==='1'}catch(e){}
+VISTA3D.ligada=VISTA3D.flag;
+/* peças que a vista 3D já desenha (MVP): fonte 1F+N, disjuntor e lâmpada sem PE. As outras bancadas ficam no SVG. */
+VISTA3D.suporta=st=>st.comps.every(c=>(c.type==='src'&&nFases(c)===1)||c.type==='fuse'||(c.type==='lamp'&&c.pe!==true));
+function quer3D(st){return !!(VISTA3D.flag&&VISTA3D.ligada&&VISTA3D.vista&&VISTA3D.vista.aceita(st))}
+function pode3D(st){return VISTA3D.flag&&!VISTA3D.erro&&(VISTA3D.vista?VISTA3D.vista.aceita(st):VISTA3D.suporta(st))}
+/* baixa o Three.js e js/bancada3d.js só quando a 3D é pedida (import dinâmico, com o three da importmap do index.html).
+   Quando termina, redesenha a bancada aberta, se ainda for a mesma. */
+function carrega3D(){
+  if(!VISTA3D.carga)VISTA3D.carga=import('./bancada3d.js').then(()=>{if(!VISTA3D.vista&&!VISTA3D.erro)VISTA3D.erro='vista 3D não registrada'})
+    .catch(e=>{VISTA3D.erro=e.message||String(e)})
+    .then(()=>{const r=VISTA3D.redesenha;if(r&&r.id===BANCADA_ID&&app.querySelector('.bench'))r.f()});
+  return VISTA3D.carga;
+}
+if(VISTA3D.flag)carrega3D();
+/* estado da bancada aberta (inspeção e testes de equivalência 2D × 3D) */
+const BANCADA={st:null};
+/* Laboratório 3D (MVP): fonte, disjuntor e lâmpada. Fica fora dos capítulos; aparece no menu só com ?3d=1. */
+const LAB3D={id:'lab3d',nome:'Laboratório 3D',sub:'Fonte, disjuntor e lâmpada',kind:'bancada',tipo:'build',ic:'disjuntor',cor:'#2b4f7a',
+  card:{leve:'O disjuntor fica na fase, antes da lâmpada.',moderado:'Disjuntor em série na fase: desligado, a lâmpada fica sem tensão.',full:'Curto depois do disjuntor: o disparo magnético do DJ abre o circuito.'},
+  dados:Object.fromEntries(['leve','moderado','full'].map(md=>[md,{
+    comps:[BAT(),C('DJ','fuse',150,70,0,{lab:'DJ 10A'}),C('L1','lamp',275,140,0)],
+    real:[['DJ','🎚','disjuntor'],['L1','💡','lâmpada'],['Fonte','🔌','rede {V} V']],
+    goal:'Ligue a lâmpada L1 na fonte passando pelo disjuntor DJ: ligado, a lâmpada acende; desligado, apaga.',
+    check:st=>{const comps=clone(st.comps).map(c=>c.type==='fuse'?Object.assign(c,{trip:false}):c),r=solve(comps,st.wires);
+      if(r.short)return 'Curto-circuito: tem caminho sem carga entre fase e neutro.';
+      if(!(r.lamp.L1>0.04))return L()?'Com o disjuntor ligado, a lâmpada deveria acender. Feche o caminho: fase, disjuntor, lâmpada e neutro.':'Com o DJ ligado, L1 deveria acender: fase → DJ → L1 → neutro.';
+      return null}}]))};
 function encaixa3D(ctx){
   const vaga=app.querySelector('[data-vaga3d]');if(!vaga||!VISTA3D.vista)return false;
   if(!VISTA3D.no){VISTA3D.no=document.createElement('div');VISTA3D.no.className='cena3d';VISTA3D.vista.montar(VISTA3D.no,ctx);VISTA3D.montagens++}
@@ -170,14 +202,16 @@ function runBuild(p,task){
     acionou:(id,lado)=>{const c=st.comps.find(x=>x.id===id);if(!c)return;acionarPeca(c,lado,render);msg=null;checa(c.id);render()},
     tirouFio:i=>{if(won||!st.wires[i])return;st.wires.splice(i,1);msg=null;render()}
   };
+  const bancadaId=BANCADA_ID;BANCADA.st=st;
   const render=()=>{
-    const r=resolve(st.comps,st.wires),R=vistaReal(),v3=!cc&&quer3D(st);
+    const r=resolve(st.comps,st.wires),R=vistaReal(),v3=!cc&&quer3D(st),p3=!cc&&pode3D(st);
+    VISTA3D.redesenha={id:bancadaId,f:render};
     const help='Toque em dois '+(R?'parafusos':'pontos ⚪')+' para ligar um fio.'+(L()?' Toque no fio para tirar.':'');
     const pl=typeof PLANTAS!=='undefined'&&PLANTAS[p.id];
     frame(p,missao(task.goal,task.real)+
       /* fases com projeto: a planta de fiação abre e fecha acima da bancada */
       (pl?'<button class="btn planta-btn" id="vplanta" aria-expanded="'+verPlanta+'">📄 '+(verPlanta?'Fechar a planta':'Ver a planta do projeto')+'</button>'+(verPlanta?plantaHTML(pl):''):'')+
-      (won?'':palette(cor,cc?['pos','neg']:null))+benchWrap(v3?'':board(st,{res:r,sel,pickTerm:!won,pickWire:!won,toggle:true,real:R,vb:zm.vb(),curto}),'',zm,cc,v3)+(cc?chipsCC(st,r):statusChips(st,r))+
+      (won?'':palette(cor,cc?['pos','neg']:null))+benchWrap(v3?'':board(st,{res:r,sel,pickTerm:!won,pickWire:!won,toggle:true,real:R,vb:zm.vb(),curto}),'',zm,cc,v3,p3)+(cc?chipsCC(st,r):statusChips(st,r))+
       (msg?'<div class="fb '+(won?'good':'bad')+'">'+(won?pick(PRAISE[S.mode])+' ':'')+msg+(won&&L()&&!cc?'<br><small>Na vida real, só eletricista mexe na rede, e com tudo desligado.</small>':'')+'</div>':st.wires.length?'':'<p class="help">'+help+'</p>')+
       (won?'<button class="btn main" id="end">Concluir ⚡</button>':'<div class="row"><button class="btn ghost" id="clr">Limpar fios</button><button class="btn main" id="chk">Verificar</button></div>'));
     const curtoAgora=curto;keepScroll(drawn);drawn=true;curto=null;/* a animação do curto roda uma vez só */
@@ -187,6 +221,7 @@ function runBuild(p,task){
     const vp=document.getElementById('vplanta');if(vp)vp.onclick=()=>{verPlanta=!verPlanta;render()};
     app.querySelectorAll('[data-vista]').forEach(b=>b.onclick=()=>{setVista(b.dataset.vista==='real');render()});
     app.querySelectorAll('[data-cor]').forEach(b=>b.onclick=()=>{cor=b.dataset.cor;render()});
+    app.querySelectorAll('[data-3d]').forEach(b=>b.onclick=()=>{VISTA3D.ligada=b.dataset['3d']==='1';if(VISTA3D.ligada&&!VISTA3D.vista)carrega3D();sel=null;render()});
     /* centro da bancada: a vista 3D (se ligada) ou o SVG; as duas falam com o mesmo ctl */
     if(!(v3&&encaixa3D({st,res:r,sel,curto:curtoAgora,cor,editavel:!won,ctl})))
       ligaSVGBancada(app.querySelector('.bench svg'),ctl,{zm,pos:t=>tpos(st.comps,t),centroX:id=>{const c=st.comps.find(x=>x.id===id);return R?RP(c)[0]:c.x}});

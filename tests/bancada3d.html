@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Teste da bancada 3D do Volt Up</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../css/estilo.css">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+</head>
+<body><div class="wrap" id="app" style="width:420px"></div><pre id="out">rodando</pre>
+<script>try{localStorage.clear();sessionStorage.clear()}catch(e){}</script>
+<script src="../js/estado.js"></script><script src="../js/rede.js"></script><script src="../js/motor.js"></script><script src="../js/bancada-real.js"></script><script src="../js/multifilar.js"></script><script src="../js/planta.js"></script><script src="../js/conteudo.js"></script><script src="../js/cc.js"></script><script src="../js/lanterna.js"></script><script src="../js/cap1.js"></script><script src="../js/imagens.js"></script><script src="../js/historia.js"></script><script src="../js/telas.js"></script><script src="../js/fases.js"></script><script src="../js/aula.js"></script><script src="../js/carreira.js"></script><script src="../js/calculo.js"></script><script src="../js/calculadora.js"></script><script src="../js/teste.js"></script>
+<script>
+/* Bancada 3D (MVP): monta a cena com WebGL e faz os mesmos gestos pela 3D (toques no canvas, com raycast)
+   e pelo SVG. Os dois caminhos têm de deixar a bancada no mesmo estado. Rode com: node tests/rodar.js */
+const R={};
+(async()=>{try{
+  S.mode='moderado';S.char='aprendiz';S.vista={moderado:'real'};
+  VISTA3D.flag=true;VISTA3D.ligada=true;
+  await carrega3D();
+  R.carregou=!!VISTA3D.vista;R.erro=VISTA3D.erro;
+  if(!VISTA3D.vista)throw new Error('a vista 3D não carregou: '+VISTA3D.erro);
+  const task=()=>comARede(LAB3D.dados.moderado),D=VISTA3D.vista.debug,J=JSON.stringify;
+  const assinatura=st=>J({fios:st.wires.map(w=>w.a+'-'+w.b+':'+w.cor),dj:st.comps.find(c=>c.id==='DJ').trip===true,fonte:st.comps.find(c=>c.type==='src').trip===true});
+  const cor=k=>document.querySelector('[data-cor="'+k+'"]').click();
+  const verificar=()=>{document.getElementById('chk').click();return (document.querySelector('.fb')||{}).textContent||''};
+
+  /* ---- 3D ---- */
+  runBuild(LAB3D,task());
+  const cv=()=>document.querySelector('.bench3d canvas');
+  R.canvas=!!cv();R.semSvg=!document.querySelector('.bench svg');R.webgl=D.gl();R.malhas=D.contagem();
+  const pe=(tipo,p,alvo)=>(alvo||window).dispatchEvent(new PointerEvent(tipo,{bubbles:true,cancelable:true,composed:true,clientX:p.x,clientY:p.y,pointerId:1,pointerType:'touch',isPrimary:true,button:0}));
+  const toque=id=>{const p=typeof id==='number'?D.telaFio(id):D.tela(id);pe('pointerdown',p,cv());pe('pointerup',p)};
+  const arrasta=(a,b)=>{const p=D.tela(a),q=D.tela(b);pe('pointerdown',p,cv());pe('pointermove',{x:(p.x+q.x)/2,y:(p.y+q.y)/2+20});pe('pointermove',q);pe('pointerup',q)};
+  const canvas1=cv();
+  toque('B.0');toque('DJ.0');                   /* fase: fonte → disjuntor (toque-toque) */
+  arrasta('DJ.1','L1.0');                        /* fase: disjuntor → lâmpada (arrastando o fio) */
+  cor('neutro');toque('L1.1');toque('B.1');      /* neutro: lâmpada → fonte */
+  R.fios3d=D.fios();R.acesa=D.brilho('L1')>0.5;
+  toque('DJ');R.djDesligou=BANCADA.st.comps.find(c=>c.id==='DJ').trip===true&&D.alavanca('DJ')>0;R.apagou=D.brilho('L1')<0.05;
+  toque('DJ');R.religou=D.brilho('L1')>0.5&&D.alavanca('DJ')<0;
+  cor('fase');toque('DJ.1');toque('B.1');        /* curto depois do disjuntor: o DJ desarma */
+  R.curto=BANCADA.st.comps.find(c=>c.id==='DJ').trip===true&&D.curtoAtivo()&&D.faisca();
+  toque(3);R.tirouCurto=BANCADA.st.wires.length===3;   /* toca no fio do curto para tirar */
+  toque('DJ');                                   /* religa */
+  R.mesmoCanvas=cv()===canvas1&&VISTA3D.montagens===1;
+  R.aprovou3d=/aprovado/i.test(verificar());
+  const st3d=assinatura(BANCADA.st);
+
+  /* ---- SVG, mesmos gestos ---- */
+  VISTA3D.ligada=false;runBuild(LAB3D,task());
+  const svg=()=>document.querySelector('.bench svg');
+  R.svgVoltou=!!svg()&&!document.querySelector('.bench3d');
+  const tap=t=>{svg().querySelector('[data-t="'+t+'"]').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));window.dispatchEvent(new PointerEvent('pointerup'))};
+  const aciona=id=>svg().querySelector('[data-sw="'+id+'"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));
+  tap('B.0');tap('DJ.0');tap('DJ.1');tap('L1.0');cor('neutro');tap('L1.1');tap('B.1');
+  aciona('DJ');aciona('DJ');cor('fase');tap('DJ.1');tap('B.1');
+  svg().querySelector('[data-w="3"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));aciona('DJ');
+  R.aprovouSvg=/aprovado/i.test(verificar());
+  const stSvg=assinatura(BANCADA.st);
+  R.equivalente=st3d===stSvg;R.st3d=st3d;R.stSvg=stSvg;
+  /* sair da bancada libera o WebGL */
+  showMap();await new Promise(r=>setTimeout(r,0));R.liberou=VISTA3D.no===null;
+}catch(e){R.ERRO=e.message+' '+(e.stack||'')}
+document.getElementById('out').textContent=JSON.stringify(R);
+})();
+</script></body></html>

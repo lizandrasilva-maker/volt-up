@@ -28,9 +28,10 @@ function servidor(){return new Promise(ok=>{
   s.listen(0,'127.0.0.1',()=>ok(s));
 })}
 
-function abrir(chrome,url){return new Promise((ok,falha)=>{
+/* webgl: a página precisa de WebGL (bancada 3D): troca o --disable-gpu pelo WebGL por software (SwiftShader) */
+function abrir(chrome,url,webgl){return new Promise((ok,falha)=>{
   const perfil=fs.mkdtempSync(path.join(os.tmpdir(),'voltup-teste-'));
-  const args=['--headless=new','--disable-gpu','--no-first-run','--no-default-browser-check','--user-data-dir='+perfil,'--virtual-time-budget=20000','--dump-dom',url];
+  const args=['--headless=new',...(webgl?['--use-angle=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist']:['--disable-gpu']),'--no-first-run','--no-default-browser-check','--user-data-dir='+perfil,'--virtual-time-budget=20000','--dump-dom',url];
   if(process.env.CI||process.platform==='linux')args.unshift('--no-sandbox');
   const p=spawn(chrome,args,{stdio:['ignore','pipe','ignore']});let html='';
   const t=setTimeout(()=>{p.kill();falha(new Error('Chrome demorou demais em '+url))},90000);
@@ -158,6 +159,16 @@ let pistas={};
     confere('Telas de bancada (desenho e aviso)',(r.problemas||[]).length===0,'todas desenham bornes e mostram o aviso de modelo didático',JSON.stringify(r.problemas));
     confere('Telas de bancada (desenho e aviso)',/^\d+ bornes$/.test(r.oficina||''),'oficina com todas as peças e o aviso (diagrama)',r.oficina);
     confere('Telas de bancada (desenho e aviso)',/^\d+ bornes$/.test(r.oficinaReal||''),'oficina com todas as peças e o aviso (vista real)',r.oficinaReal);
+    /* Bancada 3D (Three.js, MVP): cena com WebGL e os mesmos gestos que o SVG, com o mesmo resultado */
+    {const b=await abrir(chrome,base+'/tests/bancada3d.html',true),C='Bancada 3D (MVP)';
+     confere(C,!b.ERRO&&b.carregou===true,'Three.js carrega sob demanda e a vista 3D registra',b.ERRO||b.erro);
+     confere(C,b.canvas===true&&b.webgl===true&&b.semSvg===true&&b.malhas>=30,'cena monta no canvas WebGL no lugar do SVG',b.malhas+' malhas');
+     confere(C,b.fios3d===3&&b.acesa===true,'toque-toque e arrastar fio na 3D ligam fonte → DJ → lâmpada → neutro, e a lâmpada acende');
+     confere(C,b.djDesligou===true&&b.apagou===true&&b.religou===true,'tocar no disjuntor gira a alavanca: desliga (lâmpada apaga) e religa');
+     confere(C,b.curto===true&&b.tirouCurto===true,'curto depois do disjuntor: DJ desarma, fios piscam e a faísca aparece; tocar no fio tira');
+     confere(C,b.mesmoCanvas===true,'o mesmo canvas é reencaixado a cada redesenho (1 montagem)');
+     confere(C,b.aprovou3d===true&&b.aprovouSvg===true&&b.equivalente===true&&b.svgVoltou===true,'mesmos gestos na 3D e no SVG deixam a bancada no mesmo estado',b.st3d+' / '+b.stSvg);
+     confere(C,b.liberou===true,'ao sair da bancada, o WebGL é liberado');}
     /* Fonte e aterramento: a fonte não tem PE; o terra vem da haste pelo BEP */
     const fa=t.fonte||{};
     confere('Fonte e aterramento',fa.bornes1F==='2 bornes'&&fa.bornes3F==='4 bornes','fonte 1F+N tem 2 bornes e 3F+N tem 4 (sem PE)',fa.bornes1F+' / '+fa.bornes3F);

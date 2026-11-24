@@ -228,7 +228,7 @@ try{
    const falsa={aceita:()=>true,montou:0,atualizou:0,destruiu:0,ctx:null,
      montar(no){this.montou++;const cv=document.createElement('canvas');cv.id='cv3d';no.appendChild(cv)},
      atualizar(ctx){this.atualizou++;this.ctx=ctx},destruir(){this.destruiu++}};
-   VISTA3D.vista=falsa;VISTA3D.ligada=true;
+   VISTA3D.vista=falsa;VISTA3D.ligada=true;VISTA3D.flag=true;
    runBuild(pp,task);const cv1=document.getElementById('cv3d');
    ci.semSvg=!document.querySelector('.bench svg')&&!!cv1&&!!document.querySelector('.bench.bench3d');
    falsa.ctx.ctl.tocouBorne('B.0');falsa.ctx.ctl.tocouBorne('F.0');falsa.ctx.ctl.arrastouFio('F.1','S1.0');
@@ -238,7 +238,7 @@ try{
    ci.mesmoCanvas=document.getElementById('cv3d')===cv1&&cv1.isConnected;ci.montagens=falsa.montou;ci.atualizacoes=falsa.atualizou;
    showMap();ci.saiu=!cv1.isConnected;R.contrato=ci;
    /* a cena é liberada logo depois do redesenho (MutationObserver): confere no próximo ciclo e reescreve o resultado */
-   setTimeout(()=>{R.contrato.destruiu=falsa.destruiu;R.contrato.liberou=VISTA3D.no===null;VISTA3D.vista=null;VISTA3D.ligada=false;document.getElementById('out').textContent=JSON.stringify(R,null,1)},0);}
+   setTimeout(()=>{R.contrato.destruiu=falsa.destruiu;R.contrato.liberou=VISTA3D.no===null;VISTA3D.vista=null;VISTA3D.ligada=false;VISTA3D.flag=false;document.getElementById('out').textContent=JSON.stringify(R,null,1)},0);}
 }catch(e){R.ERRO=e.message+' '+e.stack}
 document.getElementById('out').textContent=JSON.stringify(R,null,1);
 </script></body></html>

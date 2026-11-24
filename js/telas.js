@@ -40,6 +40,7 @@ function showHome(){
     card('mCalc','🧮','Calculadora','Caderno de contas do Mestre Chico','" style="--i:4')+
     card('mPlano',pl.ic,'Meu plano',pl.t+' · '+pl.s,(pl.warn?' warn':'')+'" style="--i:5')+
     card('mConfig','⚙️','Configurações','Nível, personagem, conta','" style="--i:6')+
+    (typeof VISTA3D!=='undefined'&&VISTA3D.flag?card('mLab3d','🧊','Laboratório 3D','Bancada 3D em teste','" style="--i:7'):'')+
   '</div>'+
   plantaoHTML()+
   (c&&(c.papel==='admin'||c.papel==='professor')?'<a class="btn ghost" href="admin.html" style="display:grid;place-items:center;text-decoration:none">Abrir o painel Adm</a>':'')+
@@ -47,6 +48,7 @@ function showHome(){
   bindHud();if(tb)bindTesteBar();
   const on=(id,f)=>{const b=document.getElementById(id);if(b)b.onclick=f};
   on('mHist',showMap);on('mPerfil',showFicha);on('mConq',showConquistas);on('mOfi',runSandbox);on('mCalc',()=>showCalc());on('mPlano',showPlano);on('mConfig',showConfig);
+  on('mLab3d',()=>runBuild(LAB3D,comARede(LAB3D.dados[S.mode])));
 }
 function showPlano(){
   setMode();const pl=planoResumo(),c=conta();
@@ -140,7 +142,8 @@ function showMap(){
   const rp=document.getElementById('replay');if(rp)rp.onclick=()=>showScene(ch.intro,showMap);
 }
 function afterPhase(p){
-  const ch=chapterOf(p.id);const k=S.mode+':'+ch.id+':fim';
+  const ch=chapterOf(p.id);if(!ch){showHome();return}/* fase fora dos capítulos (ex.: Laboratório 3D) */
+  const k=S.mode+':'+ch.id+':fim';
   if(ch.fim&&ch.fases.every(id=>S.done[S.mode+':'+id])&&!S.seen[k]){S.seen[k]=1;save();showScene(ch.fim,showMap)}else showMap();
 }
 function showAlbum(){

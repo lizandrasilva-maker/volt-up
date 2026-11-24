@@ -735,3 +735,11 @@ svg.curto{animation:shake .32s 2}
 .rede-seg .btn[aria-pressed="true"] small{color:#3b3410}
 .af-led{fill:#5a2a24;stroke:#eef2f7;stroke-width:1.5}.af-led.on{fill:#ff6b4a}
 .af-perna{stroke:#c9cfd8;stroke-width:2}
+/* ================= BANCADA 3D (Three.js, MVP) ================= */
+.bctl-esq{display:flex;gap:6px;align-items:flex-end}
+.bench3d{padding:0;overflow:hidden;min-height:240px;background:#13283c}
+.bench3d .vaga3d{min-height:260px}
+.cena3d{position:relative;width:100%}
+.cena3d canvas{display:block;width:100%;height:auto;touch-action:none;-webkit-user-select:none;user-select:none;border-radius:0 0 16px 16px}
+.bench3d .bctl{top:8px;bottom:auto;left:auto;right:8px;justify-content:flex-end}
+.bench3d:has(.bctl){padding-bottom:0}
