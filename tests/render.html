@@ -12,8 +12,12 @@ for(const v of ['real','simb'])for(const md of ['leve','moderado','full']){S.mod
    /* toda bancada precisa do aviso de modelo didático qualitativo */
    const av=document.querySelector('.benchwrap .modelo summary');
    R[v+':'+md+':'+p.id]=n===0?'vazio':!av||!/qualitativo/i.test(av.textContent)?'sem aviso de modelo didático':'ok'}catch(e){R[v+':'+md+':'+p.id]='ERRO '+e.message}}}
-S.vista={leve:'simb'};S.mode='leve';S.sandbox={comps:[BAT(),C('A','sw2',110,60,0),C('B','sw4',180,60,0),C('Cc','dr',250,60,0),C('D','dps',300,60,0),C('E','foto',110,165,0),C('F','ri',180,165,0),C('G','kc',250,165,0),C('H','ft',300,165,0),C('I','btn',150,112,0,{nf:true}),C('J','motor',230,112,0),C('K','boia',300,112,0)],wires:[]};
-try{runSandbox();R.oficinaTodas=document.querySelectorAll('.bench svg .term').length+' bornes'+(document.querySelector('.benchwrap .modelo')?'':' (sem aviso de modelo didático)')}catch(e){R.oficinaTodas='ERRO '+e.message}
+/* Oficina com todas as peças, fonte de 3 fases, haste e BEP: 3 bornes de fase + N, 1 da haste e 4 do BEP */
+const todas=()=>({comps:[Object.assign(BAT(),{fases:3}),C('A','sw2',110,60,0),C('Bq','sw4',180,60,0),C('Cc','dr',250,60,0),C('D','dps',300,60,0),C('E','foto',110,165,0),C('F','ri',180,165,0),C('G','kc',250,165,0),C('Hf','ft',300,165,0),C('I','btn',150,112,0,{nf:true}),C('J','motor',230,112,0),C('K','boia',300,112,0),C('BEP1','bep',45,192,0),C('H1','haste',100,205,0)],wires:[]});
+const esperado=todas().comps.reduce((n,c)=>n+terms(c).length,0);
+const oficina=v=>{S.vista={leve:v};S.mode='leve';S.sandbox=todas();runSandbox();const n=document.querySelectorAll('.bench svg .term').length;
+  return n+' bornes'+(n===esperado?'':' (esperado '+esperado+')')+(document.querySelector('.benchwrap .modelo')?'':' (sem aviso de modelo didático)')};
+try{R.oficinaTodas=oficina('simb');R.oficinaReal=oficina('real')}catch(e){R.oficinaTodas='ERRO '+e.message}
 const ruins=Object.entries(R).filter(([k,v])=>v!=='ok'&&!k.startsWith('oficina'));
-document.getElementById('out').textContent=JSON.stringify({total:Object.keys(R).length,problemas:ruins,oficina:R.oficinaTodas});
+document.getElementById('out').textContent=JSON.stringify({total:Object.keys(R).length,problemas:ruins,oficina:R.oficinaTodas,oficinaReal:R.oficinaReal});
 </script></body></html>

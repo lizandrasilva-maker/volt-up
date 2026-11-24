@@ -76,7 +76,7 @@ const CHAPTERS=[
 const SCENES={
   faisca:[['chico','Antes de mexer em qualquer coisa, me responde umas perguntas. Quero ver como você pensa.']],
   entrada:[['chico','Olha pela janela da oficina: lá no poste tem o transformador, e na parede tem o medidor.'],['chico','É por esse caminho que a energia chega. {nome}, me mostra que você entendeu.']],
-  primeiro:[['chico','Essa é a sua bancada de treino. Tem a energia da rede, um interruptor e uma lâmpada.'],['chico','Olhando a tomada de frente: o pino do meio é o terra. Nesta bancada a fase fica à direita e o neutro à esquerda.'],['chico','A norma da tomada não diz de que lado fica a fase. Na obra, quem diz é o instrumento: confira antes de ligar.'],['chico','Ligue do jeito da NBR 5410: fase no interruptor, retorno até a lâmpada e neutro azul-claro direto no bocal.']],
+  primeiro:[['chico','Essa é a sua bancada de treino. Tem uma fonte de energia, um interruptor e uma lâmpada.'],['chico','Na régua da fonte, L1 é a fase e N é o neutro. O neutro já chega aterrado pela fonte.'],['chico','A fonte não tem terra. Quando precisar, você crava a haste no chão e liga no BEP. E na obra, confira a fase com o instrumento antes de ligar.'],['chico','Ligue do jeito da NBR 5410: fase no interruptor, retorno até a lâmpada e neutro azul-claro direto no bocal.']],
   previsao:[['chico','Ainda na bancada: eletricista bom prevê o que vai acontecer antes de ligar. Topa um desafio?'],['eu','Topo! Vou pensar antes de responder.']],
   paralelo:[['fatima','Bom dia! Sou a Dona Fátima, moro aqui na rua. Quero colocar duas lâmpadas na minha sala.'],['fatima','E quero as duas bem fortes, viu?'],['chico','Primeira cliente, {nome}! Cuidado: tem um jeito de ligar que deixa as duas fraquinhas.']],
   defeito:[['fatima','Mestre, a lâmpada da minha cozinha não acende mais! As outras luzes da casa estão funcionando.'],['chico','Se só a cozinha apagou, o problema está no circuito da cozinha. Vamos testar peça por peça: aqui não se troca nada no chute.']],
@@ -329,13 +329,13 @@ const PHASES=[
  {id:'partida',nome:'Partida Direta',sub:'Esteira da castanha',kind:'bancada',tipo:'build',ic:'motor',cor:'#4f6f94',
   card:{leve:'Verde liga, vermelho desliga, e o selo segura.',moderado:'LIGA em paralelo com o selo; DESLIGA (NF) antes dos dois.',full:'Partida direta: 95-96 em série com a bobina; motor pelo 1-2 da contatora e do relé.'},
   dados:{
-   leve:{comps:[BAT(),C('BD','btn',130,60,0,{nf:true}),C('BL','btn',210,60,0,{nf:false}),C('K','kc',160,170,0),C('M','motor',272,170,0)],
+   leve:{comps:[BAT(),C('BD','btn',130,60,0,{nf:true}),C('BL','btn',210,60,0,{nf:false}),C('K','kc',160,170,0),C('M','motor',272,170,0),...ATERRA()],
      real:[['BL','🟢','botão liga'],['BD','🔴','botão desliga'],['K','🧲','contatora'],['M','⚙️','motor da esteira']],
-     goal:'O motor liga no verde, continua ligado ao soltar e para no vermelho. Não esqueça o terra do motor!',check:st=>partidaCheck(st,false)},
-   moderado:{comps:[BAT(),C('FT','ft',115,60,0),C('BD','btn',190,60,0,{nf:true}),C('BL','btn',265,60,0,{nf:false}),C('K','kc',160,170,0),C('M','motor',272,170,0)],
+     goal:'O motor liga no verde, continua ligado ao soltar e para no vermelho. Não esqueça o terra do motor: haste no BEP, BEP no motor!',check:st=>partidaCheck(st,false)},
+   moderado:{comps:[BAT(),C('FT','ft',115,60,0),C('BD','btn',190,60,0,{nf:true}),C('BL','btn',265,60,0,{nf:false}),C('K','kc',160,170,0),C('M','motor',272,170,0),...ATERRA()],
      real:[['BL','🟢','botoeira liga'],['BD','🔴','botoeira desliga'],['K','🧲','contatora'],['FT','🌡️','relé térmico'],['M','⚙️','motor da esteira']],
      goal:'Partida direta com selo e relé térmico: o 95-96 corta a bobina na sobrecarga.',check:st=>partidaCheck(st,true)},
-   full:{comps:[BAT(),C('DJ','fuse',100,60,0),C('FT','ft',168,60,0),C('BD','btn',235,60,0,{nf:true}),C('BL','btn',300,60,0,{nf:false}),C('K','kc',160,170,0),C('M','motor',272,170,0)],
+   full:{comps:[BAT(),C('DJ','fuse',100,60,0),C('FT','ft',168,60,0),C('BD','btn',235,60,0,{nf:true}),C('BL','btn',300,60,0,{nf:false}),C('K','kc',160,170,0),C('M','motor',272,170,0),...ATERRA()],
      real:[['DJ','🎚','disjuntor do circuito'],['BL','🟢','botoeira liga'],['BD','🔴','botoeira desliga'],['K','🧲','contatora'],['FT','🌡️','relé térmico'],['M','⚙️','motor da esteira']],
      goal:'Partida direta completa: DJ, comando com selo, 95-96 em série com a bobina e motor pelo 1-2 da contatora e do relé, com PE.',check:st=>partidaCheck(st,true)}
   }},
@@ -355,13 +355,13 @@ const PHASES=[
  {id:'caixa',nome:'Caixa d\'Água',sub:'Bomba da fábrica',kind:'bancada',tipo:'build',ic:'agua',cor:'#2d6a8a',
   card:{leve:'Boia desce, bomba liga. Boia sobe, bomba desliga.',moderado:'A boia comanda a bobina; a contatora liga a bomba.',full:'Controle de nível: boia em série com A1-A2; bomba com PE.'},
   dados:{
-   leve:{comps:[BAT(),C('BO','boia',140,60,0,{vazia:true}),C('M','motor',260,170,0)],
+   leve:{comps:[BAT(),C('BO','boia',140,60,0,{vazia:true}),C('M','motor',260,170,0),...ATERRA()],
      real:[['BO','💧','boia da caixa d\'água'],['M','⚙️','bomba d\'água']],
      goal:'A bomba tem que ligar com a caixa vazia e desligar com a caixa cheia. Toque na caixa para testar.',check:st=>boiaCheck(st)},
-   moderado:{comps:[BAT(),C('BO','boia',125,60,0,{vazia:true}),C('K','kc',200,170,0),C('M','motor',290,170,0)],
+   moderado:{comps:[BAT(),C('BO','boia',125,60,0,{vazia:true}),C('K','kc',200,170,0),C('M','motor',290,170,0),...ATERRA()],
      real:[['BO','💧','boia da caixa d\'água'],['K','🧲','contatora da bomba'],['M','⚙️','bomba d\'água']],
      goal:'A boia comanda a bobina da contatora, e a contatora liga a bomba.',check:st=>boiaCheck(st)},
-   full:{comps:[BAT(),C('BO','boia',125,60,0,{vazia:true}),C('K','kc',200,170,0),C('M','motor',290,170,0)],
+   full:{comps:[BAT(),C('BO','boia',125,60,0,{vazia:true}),C('K','kc',200,170,0),C('M','motor',290,170,0),...ATERRA()],
      real:[['BO','💧','chave-boia de nível'],['K','🧲','contatora'],['M','⚙️','motobomba']],
      goal:'Controle automático de nível: boia em série com A1-A2, bomba pelo 1-2 da contatora, carcaça no PE.',check:st=>boiaCheck(st)}
   }},
