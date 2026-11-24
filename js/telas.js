@@ -78,7 +78,7 @@ function showConfig(){
   const sa=document.getElementById('sair');
   if(sa)sa.onclick=async()=>{sa.disabled=true;try{await nuvem.auth.signOut()}catch(e){}
     /* aparelho compartilhado na escola: o próximo aluno não vê o jogo de quem saiu */
-    try{localStorage.removeItem(STORE);sessionStorage.removeItem('volt-convidado');sessionStorage.removeItem('volt-teste-on')}catch(e){}
+    try{localStorage.removeItem(STORE);sessionStorage.removeItem('volt-convidado');sessionStorage.removeItem('volt-teste-on');sessionStorage.removeItem('volt-tela')}catch(e){}
     location.href='login.html'};
   const r=document.getElementById('reset');
   r.onclick=()=>{if(r.dataset.sure){S=FRESH();save();showStart()}else{r.dataset.sure=1;r.textContent='Toque de novo para apagar tudo'}};

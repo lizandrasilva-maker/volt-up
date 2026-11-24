@@ -649,3 +649,12 @@ svg.curto{animation:shake .32s 2}
 /* fase concluída: bolinha amarela com ícone em preto chapado, para nenhum ícone sumir no amarelo */
 .node.done .dot{background:var(--faixa);border-color:var(--amber)}
 .node.done .dot svg{filter:grayscale(1) contrast(1.6) brightness(.42)}
+/* mapa com mais destaque: bolinhas abertas com fundo mais claro, aro cobre vivo e ícone saltado;
+   a próxima fase brilha em âmbar e o nome dela fica âmbar; as travadas continuam apagadas */
+.node .dot{background:radial-gradient(circle at 35% 28%,#43689b,#22395a 62%,#1a2c47);border-color:#f0a05a}
+.node .dot svg{filter:drop-shadow(0 2px 0 rgba(4,8,16,.55))}
+.node.next .dot{border-color:var(--amber);animation:chama 1.6s ease-in-out infinite}
+.node.next .tt b{color:var(--amber)}
+@keyframes chama{0%,100%{box-shadow:0 0 0 3px var(--contorno),0 5px 0 3px var(--contorno),0 0 0 3px color-mix(in srgb,var(--amber) 0%,transparent)}
+  50%{box-shadow:0 0 0 3px var(--contorno),0 5px 0 3px var(--contorno),0 0 22px 7px color-mix(in srgb,var(--amber) 60%,transparent)}}
+.node.lock .dot{background:var(--panel)}
