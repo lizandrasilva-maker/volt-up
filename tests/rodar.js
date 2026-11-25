@@ -259,6 +259,7 @@ let pistas={};
       confere(C,o.em3d===true&&o.lampada===true&&o.acende===true,'Oficina abre em 3D; pôr uma lâmpada pela caixa e ligar fase e neutro acende',JSON.stringify(o));
       confere(C,o.desfez===true&&o.refez===true&&o.moveu===true&&o.voltou===true,'Oficina: desfazer/refazer fios e mover peça pelas setas (o desfazer devolve a posição)',JSON.stringify(o));
       confere(C,o.medir===true&&o.volta3d===true&&o.semPeca3d===true,'Oficina: Medir usa o desenho das ponteiras; Montar volta à 3D; peça sem 3D (interruptor duplo) usa o desenho antigo',JSON.stringify(o));}
+     {const pv=b.previsao||{};confere(C,pv.em3d===true&&pv.girando===true&&pv.parou===true,'Previsão (Sobrecarga!) na bancada nova: o motor gira, e ao responder o relé térmico dispara e o motor para na própria cena',JSON.stringify(pv));}
      confere(C,b.liberou===true,'ao sair da bancada, o WebGL é liberado');}
     /* Fonte e aterramento: a fonte não tem PE; o terra vem da haste pelo BEP */
     const fa=t.fonte||{};

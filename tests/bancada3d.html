@@ -376,6 +376,11 @@ const coresDoFioCSS=k=>(CORES[k].c.match(/var\(--[\w-]+\)|#[0-9a-f]{3,8}\b/gi)).
    abre();document.querySelector('[data-tool="build"]').click();of.volta3d=cv3();
    abre();document.querySelector('[data-cat="predial"]').click();document.querySelector('[data-add="sw2"]').click();of.semPeca3d=svg2()&&!cv3();
    S.sandbox=null;S.mode='moderado';}
+  /* ---- Previsão (Sobrecarga!, Cap. 3) na bancada nova: só para olhar; a ação acontece na cena ---- */
+  {const pv=R.previsao={},p=phaseById('sobrecarga');S.mode='moderado';escolheVista('3d');VISTA3D.girar=false;runPredict(p,comARede(p.dados.moderado));
+   pv.em3d=!!document.querySelector('.bench3d canvas')&&!document.querySelector('#bd .bench svg');pv.girando=D.motorGira('M')>0.5;
+   document.querySelector('.opt[data-k="0"]').click();pv.parou=D.motorGira('M')<0.05&&D.visorFT('FT')==='disparado'&&!!document.querySelector('.bench3d canvas');
+   S.mode='moderado';}
   /* sair da bancada libera o WebGL */
   showMap();await new Promise(r=>setTimeout(r,0));R.liberou=VISTA3D.no===null;
 }catch(e){R.ERRO=e.message+' '+(e.stack||'')}
