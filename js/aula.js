@@ -40,6 +40,8 @@ const fLamp=(x,y,acesa)=>'<g transform="translate('+x+' '+y+')">'+(acesa?'<circl
 const fFluxo=(d,rev,cls)=>'<path d="'+d+'" class="af-fio"/><path d="'+d+'" class="af-fluxo'+(rev?' rev':'')+(cls?' '+cls:'')+'"/>';
 const fCarga=(x,y,s,r)=>'<g transform="translate('+x+' '+y+')"><circle r="'+(r||8)+'" class="'+(s>0?'af-pos':'af-neg')+'"/><text y="4" class="af-t af-escuro" text-anchor="middle" style="font-size:'+((r||8)+3)+'px">'+(s>0?'+':'−')+'</text></g>';
 
+/* medidor redondo com a letra da grandeza (V, A ou Ω) */
+const fMed=(x,y,l,cls)=>'<g transform="translate('+x+' '+y+')"><circle r="17" class="af-bola'+(cls?' '+cls:'')+'"/>'+fT(0,7,l,{s:18,c:'af-amb'})+'</g>';
 const FIG={
   formas:()=>fDefs+fT(160,22,'A energia muda de forma',{c:'af-tit'})+
     [['🔋','química'],['⚡','elétrica'],['💡','luz'],['🔥','calor'],['⚙️','movimento']].map(([e,n],k)=>{const x=36+k*62;
@@ -108,5 +110,26 @@ const FIG={
   sentido:()=>fDefs+fPilha(60,92,-90)+fLamp(250,80,true)+fFluxo('M60 62 V30 H250 V60',true)+fFluxo('M60 122 V156 H250 V100',false)+
     fSeta(120,44,190,44,'af-amb')+fT(155,60,'sentido convencional: + → −',{c:'af-sub'})+fSeta(190,142,120,142,'af-info')+fT(155,136,'elétrons: − → +',{c:'af-sub'}),
   unidades:()=>fDefs+[['Tensão','U','volt (V)','empurra'],['Corrente','I','ampère (A)','anda'],['Resistência','R','ohm (Ω)','atrapalha']].map(([n,s,u,d],k)=>{const x=58+k*102;
-    return '<g class="af-entra" style="animation-delay:'+(k*.15)+'s"><rect x="'+(x-46)+'" y="30" width="92" height="120" rx="12" class="af-cartao"/>'+fT(x,58,n,{c:'af-tit'})+fT(x,96,s,{s:30,c:'af-amb'})+fT(x,122,u)+fT(x,140,d,{c:'af-sub'})+'</g>'}).join('')
+    return '<g class="af-entra" style="animation-delay:'+(k*.15)+'s"><rect x="'+(x-46)+'" y="30" width="92" height="120" rx="12" class="af-cartao"/>'+fT(x,58,n,{c:'af-tit'})+fT(x,96,s,{s:30,c:'af-amb'})+fT(x,122,u)+fT(x,140,d,{c:'af-sub'})+'</g>'}).join(''),
+  /* ---- Ato 2: como se mede ---- */
+  escala:()=>fDefs+'<rect x="112" y="14" width="96" height="152" rx="12" class="af-cartao"/><rect x="124" y="26" width="72" height="28" rx="4" class="af-barra"/>'+fT(160,46,'1,50',{c:'af-escuro'})+
+    '<circle cx="160" cy="100" r="26" class="af-bola"/>'+fSeta(160,100,160,80,'af-amb')+fT(160,68,'V⎓',{s:12})+fT(196,104,'A',{s:12,a:'start'})+fT(124,104,'Ω',{s:12,a:'end'})+fT(160,140,'desl.',{s:10})+
+    '<circle cx="132" cy="152" r="6" class="af-pos"/><circle cx="160" cy="152" r="6" class="af-neg"/><circle cx="188" cy="152" r="6" class="af-pos"/>'+
+    fT(40,60,'1º escolha',{c:'af-sub'})+fT(40,76,'a grandeza',{c:'af-sub'})+fT(280,60,'2º encoste',{c:'af-sub'})+fT(280,76,'as pontas',{c:'af-sub'})+fT(160,178,'VΩ · COM · A',{c:'af-sub'}),
+  voltimetro:()=>fDefs+fPilha(50,92,-90)+fLamp(230,80,true)+fFluxo('M50 62 V30 H230 V60',false)+fFluxo('M50 122 V156 H230 V100',true)+
+    '<path d="M230 42 H292 V63" class="af-fio vermelho"/><path d="M230 140 H292 V97" class="af-fio"/>'+fMed(292,80,'V')+fT(150,176,'voltímetro em paralelo: mede sem abrir o circuito',{c:'af-sub'}),
+  amperimetro:()=>fDefs+fPilha(50,92,-90)+fLamp(250,80,true)+fFluxo('M50 62 V30 H133',false)+fMed(150,30,'A')+fFluxo('M167 30 H250 V60',false)+fFluxo('M50 122 V156 H250 V100',true)+
+    fT(150,70,'o circuito abre e o medidor entra no caminho',{c:'af-sub'})+fT(160,176,'amperímetro em série: a corrente passa por dentro dele',{c:'af-sub'}),
+  ampCurto:()=>fDefs+fPilha(50,92,-90)+fLamp(230,80,false)+'<path d="M50 62 V30 H230 V60" class="af-fio"/><path d="M50 122 V156 H230 V100" class="af-fio"/>'+
+    fFluxo('M230 42 H292 V63',false)+fFluxo('M292 97 V140 H230',false)+fMed(292,80,'A','af-erro')+'<path d="M262 66 l10 -6 l-2 8 l12 -4" class="af-raio af-pisca"/>'+
+    fT(160,176,'amperímetro em paralelo: vira um curto',{c:'af-erro'}),
+  ohmimetro:()=>fDefs+fLamp(110,78,false)+'<path d="M104 98 V132 H222 V97" class="af-fio vermelho"/><path d="M116 98 V120 H238 V97" class="af-fio"/>'+fMed(230,80,'Ω')+
+    fEmo(262,36,'🔋',20)+'<path d="M250 22 l26 28 M276 22 l-26 28" class="af-seta af-erro"/>'+fT(160,176,'ohmímetro: peça sem energia (pilha fora)',{c:'af-sub'}),
+  /* ---- Ato 2: lei de Ohm e potência ---- */
+  ohm:()=>fDefs+'<path d="M160 22 L74 152 H246 Z" class="af-cartao"/><line x1="104" y1="104" x2="216" y2="104" class="af-cota"/><line x1="160" y1="104" x2="160" y2="152" class="af-cota"/>'+
+    fT(160,90,'U',{s:30,c:'af-amb'})+fT(126,138,'R',{s:26})+fT(194,138,'I',{s:26})+fT(160,174,'U = R × I · I = U ÷ R · R = U ÷ I',{c:'af-sub'}),
+  lanternaNumeros:()=>fDefs+fPilha(50,92,-90)+fLamp(230,80,true)+fFluxo('M50 62 V30 H230 V60',false)+fFluxo('M50 122 V156 H230 V100',true)+
+    fT(92,96,'U = 3 V',{a:'start'})+fT(262,84,'R = 10 Ω',{a:'start',s:12})+fT(150,20,'I = U ÷ R = 0,3 A',{c:'af-amb'})+fT(160,176,'a mesma corrente passa pela pilha e pela lâmpada',{c:'af-sub'}),
+  potencia:()=>fDefs+fLamp(80,84,true)+fT(214,58,'P = U × I',{s:22,c:'af-amb'})+fT(214,94,'3 V × 0,3 A')+fT(214,126,'= 0,9 W',{s:20,c:'af-ok'})+
+    fT(160,176,'potência: quanta energia por segundo',{c:'af-sub'})
 };

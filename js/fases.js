@@ -365,11 +365,11 @@ function runPredict(p,list){
 /* ---------- Multímetro com ponteiras ----------
    O aparelho fica acima da bancada (visor, chave em V~, bornes VΩ e COM); os cabos descem até a bancada
    e o aluno arrasta as pontas até os parafusos. Tocar num parafuso também leva uma ponta até ele. */
-function multimetroHTML(v,dica){
-  const val=v===null||v===undefined?'– – –':v.toFixed(v<10?2:1).replace('.',',');
+function multimetroHTML(v,dica,o){const cc=!!(o&&o.cc),un=cc?'V⎓':'V~';
+  const val=v===null||v===undefined?'– – –':(v<0?'−':'')+Math.abs(v).toFixed(Math.abs(v)<10?2:1).replace('.',',');
   return '<div class="mm"><div class="mm-corpo" aria-label="Multímetro: '+(v===null||v===undefined?'sem leitura':val+' volts')+'">'+
-    '<div class="mm-lcd"><b>'+val+'</b><small>V~</small></div>'+
-    '<div class="mm-baixo"><div class="mm-dial" aria-hidden="true"><i></i><span>V~</span></div>'+
+    '<div class="mm-lcd"><b>'+val+'</b><small>'+un+'</small></div>'+
+    '<div class="mm-baixo"><div class="mm-dial" aria-hidden="true"><i></i><span>'+un+'</span></div>'+
     '<div class="mm-bornes" aria-hidden="true"><span><i class="vr"></i>VΩ</span><span><i class="pr"></i>COM</span></div></div></div>'+
     '<p class="help">'+dica+'</p></div>'}
 function dicaPonteiras(pt){return !pt.r.t&&!pt.k.t?'Arraste a <b style="color:#ff6b5e">ponta vermelha</b> e a <b>ponta preta</b> até dois parafusos (ou toque nos parafusos).'
@@ -388,6 +388,49 @@ function ligaPonteiras(svg,comps,pt,mudou,zm){
 }
 /* toque num parafuso: leva a ponta que ainda está solta (ou a que não foi a última usada) */
 function tocaPonteira(comps,pt,t,ultima){const id=!pt.r.t?'r':!pt.k.t?'k':ultima==='r'?'k':'r';pt[id].t=t;pt[id].p=tpos(comps,t).slice();return id}
+
+/* ---------- Bancada: medir (Cap. 1, corrente contínua) ----------
+   Circuito pronto na bancada de pilhas; o aluno faz as medições pedidas com o multímetro (ponteiras) e responde
+   perguntas com os valores que ele mesmo mediu. Todos os valores vêm do simulador CC (js/cc.js), nunca sorteados.
+   d.circuito() monta a bancada; d.tarefas: {id, t, entre:[+,−], estado?(st), antes?, ok(v), dica} para medir ou
+   {q:(medidas,res)=>({q,o,w})} para perguntar (a opção 0 é a certa). Pontas invertidas: leitura negativa, refazer. */
+const fmtV=v=>(v<0?'−':'')+Math.abs(v).toFixed(2).replace('.',',');
+function dicaCC(pt){return !pt.r.t&&!pt.k.t?'Arraste a <b style="color:#ff6b5e">ponta vermelha</b> e a <b>ponta preta</b> até dois parafusos (ou toque nos parafusos).'
+  :!(pt.r.t&&pt.k.t)?'Agora leve a outra ponta a um parafuso.':'Medindo a tensão contínua entre os dois pontos. Ponta vermelha no + dá leitura positiva.'}
+function runMedir(p,d){
+  const st=d.circuito(),tarefas=d.tarefas,medidas={},res=[],zm=benchZoom();
+  let i=0,ok=0,errou=false,pt=novasPonteiras(),ultima=null,msg=null,drawn=false,resp=null;
+  const sim=()=>CC.resolver(st.comps,st.wires);
+  const avanca=()=>{res[i]=!errou;if(!errou)ok++;i++;errou=false;resp=null;if(i>=tarefas.length){finish(p,ok,tarefas.length);return false}return true};
+  const render=()=>{const T=tarefas[i],r=sim(),rb=CC.paraBancada(r),v=pt.r.t&&pt.k.t?r.v(pt.r.t)-r.v(pt.k.t):null;
+    if(T.q){const q=T.q(medidas,r),ordem=resp?resp.ordem:shuffle(q.o.map((t,k)=>({t,k})));
+      frame(p,progBar(tarefas.length,i,res)+(msg?'<div class="fb good">'+msg.t+'</div>':'')+'<div class="qcard"><p class="q">'+q.q+'</p></div>'+
+        '<div class="opts">'+ordem.map(o=>'<button class="btn opt" data-k="'+o.k+'">'+o.t+'</button>').join('')+'</div><div id="fb" class="opts"></div>',L()?'Use o que você mediu.':'Responda com os seus valores.');
+      msg=null;resp={ordem};
+      app.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{const certo=+b.dataset.k===0,fb=document.getElementById('fb');
+        if(certo||!L()){app.querySelectorAll('.opt').forEach(x=>{x.disabled=true;if(+x.dataset.k===0)x.classList.add('right')});if(!certo){b.classList.add('wrong','shake');errou=true}
+          if(certo&&!errou)S.xp+=10;save();fb.innerHTML='<div class="fb '+(certo?'good':'bad')+'">'+q.w+'</div>'+nextBtn(i===tarefas.length-1);
+          document.getElementById('nx').onclick=()=>{if(avanca())render()}}
+        else{errou=true;b.classList.add('wrong','shake');b.disabled=true;fb.innerHTML='<div class="fb bad">Quase! Olhe de novo os valores que você mediu.</div>'}});
+      return}
+    frame(p,progBar(tarefas.length,i,res)+missao(T.t,d.real||[],null,'TAREFA')+multimetroHTML(v,dicaCC(pt),{cc:true})+
+      benchWrap(board(st,{res:rb,ponteiras:pt,real:true,vb:zm.vb(),pickTerm:true,toggle:true}),'',zm,true)+
+      (msg?'<div class="fb '+(msg.bad?'bad':'good')+'">'+msg.t+'</div>':'')+
+      '<div class="row"><button class="btn main" id="reg"'+(v===null?' disabled':'')+'>📏 Registrar medição</button></div>');
+    keepScroll(drawn);drawn=true;
+    const svg=app.querySelector('.bench svg');zm.bind(app.querySelector('.bench'),app);
+    svg.querySelectorAll('[data-t]').forEach(h=>h.addEventListener('click',()=>{if(zm.busy())return;ultima=tocaPonteira(st.comps,pt,h.dataset.t,ultima);msg=null;render()}));
+    ligaPonteiras(svg,st.comps,pt,id=>{ultima=id;msg=null;render()},zm);
+    /* tocar no interruptor abre e fecha (para medir com o circuito aberto) */
+    svg.querySelectorAll('[data-sw]').forEach(h=>h.addEventListener('click',()=>{if(zm.busy())return;const c=st.comps.find(x=>x.id===h.dataset.sw);if(c){acionarPeca(c,0);msg=null;render()}}));
+    document.getElementById('reg').onclick=()=>{
+      if(T.estado&&!T.estado(st)){msg={bad:1,t:T.antes};render();return}
+      const n=r.net,a=n(pt.r.t),b=n(pt.k.t),A=n(T.entre[0]),B=n(T.entre[1]);
+      if(a===A&&b===B){medidas[T.id]=v;msg={t:'✓ '+T.ok(v)};if(avanca())render()}
+      else{errou=true;msg={bad:1,t:a===B&&b===A?'O visor mostra '+fmtV(v)+' V: o sinal de menos quer dizer que as pontas estão trocadas. A vermelha vai no +.':T.dica};render()}};
+  };
+  render();
+}
 
 /* ---------- Bancada: caça-defeito ---------- */
 function diagCircuit(V){return withPE({comps:[BAT(),C('F','fuse',125,48,0,{lab:'DJ'}),C('S1','sw',225,48,0,{closed:true}),C('L1','lamp',300,140,1)],
