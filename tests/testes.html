@@ -171,6 +171,18 @@ try{
     S.mode='moderado';const pl=phaseById('lanterna');runBuild(pl,pl.dados.moderado);
     k.tela=!document.querySelector('.benchwrap .entrada')&&/corrente contínua/i.test((document.querySelector('.benchwrap .modelo summary')||{}).textContent||'')&&!!document.querySelector('[data-cor="pos"]');
     k.ordemCap1=CHAPTERS[0].fases.join(',');R.cc=k;}
+  /* Medir de Verdade (Cap. 1, Ato 2): multímetro de CC com sinal; o registro confere o nó elétrico; o ponto aberto exige S1 aberto */
+  {const m={},p=phaseById('medir');S.mode='moderado';S.vista={moderado:'real'};runMedir(p,comARede(p.dados.moderado));
+   const sv=()=>document.querySelector('.bench svg'),t=id=>sv().querySelector('[data-t="'+id+'"]').dispatchEvent(new MouseEvent('click',{bubbles:true})),
+     reg=()=>document.getElementById('reg').click(),lcd=()=>document.querySelector('.mm-lcd b').textContent,txt=()=>document.getElementById('app').textContent;
+   m.unidade=document.querySelector('.mm-lcd small').textContent==='V⎓';
+   t('P1.1');t('P1.0');m.negativo=/^−1,4/.test(lcd());reg();m.recusaInvertida=/trocadas/.test(txt());
+   t('P1.0');t('P1.1');m.positivo=/^1,4/.test(lcd());reg();m.avancou=/conjunto em série/.test(txt());
+   t('P1.0');t('P2.1');reg();t('L1.0');t('L1.1');m.lampada=lcd()==='2,88';reg();
+   t('S1.0');t('S1.1');reg();m.pedeAbrir=/abra o interruptor/i.test(txt());
+   sv().querySelector('[data-sw="S1"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));m.aberto=lcd()==='3,00';reg();
+   const q=(document.querySelector('.qcard .q')||{}).textContent||'';m.perguntaComMedidas=q.includes('2,88')&&q.includes('3,00');
+   const ph=new Set(PHASES.map(x=>x.id));m.fases=['medicao','medir','leiohm','ohmcc'].every(x=>ph.has(x));R.medir=m;}
   // 8c) Caça-Defeito com multímetro e ponteiras: sem letras nos parafusos; arrastar a vermelha, tocar para a preta, o visor mede
   {const mm={};S.mode='moderado';const pd=phaseById('defeito');runDiag(pd,pd.dados.moderado);
     const svg=()=>document.querySelector('.bench svg'),lcd=()=>(document.querySelector('.mm-lcd b')||{}).textContent;

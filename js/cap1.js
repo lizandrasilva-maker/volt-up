@@ -3,6 +3,52 @@
    Aulas (teoria) se alternam com práticas que validam o que foi visto.
    Ato 1 · O que é eletricidade: energia → fontes → carga → estática → condutor → continuidade → grandezas → lanterna.
    CA, tomada e rede só aparecem no Capítulo 2; o capítulo termina explicando CC × CA. */
+/* ---------- Ato 2: bancada de medir (lanterna pronta) e as tarefas por nível ---------- */
+/* lanterna montada: 2 pilhas em série, S1 fechado e a lâmpada de 3 V / 0,3 A */
+function lanternaMontada(){const st={comps:pecasLanterna(2,true),wires:[W('P1.0','S1.0'),W('S1.1','L1.0'),W('L1.1','P2.1'),W('P1.1','P2.0')]};
+  st.comps.find(c=>c.id==='S1').closed=true;st.wires[0].cor=st.wires[1].cor='pos';st.wires[2].cor=st.wires[3].cor='neg';return st}
+const s1Aberto=st=>!st.comps.find(c=>c.id==='S1').closed;
+const fmtA=x=>x.toFixed(2).replace('.',','),fmtW=x=>x.toFixed(2).replace('.',',');
+function tarefasMedir(n){const T={
+  leve:['Meça a tensão da pilha P1: ponta vermelha no + dela e preta no −.','Agora meça as duas pilhas juntas: do + da P1 até o − da P2.','Meça a tensão na lâmpada acesa.','Toque no interruptor S1 para abrir e meça a tensão nos dois parafusos dele.'],
+  moderado:['Meça a tensão nos bornes da pilha P1, com a lanterna acesa.','Meça a tensão do conjunto em série: + da P1 ao − da P2.','Meça a tensão na lâmpada L1 acesa.','Abra o S1 (toque nele) e meça a tensão entre os bornes do interruptor aberto.'],
+  full:['Meça a tensão nos bornes de P1 sob carga (lanterna acesa).','Meça a tensão do arranjo série P1 + P2, sob carga.','Meça a tensão na carga L1.','Abra o S1 e meça a tensão no ponto aberto.']}[n];
+  return [
+   {id:'p1',t:T[0],entre:['P1.0','P1.1'],dica:'Esses não são os dois lados da pilha P1. Procure os parafusos + e − dela.',
+    ok:v=>({leve:'P1 mede '+fmtV(v)+' V. Pilha nova dá 1,5 V; com a lanterna acesa, cai um pouquinho.',moderado:'P1: '+fmtV(v)+' V. Com corrente, a resistência interna derruba um pouco os 1,5 V.',full:'U(P1) = '+fmtV(v)+' V < E = 1,50 V: queda r × I na resistência interna.'})[n]},
+   {id:'serie',t:T[1],entre:['P1.0','P2.1'],dica:'Uma ponta no + da P1 e a outra no − da P2: as duas pilhas juntas.',
+    ok:v=>({leve:'As duas juntas: '+fmtV(v)+' V. Uma pilha atrás da outra, as tensões somam.',moderado:'Conjunto série: '+fmtV(v)+' V, a soma das duas.',full:'U(série) = '+fmtV(v)+' V = U(P1) + U(P2).'})[n]},
+   {id:'lamp',t:T[2],entre:['L1.0','L1.1'],dica:'As pontas vão nos dois parafusos da lâmpada L1.',
+    ok:v=>({leve:'A lâmpada recebe '+fmtV(v)+' V: quase toda a tensão das pilhas.',moderado:'L1: '+fmtV(v)+' V, a mesma tensão do conjunto (os fios quase não têm queda).',full:'U(L1) = '+fmtV(v)+' V: igual à do arranjo, com condutores ideais.'})[n]},
+   {id:'aberto',t:T[3],entre:['S1.0','S1.1'],estado:s1Aberto,antes:'Primeiro abra o interruptor S1: toque nele na bancada.',dica:'As pontas vão nos dois parafusos do interruptor S1.',
+    ok:v=>({leve:'Interruptor aberto: '+fmtV(v)+' V. Sem corrente, toda a tensão aparece onde o caminho abriu.',moderado:'Ponto aberto: '+fmtV(v)+' V, a tensão inteira das pilhas; a lâmpada fica com 0 V.',full:'Com I = 0, não há queda em r nem em L1: o ponto aberto recebe E = '+fmtV(v)+' V.'})[n]},
+   {q:m=>({leve:{q:'Com o S1 fechado, a lâmpada mediu '+fmtV(m.lamp)+' V. Aberto, o interruptor mediu '+fmtV(m.aberto)+' V. Por que o interruptor aberto mostra mais?',
+       o:['Sem corrente, a pilha não perde nada por dentro','O interruptor aberto guarda a tensão da lâmpada','O multímetro mede a pilha e a lâmpada somadas'],
+       w:'Com o caminho aberto não passa corrente, e a pilha não perde tensão por dentro. Por isso aparece a tensão inteira, '+fmtV(m.aberto)+' V. O interruptor não guarda nada, e o multímetro mede só entre as duas pontas.'},
+     moderado:{q:'Fechado: L1 = '+fmtV(m.lamp)+' V. Aberto: S1 = '+fmtV(m.aberto)+' V. A diferença de '+fmtV(m.aberto-m.lamp)+' V se explica porque…',
+       o:['Sem corrente, some a queda na resistência interna','O interruptor aberto acumula a tensão da lâmpada','O voltímetro mede a tensão de L1 e S1 somadas'],
+       w:'Com o circuito fechado, a corrente provoca queda na resistência interna das pilhas. Aberto, I = 0 e essa queda some: aparece a tensão inteira. O interruptor não acumula tensão.'},
+     full:{q:'U(L1) fechado = '+fmtV(m.lamp)+' V e U(S1) aberto = '+fmtV(m.aberto)+' V. Com R(L1) = 10 Ω, a resistência interna total das pilhas é de cerca de…',
+       o:['0,4 Ω','4 Ω','1,1 Ω'],
+       w:'I = '+fmtV(m.lamp)+' ÷ 10 ≈ '+fmtA(m.lamp/10)+' A; r = (E − U) ÷ I = ('+fmtV(m.aberto)+' − '+fmtV(m.lamp)+') ÷ '+fmtA(m.lamp/10)+' ≈ 0,4 Ω (0,2 Ω por pilha). 4 Ω erra a vírgula; 1,1 Ω divide a diferença pela tensão.'}})[n]}]}
+function tarefasOhm(n){
+  const lamp={id:'lamp',t:{leve:'Meça a tensão na lâmpada acesa.',moderado:'Meça a tensão em L1 com a lanterna acesa.',full:'Meça U(L1) sob carga.'}[n],entre:['L1.0','L1.1'],dica:'As pontas vão nos dois parafusos da lâmpada L1.',ok:v=>'L1: '+fmtV(v)+' V.'};
+  const p1={id:'p1',t:{leve:'Agora meça a pilha P1 com a lanterna acesa.',moderado:'Meça a tensão nos bornes de P1 com a lanterna acesa.',full:'Meça U(P1) sob carga.'}[n],entre:['P1.0','P1.1'],dica:'Os dois parafusos da pilha P1: vermelha no +, preta no −.',ok:v=>'P1: '+fmtV(v)+' V.'};
+  const I=m=>m.lamp/10;
+  return [lamp,
+   {q:m=>({q:{leve:'A lâmpada tem 10 Ω e você mediu '+fmtV(m.lamp)+' V nela. Quanta corrente passa?',moderado:'L1 tem 10 Ω e mede '+fmtV(m.lamp)+' V. A corrente é…',full:'Com R(L1) = 10 Ω e U(L1) = '+fmtV(m.lamp)+' V, I vale…'}[n],
+     o:[fmtA(I(m))+' A',fmtA(m.lamp*10).replace(/,00$/,'')+' A',fmtA(10/m.lamp)+' A'],
+     w:'I = U ÷ R = '+fmtV(m.lamp)+' ÷ 10 ≈ '+fmtA(I(m))+' A. Multiplicar U por R dá '+fmtA(m.lamp*10)+' A; dividir R por U dá '+fmtA(10/m.lamp)+' A. Os dois estão errados.'})},
+   {q:m=>({q:{leve:'Com '+fmtV(m.lamp)+' V e '+fmtA(I(m))+' A, quanta potência a lâmpada usa?',moderado:'Potência de L1 com U = '+fmtV(m.lamp)+' V e I = '+fmtA(I(m))+' A:',full:'P(L1) com os valores medidos:'}[n],
+     o:[fmtW(m.lamp*I(m))+' W','10 W',fmtW(m.lamp+I(m))+' W'],
+     w:'P = U × I = '+fmtV(m.lamp)+' × '+fmtA(I(m))+' ≈ '+fmtW(m.lamp*I(m))+' W. 10 W é U ÷ I, que dá a resistência (em ohm), não a potência; somar tensão e corrente não tem sentido físico.'})},
+   p1,
+   {q:m=>({leve:{q:'A pilha P1 mede '+fmtV(m.p1)+' V com a lanterna acesa, menos que 1,5 V. Por quê?',o:['Passando corrente, ela perde um pouco por dentro','A lâmpada puxa a tensão de volta para ela','O multímetro gasta um pouco da pilha ao medir'],
+       w:'Toda pilha tem uma pequena resistência por dentro. Com corrente passando, um pouco da tensão fica ali e vira calor. O multímetro quase não gasta nada.'},
+     moderado:{q:'P1 mede '+fmtV(m.p1)+' V com '+fmtA(I(m))+' A passando. A resistência interna dela é de cerca de…',o:['0,2 Ω',fmtW(m.p1/I(m))+' Ω',fmtW(1.5/I(m))+' Ω'],
+       w:'r = (E − U) ÷ I = (1,50 − '+fmtV(m.p1)+') ÷ '+fmtA(I(m))+' ≈ 0,2 Ω. Dividir a tensão medida pela corrente dá outra resistência, não a interna.'},
+     full:{q:'Com U(P1) = '+fmtV(m.p1)+' V, I = '+fmtA(I(m))+' A e E = 1,5 V, a potência perdida dentro de P1 é de cerca de…',o:[(.2*I(m)*I(m)).toFixed(3).replace('.',',')+' W',fmtW(m.p1*I(m))+' W',fmtW(1.5-m.p1)+' W'],
+       w:'P = r × I² = 0,2 × '+fmtA(I(m))+'² ≈ '+(.2*I(m)*I(m)).toFixed(3).replace('.',',')+' W. '+fmtW(m.p1*I(m))+' W é a potência que P1 entrega à lâmpada; '+fmtW(1.5-m.p1)+' é a queda de tensão (em volt), não potência.'}})[n]}]}
 const CAP1_FASES=[
  {id:'energia',nome:'De Onde Vem a Energia',sub:'Formas de energia',kind:'aula',tipo:'aula',ic:'livro',cor:'#2f4a6e',
   card:{leve:'Energia não some: muda de forma. A pilha transforma química em elétrica.',moderado:'Pilha: energia química → elétrica. Lâmpada: elétrica → luz e calor.',full:'Conservação: Eentrada = Eútil + perdas. Rendimento η = Eútil ÷ Eentrada.'},
@@ -168,10 +214,87 @@ const CAP1_FASES=[
      {q:'Uma corrente de 0,3 A circula por 10 s. Quanta carga atravessou a lâmpada?',o:['3 C','0,03 C','33 C'],w:'Δq = I × Δt = 0,3 × 10 = 3 C. 0,03 C divide em vez de multiplicar; 33 C divide 10 por 0,3.'},
      {q:'Uma pilha de 1,5 V movimenta 2 C pelo circuito. Quanta energia ela entrega?',o:['3 J','0,75 J','1,5 J'],w:'U = E ÷ q, então E = U × q = 1,5 × 2 = 3 J. 0,75 J divide; 1,5 J ignora a carga.'},
      {q:'No diagrama, a seta da corrente sai do + da pilha. Os elétrons, nesse fio…',o:['Andam no sentido contrário ao da seta','Andam no mesmo sentido da seta','Ficam parados: só a energia anda'],w:'A seta usa o sentido convencional. Nos metais quem anda são os elétrons, do − para o + por fora da fonte. Andam devagar, mas andam.'}]}
-  }}
+  }},
+ /* ---------------- Ato 2 · Medir e calcular ---------------- */
+ {id:'medicao',nome:'Como se Mede',sub:'Voltímetro, amperímetro e ohmímetro',kind:'aula',tipo:'aula',ic:'livro',cor:'#2b4f6e',
+  card:{leve:'Tensão se mede por fora; corrente, no caminho; resistência, com tudo desligado.',moderado:'Voltímetro em paralelo, amperímetro em série, ohmímetro sem tensão no circuito.',full:'Voltímetro: resistência interna alta. Amperímetro: quase nula. Ohmímetro: fonte própria.'},
+  dados:{
+   leve:{quadros:[
+     {fig:'escala',t:'Este é o multímetro: um aparelho que mede várias coisas. Antes de encostar as pontas, gire a chave para o que você quer medir.'},
+     {fig:'voltimetro',t:'Para medir a tensão, encoste as duas pontas nos dois lados da peça, sem desligar nada. A vermelha vai no + e a preta no −.'},
+     {fig:'amperimetro',t:'Para medir a corrente, ela tem que passar por dentro do aparelho: a gente abre o circuito e coloca o medidor no meio do caminho.'},
+     {fig:'ampCurto',t:'Cuidado: o medidor de corrente encostado nos dois lados da pilha ou da lâmpada vira um atalho. É um curto.'},
+     {fig:'ohmimetro',t:'Para medir a resistência, a peça tem que estar sem energia: tire a pilha ou tire a peça do circuito.'}],
+    checa:[
+     {q:'Você quer saber se a pilha da lanterna ainda está boa, sem desmontar nada. Como encosta o multímetro?',o:['Uma ponta em cada lado da pilha, na escala de tensão','No meio do fio, abrindo o circuito, na escala de corrente','Uma ponta em cada lado da pilha, na escala de corrente'],w:'Tensão se mede por fora, com as pontas nos dois lados. Abrir o circuito é o jeito de medir corrente. E a escala de corrente nos dois lados da pilha faz um curto.'},
+     {q:'O medidor de corrente foi encostado nos dois lados da lâmpada acesa. O que acontece?',o:['A corrente desvia por ele e faz um curto','O visor mostra a corrente da lâmpada certinho','A lâmpada brilha mais, porque recebe ajuda dele'],w:'O medidor de corrente quase não atrapalha a passagem. Encostado dos dois lados, ele vira um atalho: a corrente desvia por ele, a lâmpada apaga e a pilha se esgota (ou o fusível do medidor queima).'},
+     {q:'Antes de medir a resistência da lâmpada, o que é preciso fazer?',o:['Tirar a pilha do circuito ou tirar a lâmpada','Deixar a lanterna acesa para a lâmpada esquentar','Trocar a ponta vermelha de lugar com a preta'],w:'O medidor de resistência usa uma pilhinha dele mesmo. Com a pilha da lanterna ligada, a leitura sai errada e o aparelho pode estragar. Trocar as pontas não muda a resistência.'}]},
+   moderado:{quadros:[
+     {fig:'escala',t:'O multímetro mede tensão (V), corrente (A) e resistência (Ω). Escolha a grandeza e a escala antes de encostar; em corrente contínua, use a posição V⎓.'},
+     {fig:'voltimetro',t:'Voltímetro em paralelo: as pontas vão nos dois pontos entre os quais se quer a tensão. Vermelha (VΩ) no +, preta (COM) no −; invertidas, o visor mostra o sinal de menos.'},
+     {fig:'amperimetro',t:'Amperímetro em série: abre-se o circuito e o medidor passa a fazer parte do caminho. A ponta vermelha vai para o borne A do aparelho.'},
+     {fig:'ampCurto',t:'Amperímetro em paralelo com a carga ou com a fonte é um curto-circuito: a resistência dele é quase zero.'},
+     {fig:'ohmimetro',t:'Ohmímetro só com o circuito desenergizado: ele injeta uma corrente pequena própria. Com tensão externa, a leitura é falsa e o aparelho pode queimar.'}],
+    checa:[
+     {q:'Para medir a corrente da lanterna, onde entra o amperímetro?',o:['Em série, abrindo o circuito entre a pilha e a lâmpada','Em paralelo com a lâmpada, com as pontas nos bornes dela','Em paralelo com as pilhas, entre o + e o − do conjunto'],w:'A corrente precisa atravessar o medidor, então ele entra em série. Nas outras duas posições ele fica em paralelo e vira um curto, porque a resistência dele é quase zero.'},
+     {q:'O visor mostra −1,50 V medindo uma pilha. O que isso indica?',o:['As pontas estão invertidas em relação à polaridade','A pilha está descarregada e precisa ser trocada','A chave do multímetro está na posição de corrente'],w:'O sinal de menos mostra que a vermelha está no − e a preta no +. O valor de 1,50 V indica pilha boa. Na posição de corrente, o visor não mostraria volts.'},
+     {q:'Por que o ohmímetro não pode medir uma peça com o circuito energizado?',o:['A tensão do circuito entra na conta e falseia a leitura','A peça energizada esfria e a resistência dela some','A ponta preta precisaria ficar no borne de corrente'],w:'O ohmímetro calcula R = U ÷ I com a corrente que ele mesmo injeta. Uma tensão externa entra nessa conta e a leitura fica errada, além de poder danificar o aparelho.'}]},
+   full:{quadros:[
+     {fig:'escala',t:'Multímetro digital: grandeza e faixa selecionadas antes da conexão. Em CC, posição V⎓; a categoria de medição (CAT) indica até que nível de surto ele é seguro.'},
+     {fig:'voltimetro',t:'Voltímetro em paralelo, com resistência interna alta (tipicamente 10 MΩ): quase não desvia corrente e não altera o circuito medido.'},
+     {fig:'amperimetro',t:'Amperímetro em série, com resistência interna quase nula (shunt): a queda de tensão nele é desprezível e a corrente do circuito praticamente não muda.'},
+     {fig:'ampCurto',t:'Amperímetro em paralelo com a fonte forma um curto: I ≈ E ÷ (r interna + r shunt). Por isso a entrada de corrente tem fusível próprio.'},
+     {fig:'ohmimetro',t:'Ohmímetro: mede R = U ÷ I com fonte interna. Exige circuito desenergizado e, de preferência, o componente isolado; senão mede o paralelo com o resto do circuito.'}],
+    checa:[
+     {q:'Um voltímetro de 10 MΩ mede a lâmpada de 10 Ω da lanterna. Quanto ele altera a corrente do circuito?',o:['Quase nada, desvia cerca de um milionésimo dela','Metade, porque divide a corrente com a lâmpada','Aumenta a corrente, pois soma uma resistência em série'],w:'Em paralelo, a corrente se divide na razão inversa das resistências: 10 Ω contra 10 000 000 Ω. O voltímetro leva cerca de um milionésimo e não muda o circuito. Ele não fica em série.'},
+     {q:'Um amperímetro de 0,1 Ω é ligado por engano em paralelo com duas pilhas de 1,5 V em série (resistência interna total de 0,4 Ω). A corrente fica perto de…',o:['6 A','30 A','7,5 A'],w:'I = E ÷ (rint + rshunt) = 3 ÷ (0,4 + 0,1) = 6 A, vinte vezes a corrente da lanterna. 30 A ignora a resistência das pilhas; 7,5 A ignora a do amperímetro.'},
+     {q:'Medindo um resistor ainda soldado na placa, o ohmímetro mostra menos que o valor marcado. A explicação mais provável é…',o:['Ele mede o paralelo com outros componentes da placa','O resistor aqueceu e a resistência caiu pela metade','A pilha interna do ohmímetro está com tensão alta'],w:'Soldado, o resistor fica em paralelo com o resto do circuito, e a resistência equivalente de um paralelo é menor que a menor delas. Por isso se mede o componente isolado.'}]}
+  }},
+ {id:'medir',nome:'Medir de Verdade',sub:'Multímetro na lanterna',kind:'bancada',tipo:'medir',ic:'multimetro',cor:'#1f5a4e',cc:true,
+  card:{leve:'Pontas nos dois lados da peça: vermelha no +, preta no −.',moderado:'Em série as tensões das pilhas somam; o ponto aberto recebe a tensão inteira.',full:'Sob carga, U = E − r × I: a pilha mede menos que a fem.'},
+  dados:Object.fromEntries(['leve','moderado','full'].map(n=>[n,{real:LANTERNA_REAL,circuito:lanternaMontada,tarefas:tarefasMedir(n)}]))},
+ {id:'leiohm',nome:'Lei de Ohm e Potência',sub:'U = R × I e P = U × I',kind:'aula',tipo:'aula',ic:'livro',cor:'#5a2a4e',
+  card:{leve:'Mais tensão, mais corrente. Mais resistência, menos corrente.',moderado:'U = R × I e P = U × I.',full:'P = U × I = R × I² = U² ÷ R; energia E = P × t.'},
+  dados:{
+   leve:{quadros:[
+     {fig:'caixa',t:'Lembra da caixa-d\'água? Mais altura empurra mais água. Na eletricidade, mais tensão empurra mais corrente.'},
+     {fig:'ohm',t:'E mais resistência atrapalha mais: com a mesma tensão, passa menos corrente. Essa é a lei de Ohm.'},
+     {fig:'lanternaNumeros',t:'Na lanterna: 3 volts empurram a corrente por uma lâmpada de 10 ohms. Passam 0,3 ampère.'},
+     {fig:'potencia',t:'A potência diz quanta energia a lâmpada usa a cada segundo. É a tensão vezes a corrente: 3 × 0,3 = 0,9 watt.'},
+     {fig:'ohm',t:'Com uma pilha só, a tensão cai pela metade e a corrente também. A lâmpada fica fraca.'}],
+    checa:[
+     {q:'A lanterna troca de 2 pilhas para 1 pilha. O que acontece com a corrente na lâmpada?',o:['Cai mais ou menos pela metade','Continua igual, porque a lâmpada é a mesma','Dobra, porque a pilha sozinha empurra mais'],w:'Com metade da tensão empurrando a mesma resistência, passa mais ou menos metade da corrente. Por isso a lâmpada fica fraca.'},
+     {q:'Duas lâmpadas recebem a mesma tensão. A de resistência maior…',o:['Deixa passar menos corrente','Deixa passar mais corrente','Recebe mais tensão que a outra'],w:'Resistência maior atrapalha mais: com a mesma tensão, passa menos corrente. E as duas recebem a mesma tensão, como diz a pergunta.'},
+     {q:'Qual lâmpada usa mais energia por segundo, ou seja, mais potência?',o:['A de 3 V com 0,5 A','A de 3 V com 0,3 A','A de 1,5 V com 0,5 A'],w:'Potência é tensão vezes corrente: 3 × 0,5 = 1,5 W, contra 0,9 W e 0,75 W das outras.'}]},
+   moderado:{quadros:[
+     {fig:'ohm',t:'Lei de Ohm: U = R × I. Com R fixo, a corrente é proporcional à tensão; com U fixo, inversamente proporcional à resistência.'},
+     {fig:'lanternaNumeros',t:'A lâmpada de 3 V / 0,3 A tem R = U ÷ I = 10 Ω. Com 3 V aplicados, I = 3 ÷ 10 = 0,3 A.'},
+     {fig:'potencia',t:'Potência elétrica: P = U × I, em watt. Na lâmpada da lanterna, P = 3 × 0,3 = 0,9 W.'},
+     {fig:'caixa',t:'As pilhas também têm resistência interna (cerca de 0,2 Ω cada): com carga, a tensão nos bornes cai um pouco abaixo de 1,5 V.'},
+     {fig:'ohm',t:'Sabendo duas grandezas, a lei de Ohm dá a terceira. É a conta que o eletricista faz antes de escolher fio e proteção.'}],
+    checa:[
+     {q:'Uma lâmpada de lanterna recebe 1,5 V e tem 10 Ω. A corrente é…',o:['0,15 A','15 A','6,7 A'],w:'I = U ÷ R = 1,5 ÷ 10 = 0,15 A. 15 A multiplica U por R; 6,7 A divide R por U.'},
+     {q:'Medindo 2,88 V numa lâmpada de 10 Ω, a potência dela é de cerca de…',o:['0,83 W','28,8 W','8,3 W'],w:'I = 2,88 ÷ 10 ≈ 0,29 A e P = U × I = 2,88 × 0,29 ≈ 0,83 W (ou U² ÷ R). 28,8 W multiplica U por R; 8,3 W erra a vírgula.'},
+     {q:'Por que a tensão de uma pilha nova cai de 1,5 V para cerca de 1,44 V quando a lanterna acende?',o:['A corrente provoca queda na resistência interna dela','A lâmpada acesa devolve parte da tensão para a pilha','O multímetro consome tensão ao medir com carga'],w:'Com corrente, a resistência interna (≈ 0,2 Ω) derruba uma parte: 0,29 A × 0,2 Ω ≈ 0,06 V. O voltímetro quase não consome nada, e a lâmpada não devolve tensão.'}]},
+   full:{quadros:[
+     {fig:'ohm',t:'Lei de Ohm (bipolo ôhmico): U = R × I. A resistência depende do material, do comprimento e da seção: R = ρ × L ÷ A.'},
+     {fig:'potencia',t:'Potência: P = U × I = R × I² = U² ÷ R. Energia: E = P × t (em joule, ou em Wh na prática).'},
+     {fig:'lanternaNumeros',t:'Com fonte real: I = E ÷ (R + r). Duas pilhas (E = 3 V, r = 0,4 Ω) na lâmpada de 10 Ω: I = 3 ÷ 10,4 ≈ 0,288 A.'},
+     {fig:'caixa',t:'Tensão nos bornes: U = E − r × I = 3 − 0,4 × 0,288 ≈ 2,88 V. A diferença vira calor dentro das pilhas.'},
+     {fig:'ohm',t:'O filamento real não é ôhmico: R cresce com a temperatura. No jogo, a lâmpada é modelada como R fixo (10 Ω).'}],
+    checa:[
+     {q:'Duas pilhas (E = 3 V, r = 0,4 Ω) alimentam a lâmpada de 10 Ω. A potência dissipada dentro das pilhas é de aproximadamente…',o:['0,033 W','0,83 W','0,12 W'],w:'P = r × I² = 0,4 × 0,288² ≈ 0,033 W. 0,83 W é a potência da lâmpada; 0,12 W confunde a queda de tensão r × I com potência.'},
+     {q:'Uma lâmpada de 3 V / 0,9 W é ligada em 4,5 V (três pilhas, sem contar a resistência interna). Com R constante, a potência vai para…',o:['2,0 W','1,35 W','0,9 W'],w:'R = U² ÷ P = 9 ÷ 0,9 = 10 Ω. P = 4,5² ÷ 10 ≈ 2,0 W: com 1,5 vez a tensão, a potência sobe 1,5² = 2,25 vezes. 1,35 W supõe que a potência cresce na mesma proporção da tensão.'},
+     {q:'A lanterna (0,83 W) fica acesa 3 h. A energia consumida é de cerca de…',o:['2,5 Wh','0,28 Wh','0,83 Wh'],w:'E = P × t = 0,83 W × 3 h ≈ 2,5 Wh (≈ 9 000 J). 0,28 Wh divide em vez de multiplicar; 0,83 Wh esquece o tempo.'}]}
+  }},
+ {id:'ohmcc',nome:'Mestre Ohm na Bancada',sub:'Medir e calcular',kind:'bancada',tipo:'medir',ic:'ohm',cor:'#6b3a1f',cc:true,
+  card:{leve:'Mediu a tensão e sabe a resistência? Dá para achar a corrente.',moderado:'I = U ÷ R e P = U × I com os valores medidos.',full:'r interna = (E − U) ÷ I, a partir de duas medições.'},
+  dados:Object.fromEntries(['leve','moderado','full'].map(n=>[n,{real:LANTERNA_REAL,circuito:lanternaMontada,tarefas:tarefasOhm(n)}]))}
 ];
 /* Cenas antes das práticas (as aulas já são conduzidas pelo Mestre Chico) */
 const CAP1_CENAS={
+  medir:[['chico','A lanterna está montada. Agora quero ver você medir de verdade.'],['chico','Multímetro na posição V⎓. Lembra: ponta vermelha no +, preta no −.']],
+  ohmcc:[['chico','Medir é metade do serviço, {nome}. A outra metade é fazer a conta.'],['chico','Mede, calcula e me diz quanto a lâmpada puxa e quanto a pilha perde.']],
   renovavel:[['chico','Você viu que a eletricidade das casas vem de usinas, e cada usina usa uma fonte.'],['chico','Umas a natureza repõe, outras acabam um dia. {nome}, separa pra mim.']],
   macaneta:[['eu','Ai! Mestre, levei um choquinho na maçaneta da oficina!'],['chico','É a carga que você mesmo juntou andando no piso. Eletricidade estática.'],['chico','Vamos ver se você sabe explicar as situações do dia a dia.']],
   continuidade:[['chico','Toma o testador: uma pilha, um LED e duas pontas.'],['chico','Encosta as pontas no material. Se o LED acender, ele conduz. Antes de testar, me diz o que você acha.']]

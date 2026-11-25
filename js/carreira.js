@@ -6,7 +6,7 @@ const ATTR={
   seguranca:{n:'Segurança',i:'🦺',c:'var(--terra)'},
   calculo:{n:'Cálculo',i:'Ω',c:'var(--fase)'}
 };
-const PH_ATTR={energia:'conceito',carga:'conceito',macaneta:'conceito',condutor:'conceito',continuidade:'diagnostico',grandezas:'conceito',lanterna:'montagem',entrada:'conceito',faisca:'conceito',renovavel:'conceito',primeiro:'montagem',paralelo:'montagem',previsao:'diagnostico',defeito:'diagnostico',seguranca:'seguranca',ohm:'calculo',
+const PH_ATTR={energia:'conceito',carga:'conceito',macaneta:'conceito',condutor:'conceito',continuidade:'diagnostico',grandezas:'conceito',lanterna:'montagem',medicao:'conceito',medir:'diagnostico',leiohm:'calculo',ohmcc:'calculo',entrada:'conceito',faisca:'conceito',renovavel:'conceito',primeiro:'montagem',paralelo:'montagem',previsao:'diagnostico',defeito:'diagnostico',seguranca:'seguranca',ohm:'calculo',
   quadro:'conceito',quadronovo:'montagem',escada:'montagem',corredor:'montagem',garagem:'montagem',impulso:'montagem',surto:'seguranca',
   turno:'seguranca',partida:'montagem',sobrecarga:'diagnostico',caixa:'montagem',fimturno:'calculo'};
 const KLASS={conceito:'Mente Teórica',montagem:'Mão na Massa',diagnostico:'Detetive de Falhas',seguranca:'Guardião da Segurança',calculo:'Calculista'};
