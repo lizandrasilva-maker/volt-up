@@ -158,7 +158,7 @@ function cardHTML(p,md,extra){return '<div class="card '+(extra||'')+'" style="-
 
 function playPhase(i){
   const p=PHASES[i],d=comARede(p.dados[S.mode]);
-  const go=()=>({quiz:runQuiz,sort:runSort,build:runBuild,predict:runPredict,diag:runDiag,aula:runAula,medir:runMedir,cacacc:runCacaCC})[p.tipo](p,d);
+  const go=()=>({quiz:runQuiz,sort:runSort,build:runBuild,predict:runPredict,diag:runDiag,aula:runAula,medir:runMedir,cacacc:runCacaCC,capacitor:runCapacitor,eletroima:runEletroima})[p.tipo](p,d);
   const k=S.mode+':'+p.id+':cena';
   /* no modo teste a cena aparece sempre, para revisar a história */
   const cena=cenaDe(p.id);

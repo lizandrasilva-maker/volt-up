@@ -148,6 +148,32 @@ const PREV=n=>{const t={
     ['Duas células iguais em paralelo alimentam L1. P2 vai ser retirada.','Em relação a antes, U(L1)…',['Cai alguns centésimos de volt','Cai pela metade','Não muda nada, em teoria nem na prática'],'Em paralelo, r equivalente = 0,1 Ω; com uma célula só, r = 0,2 Ω. A queda r × I aumenta um pouco e U(L1) cai alguns centésimos.']]}[n];
   const cenas=[cenaSerieCC,cenaParaleloCC,cenaPilhasPar],acts=[queimaLamp('L1'),queimaLamp('L1'),st=>{st.wires=st.wires.filter(w=>!w.a.startsWith('P2.')&&!w.b.startsWith('P2.'))}];
   return t.map(([acao,q,o,w],k)=>({sc:cenas[k],act:acts[k],acao,q,o,w}))};
+/* ---------- Ato 4: tarefas das práticas de capacitor e eletroímã ---------- */
+const fmt2=x=>x.toFixed(2).replace('.',',');
+function tarefasCapacitor(n){const t={
+  leve:['Ponha a chave em CARREGAR e espere o capacitor encher.','Agora ponha em DESCARREGAR: o LED vai acender com a carga guardada.'],
+  moderado:['Carregue o capacitor pelo resistor (chave em CARREGAR) até quase 3 V.','Descarregue o capacitor pelo LED (chave em DESCARREGAR) até quase zero.'],
+  full:['Carregue C através de R até u ≥ 0,95 E (≈ 3τ).','Descarregue C pelo LED até u ≤ 0,05 E.']}[n];
+  return [
+   {id:'carga',t:t[0],cond:(U,m)=>m==='carga'&&U>=2.85,ok:{leve:'Cheio! Ele encheu rápido no começo e devagar no fim.',moderado:'Carregado: em cerca de 3τ (3 s) ele chega a 95 % da tensão da pilha.',full:'u ≥ 0,95 E: em 3τ restam e⁻³ ≈ 5 % para completar.'}[n]},
+   {id:'descarga',t:t[1],cond:(U,m)=>m==='descarga'&&U<=.15,ok:{leve:'O LED acendeu e foi apagando: a carga guardada acabou.',moderado:'Descarregado: a corrente no LED caiu junto com a tensão, também de forma exponencial.',full:'Descarga exponencial: u = U0 × e^(−t/τ); a corrente no LED segue a mesma curva.'}[n]},
+   {q:()=>({leve:{q:'Quando você pôs a chave em CARREGAR, a tensão no capacitor…',o:['Subiu rápido no começo e devagar no fim','Subiu no mesmo ritmo do começo até o fim da carga','Pulou num instante direto para 3 V'],w:'No começo o capacitor está vazio e a corrente é grande; conforme ele enche, a corrente diminui e a tensão sobe cada vez mais devagar.'},
+     moderado:{q:'Com R = 1 kΩ e C = 1000 µF, a constante de tempo τ = R × C vale…',o:['1 s','1000 s','0,001 s'],w:'τ = 1000 Ω × 0,001 F = 1 s. Em 1τ o capacitor chega a 63 % e em cerca de 5τ está praticamente cheio.'},
+     full:{q:'Partindo de 0 V com E = 3 V, depois de 2τ carregando a tensão vale cerca de…',o:['2,59 V','1,90 V','3,00 V'],w:'u = 3 × (1 − e⁻²) ≈ 3 × 0,865 ≈ 2,59 V. 1,90 V é o valor em 1τ; 3,00 V só depois de uns 5τ.'}})[n]},
+   {q:()=>({leve:{q:'Se a chave ficar em ABERTA com o capacitor cheio, ele…',o:['Continua guardando a carga','Descarrega na hora','Fica com a metade da carga'],w:'Sem caminho para a corrente, a carga fica nas placas. Por isso um aparelho desligado pode ter capacitor carregado.'},
+     moderado:{q:'Por que é perigoso mexer numa fonte desligada que tem capacitores grandes?',o:['Eles podem continuar carregados e dar choque','A fonte desligada puxa energia da tomada','Os capacitores viram curto ao desligar'],w:'Capacitores guardam carga depois de desligados. Antes de mexer, descarregue com resistor e confira com o voltímetro.'},
+     full:{q:'A energia armazenada em 1000 µF com 3 V é de…',o:['4,5 mJ','9 mJ','1,5 mJ'],w:'W = ½ × C × U² = 0,5 × 0,001 × 3² = 0,0045 J = 4,5 mJ. 9 mJ esquece o ½; 1,5 mJ usa U em vez de U².'}})[n]}]}
+function tarefasEletroima(n){const t={
+  leve:['Ligue o eletroímã e segure pelo menos 4 clipes.','Agora segure os 12 clipes de uma vez.','Solte todos os clipes.'],
+  moderado:['Segure pelo menos 4 clipes.','Segure os 12 clipes.','Faça os clipes caírem sem mexer na bobina.'],
+  full:['Atinja força para 4 clipes.','Atinja a força máxima (12 clipes).','Anule a força magnética.']}[n];
+  return [
+   {id:'quatro',t:t[0],cond:(c,e)=>e.clipes>=4,ok:{leve:'Pegou! Mais voltas, mais pilhas ou o prego de ferro deixam o ímã mais forte.',moderado:'Força suficiente: ela cresce com N × I e com o núcleo de ferro.',full:'F cresce com a força magnetomotriz N × I e com a permeabilidade do núcleo.'}[n]},
+   {id:'todos',t:t[1],cond:(c,e)=>e.clipes>=12,ok:{leve:'Os 12! Com o ferro no meio, o eletroímã fica muito mais forte.',moderado:'Máximo: o núcleo de ferro concentra o campo da bobina.',full:'Saturação do modelo: o núcleo de ferro multiplica B.'}[n]},
+   {id:'solta',t:t[2],cond:c=>!c.lig,ok:{leve:'Caíram todos! Sem corrente, o eletroímã não puxa. É assim que a contatora solta.',moderado:'Sem corrente, sem campo: a armadura solta, como na contatora quando a bobina perde a tensão.',full:'I = 0 ⇒ B ≈ 0 (desprezando o magnetismo residual): é o desligamento da contatora.'}[n]},
+   {q:m=>({leve:{q:'O que fez o eletroímã pegar mais clipes?',o:['Mais voltas, mais pilhas e o prego de ferro','Menos voltas para a corrente andar mais rápido','Tirar o prego para o ímã ficar mais leve'],w:'Mais voltas e mais corrente somam campo, e o ferro concentra esse campo. Tirar o ferro deixa o eletroímã fraco.'},
+     moderado:{q:'Com 2 pilhas (3 V), 40 espiras e o resistor de 10 Ω, a força magnetomotriz N × I é de…',o:['12 A·esp','120 A·esp','1,2 A·esp'],w:'I = 3 V ÷ 10 Ω = 0,3 A; N × I = 40 × 0,3 = 12 A·esp. 120 multiplica 40 por 3 V (tensão, não corrente).'},
+     full:{q:'Mantendo a corrente, trocar 10 por 40 espiras (núcleo sem saturar) faz o campo B…',o:['Ficar 4 vezes maior','Dobrar','Ficar 16 vezes maior'],w:'B ≈ μ × N × I ÷ ℓ: proporcional a N. Quatro vezes N, quatro vezes B. 16 vezes seria se dependesse de N².'}})[n]}]}
 const CAP1_FASES=[
  {id:'energia',nome:'De Onde Vem a Energia',sub:'Formas de energia',kind:'aula',tipo:'aula',ic:'livro',cor:'#2f4a6e',
   card:{leve:'Energia não some: muda de forma. A pilha transforma química em elétrica.',moderado:'Pilha: energia química → elétrica. Lâmpada: elétrica → luz e calor.',full:'Conservação: Eentrada = Eútil + perdas. Rendimento η = Eútil ÷ Eentrada.'},
@@ -472,10 +498,133 @@ const CAP1_FASES=[
   dados:Object.fromEntries(['leve','moderado','full'].map(n=>[n,{real:DUAS_REAL,circuito:cenaSerieCC,tarefas:tarefasKirch(n)}]))},
  {id:'emergencia',nome:'Lanterna de Emergência',sub:'Caça-defeito com o multímetro',kind:'bancada',tipo:'cacacc',ic:'multimetro',cor:'#6e2a2a',cc:true,
   card:{leve:'Onde aparece a força inteira das pilhas, ali o caminho está aberto.',moderado:'Série aberta: a tensão da fonte aparece no ponto aberto.',full:'I = 0: só o elemento aberto apresenta U = E.'},
-  dados:Object.fromEntries(['leve','moderado','full'].map(n=>[n,dadosEmergencia(n)]))}
+  dados:Object.fromEntries(['leve','moderado','full'].map(n=>[n,dadosEmergencia(n)]))},
+ /* ---------------- Ato 4 · Capacitor, ímã e bobina, CC × CA ---------------- */
+ {id:'capacitor',nome:'O Capacitor',sub:'Guardar carga',kind:'aula',tipo:'aula',ic:'livro',cor:'#2b5a6e',
+  card:{leve:'O capacitor enche rápido no começo e devagar no fim.',moderado:'Q = C × U; τ = R × C dá o ritmo da carga.',full:'u(t) = E × (1 − e^(−t/τ)); W = ½ × C × U².'},
+  dados:{
+   leve:{quadros:[
+     {fig:'capCarga',t:'O capacitor é como uma caixinha que guarda carga elétrica. Ligado na pilha, ele vai enchendo.'},
+     {fig:'capCurva',t:'Ele enche rápido no começo e cada vez mais devagar, até ficar com a força da pilha.'},
+     {fig:'capDescarga',t:'Depois de cheio, ele pode soltar a carga: acende um LED por alguns instantes, mesmo sem a pilha.'},
+     {fig:'capCurva',t:'Cheio, ele não deixa mais passar corrente da pilha: é como um caminho que se fecha sozinho.'},
+     {fig:'capPerigo',t:'Atenção: aparelhos desligados podem ter capacitores ainda carregados. Por isso não se abre fonte de TV nem de micro-ondas.'}],
+    checa:[
+     {q:'Você ligou um capacitor vazio na pilha. Como ele enche?',o:['Rápido no começo e devagar no fim','No mesmo ritmo do começo até o fim da carga','Num instante, de uma vez'],w:'No começo o capacitor está vazio e a corrente é grande; conforme ele enche, a corrente diminui e ele enche cada vez mais devagar.'},
+     {q:'O capacitor cheio foi desligado da pilha e ligado num LED. O LED…',o:['Acende e vai apagando aos poucos','Fica aceso enquanto o capacitor existir','Não acende, porque falta a pilha'],w:'O capacitor devolve a carga que guardou: o LED acende e vai apagando conforme ele esvazia. A carga acaba logo.'},
+     {q:'Por que não se deve abrir a fonte de uma TV, mesmo desligada da tomada?',o:['Os capacitores podem continuar carregados','A tomada continua mandando energia pelo ar','O plástico da TV guarda eletricidade'],w:'Capacitores grandes guardam carga mesmo com o aparelho desligado e podem dar um choque forte. A tomada desligada não manda nada, e o plástico é isolante.'}]},
+   moderado:{quadros:[
+     {fig:'capCarga',t:'Capacitor: duas placas condutoras separadas por um isolante (dielétrico). Ligado a uma fonte, acumula cargas opostas nas placas.'},
+     {fig:'capCurva',t:'Capacitância C, em farad (F): Q = C × U. Na prática se usa µF. Quanto maior C, mais carga para a mesma tensão.'},
+     {fig:'capCurva',t:'Carga por um resistor: a tensão sobe de forma exponencial; τ = R × C é o tempo para chegar a 63 %. Em cerca de 5τ ele está praticamente cheio.'},
+     {fig:'capDescarga',t:'Carregado, ele bloqueia a corrente contínua (I = 0) e pode devolver a energia: na descarga, a tensão também cai de forma exponencial.'},
+     {fig:'capPerigo',t:'Segurança: descarregue capacitores grandes antes de mexer (resistor de descarga) e confira com o voltímetro.'}],
+    checa:[
+     {q:'R = 10 kΩ e C = 100 µF. A constante de tempo τ é de…',o:['1 s','10 s','1000 s'],w:'τ = R × C = 10 000 Ω × 0,0001 F = 1 s. Em cerca de 5 s o capacitor fica praticamente cheio.'},
+     {q:'Um capacitor de 1000 µF carregado com 3 V guarda uma carga de…',o:['3 mC','30 mC','3 C'],w:'Q = C × U = 0,001 F × 3 V = 0,003 C = 3 mC. 3 C esquece o micro (1 µF = 10⁻⁶ F).'},
+     {q:'Com o capacitor totalmente carregado num circuito de corrente contínua, a corrente no ramo dele é…',o:['Praticamente zero','Máxima, igual à da fonte em curto','Igual à metade da inicial'],w:'Carregado, a tensão nele iguala a da fonte e a corrente cai a zero: em regime, o capacitor bloqueia a corrente contínua. Máxima ela é no primeiro instante.'}]},
+   full:{quadros:[
+     {fig:'capCarga',t:'Capacitância: C = Q ÷ U (F). Placas paralelas: C = ε × A ÷ d (área, distância e dielétrico).'},
+     {fig:'capCurva',t:'Carga RC: u(t) = E × (1 − e^(−t/τ)), τ = R × C; i(t) = (E ÷ R) × e^(−t/τ).'},
+     {fig:'capDescarga',t:'Descarga: u(t) = U0 × e^(−t/τ). Após 1τ restam 37 %; após 5τ, menos de 1 %.'},
+     {fig:'capCurva',t:'Energia armazenada: W = ½ × C × U². Em regime CC, o capacitor é um circuito aberto.'},
+     {fig:'capPerigo',t:'Bancos de capacitores e fontes chaveadas retêm tensão perigosa: descarga controlada e verificação de ausência de tensão antes da intervenção.'}],
+    checa:[
+     {q:'Carga RC partindo de 0 V, E = 3 V. Após t = τ, a tensão no capacitor é de cerca de…',o:['1,9 V','2,6 V','3,0 V'],w:'u = 3 × (1 − e⁻¹) ≈ 3 × 0,632 ≈ 1,9 V. 2,6 V é depois de 2τ; 3,0 V só depois de uns 5τ.'},
+     {q:'A energia num capacitor de 1000 µF carregado com 10 V é de…',o:['50 mJ','10 mJ','5 mJ'],w:'W = ½ × C × U² = 0,5 × 0,001 × 10² = 0,05 J = 50 mJ. 10 mJ é C × U (sem o ½ e sem o quadrado); 5 mJ esquece o quadrado.'},
+     {q:'Num circuito CC em regime permanente, o capacitor se comporta como…',o:['Circuito aberto','Curto-circuito','Resistor de valor R × C'],w:'Em regime, du/dt = 0 e i = C × du/dt = 0: circuito aberto. Curto é o comportamento no instante inicial da carga (capacitor vazio).'}]}
+  }},
+ {id:'capbanc',nome:'Capacitor na Bancada',sub:'Carregar e descarregar',kind:'bancada',tipo:'capacitor',ic:'pilha',cor:'#1f5a6e',cc:true,
+  card:{leve:'O capacitor guarda a carga e devolve no LED.',moderado:'Em 3τ, 95 % da carga; em 5τ, praticamente cheio.',full:'u(2τ) ≈ 0,865 E; W = ½ C U².'},
+  dados:Object.fromEntries(['leve','moderado','full'].map(n=>[n,{tarefas:tarefasCapacitor(n)}]))},
+ {id:'imabobina',nome:'Ímã e Bobina',sub:'Eletricidade que vira ímã',kind:'aula',tipo:'aula',ic:'livro',cor:'#5a3a2e',
+  card:{leve:'Fio enrolado com corrente vira ímã; sem corrente, solta.',moderado:'Força do eletroímã ∝ N × I; o ferro concentra o campo.',full:'Faraday: só fluxo variável induz tensão.'},
+  dados:{
+   leve:{quadros:[
+     {fig:'ima',t:'O ímã tem dois lados, o norte e o sul. Lados diferentes se puxam; lados iguais se empurram.'},
+     {fig:'oersted',t:'A corrente num fio também cria um ímã invisível em volta dele: a agulha da bússola se mexe quando a corrente passa.'},
+     {fig:'bobina',t:'Enrolando o fio em muitas voltas, o efeito soma. Com um prego de ferro no meio, vira um eletroímã forte.'},
+     {fig:'contatoraIma',t:'Desligou a corrente, o eletroímã solta. É assim que a contatora e o relé ligam e desligam máquinas.'},
+     {fig:'inducao',t:'E o contrário também acontece: mexendo um ímã dentro da bobina, aparece eletricidade nela. É o princípio do gerador.'}],
+    checa:[
+     {q:'Você aproxima o norte de um ímã do norte de outro. O que acontece?',o:['Eles se empurram','Eles se puxam e grudam','Nada, porque são iguais'],w:'Polos iguais se empurram; diferentes se puxam. Por isso dois nortes se afastam.'},
+     {q:'Como deixar um eletroímã mais forte?',o:['Mais voltas de fio e um núcleo de ferro','Fio de plástico e menos voltas','Trocar o prego de ferro do meio por um pau de madeira'],w:'Mais voltas somam o efeito, e o ferro concentra o campo. Plástico e madeira não ajudam: o plástico nem conduz.'},
+     {q:'Por que a contatora solta quando falta energia na bobina?',o:['Sem corrente, o eletroímã deixa de puxar','A mola de dentro fica sem força elétrica','O ímã dela é desligado por um botão'],w:'A bobina é um eletroímã: só puxa enquanto passa corrente. Sem corrente, a mola devolve os contatos. A mola é mecânica, não elétrica.'}]},
+   moderado:{quadros:[
+     {fig:'ima',t:'Ímã permanente: polos norte e sul e um campo magnético que sai do norte e entra no sul. Polos iguais se repelem; opostos se atraem.'},
+     {fig:'oersted',t:'Experimento de Oersted: um condutor com corrente cria campo magnético em volta dele, e a bússola deflete.'},
+     {fig:'bobina',t:'Bobina (solenoide): o campo de cada espira se soma. A força cresce com o número de espiras e com a corrente (ampère-espira); o núcleo de ferro concentra o campo.'},
+     {fig:'contatoraIma',t:'Na contatora, a bobina (A1-A2) energizada atrai a armadura e fecha os contatos; desenergizada, a mola abre.'},
+     {fig:'inducao',t:'Indução: um campo magnético variando dentro de uma bobina induz tensão nela. Campo parado não induz nada.'}],
+    checa:[
+     {q:'Uma bobina de 200 espiras com 0,5 A produz quantos ampère-espira?',o:['100 A·esp','400 A·esp','200,5 A·esp'],w:'Força magnetomotriz = N × I = 200 × 0,5 = 100 A·esp. Dividir dá 400; somar não tem sentido físico.'},
+     {q:'Um ímã está parado dentro de uma bobina ligada a um voltímetro. O voltímetro mostra…',o:['Zero, com o campo parado','A tensão máxima, enquanto o ímã ficar lá','Uma tensão que cresce com o tempo'],w:'Só há tensão induzida quando o campo varia (ímã em movimento ou corrente variando). Por isso o transformador funciona com corrente alternada.'},
+     {q:'O que acontece com os contatos de uma contatora quando a bobina perde a tensão?',o:['Voltam à posição de repouso pela mola','Ficam presos na posição onde estavam, pelo magnetismo','Fecham com mais força'],w:'Sem corrente, o campo da bobina desaparece e a mola devolve os contatos ao repouso (NA abre, NF fecha). O núcleo não fica magnetizado o bastante para segurar.'}]},
+   full:{quadros:[
+     {fig:'ima',t:'Campo magnético B (tesla). As linhas são fechadas: saem do polo norte e entram no sul; não existem monopolos.'},
+     {fig:'oersted',t:'Lei de Ampère: corrente gera campo; no condutor retilíneo, B ∝ I ÷ r, em círculos concêntricos (regra da mão direita).'},
+     {fig:'bobina',t:'Solenoide: B ≈ μ × N × I ÷ ℓ. Um núcleo ferromagnético multiplica μ (até saturar).'},
+     {fig:'inducao',t:'Lei de Faraday: e = −N × ΔΦ ÷ Δt. Só fluxo variável induz tensão (Lenz: o sinal se opõe à variação).'},
+     {fig:'contatoraIma',t:'Contatora: a força de atração da bobina vence a mola de retorno; ao desenergizar, a mola abre os contatos principais e auxiliares.'}],
+    checa:[
+     {q:'Num solenoide sem saturação, dobrando N e mantendo I, o campo B…',o:['Dobra','Quadruplica','Fica igual'],w:'B ≈ μ × N × I ÷ ℓ: proporcional a N. Quadruplicar seria dobrar N e I juntos.'},
+     {q:'Uma bobina de 100 espiras tem o fluxo variando 0,02 Wb em 0,1 s. A fem induzida média é de…',o:['20 V','2 V','0,2 V'],w:'e = N × ΔΦ ÷ Δt = 100 × 0,02 ÷ 0,1 = 20 V. 2 V esquece de dividir pelo tempo; 0,2 V esquece o número de espiras.'},
+     {q:'Por que um transformador não funciona ligado a uma bateria (CC)?',o:['O fluxo constante não induz tensão no secundário','A bateria tem tensão baixa demais para o enrolamento primário','O núcleo de ferro bloqueia a corrente contínua'],w:'Pela lei de Faraday, só fluxo variável induz tensão. Com CC, o fluxo fica constante e o secundário fica em 0 V (e o primário pode aquecer muito).'}]}
+  }},
+ {id:'eletroima',nome:'Eletroímã na Bancada',sub:'Pegar e soltar clipes',kind:'bancada',tipo:'eletroima',ic:'disjuntor',cor:'#6e4a1f',cc:true,
+  card:{leve:'Mais voltas, mais pilhas e ferro: mais força. Sem corrente, solta.',moderado:'N × I em ampère-espira; o núcleo de ferro multiplica a força.',full:'B ∝ μ × N × I: a força do eletroímã segue o campo.'},
+  dados:Object.fromEntries(['leve','moderado','full'].map(n=>[n,{tarefas:tarefasEletroima(n)}]))},
+ {id:'ccca',nome:'CC × CA',sub:'Contínua e alternada',kind:'aula',tipo:'aula',ic:'livro',cor:'#2a3a6e',
+  card:{leve:'Pilha: corrente contínua. Tomada: corrente alternada.',moderado:'A rede tem {Hz} Hz: {2Hz} inversões de sentido por segundo.',full:'u(t) = Up × sen(2π f t); Uef = Up ÷ √2.'},
+  dados:{
+   leve:{quadros:[
+     {fig:'ccGrafico',t:'Até aqui, toda a energia veio de pilhas: corrente contínua (CC). Ela anda sempre no mesmo sentido.'},
+     {fig:'caGrafico',t:'A energia da tomada é diferente: corrente alternada (CA). Ela vai e volta, trocando de sentido {2Hz} vezes por segundo.'},
+     {fig:'transmissao',t:'A CA é usada nas casas porque é fácil subir e baixar a tensão com transformadores, para trazer a energia de longe.'},
+     {fig:'ccEmCasa',t:'Muitos aparelhos usam CC por dentro: o carregador do celular transforma a CA da tomada em CC.'},
+     {fig:'caGrafico',t:'A tomada é muito mais forte que a pilha: {V} volts. No próximo capítulo você vai trabalhar com ela, sempre com segurança.'}],
+    checa:[
+     {q:'Qual destas dá corrente alternada?',o:['A tomada da casa','A pilha da lanterna','A bateria do celular'],w:'A tomada recebe a CA da rede, que troca de sentido. Pilha e bateria dão CC.'},
+     {q:'O carregador do celular é ligado na tomada. O que ele faz?',o:['Transforma a CA da tomada em CC para a bateria','Guarda a energia da tomada até o celular pedir','Passa a CA direto para a bateria do celular'],w:'A bateria só carrega com CC. O carregador baixa a tensão e transforma a CA em CC. Ele não guarda energia.'},
+     {q:'Por que as casas recebem corrente alternada, e não contínua?',o:['Com CA é fácil subir e baixar a tensão','A CA não dá choque nas pessoas','A corrente contínua não consegue acender as lâmpadas de casa'],w:'Transformadores só funcionam com CA, e com eles a energia viaja em alta tensão e chega baixa nas casas. CA dá choque sim, e CC também acende lâmpadas (a lanterna é prova).'}]},
+   moderado:{quadros:[
+     {fig:'ccGrafico',t:'Corrente contínua: polaridade fixa, sentido constante. Pilhas, baterias e painéis solares geram CC.'},
+     {fig:'caGrafico',t:'Corrente alternada: a tensão varia em forma de onda senoidal e inverte a polaridade. A rede tem {Hz} Hz: {Hz} ciclos e {2Hz} inversões por segundo.'},
+     {fig:'transmissao',t:'A CA permite usar transformadores: a usina eleva a tensão para transmitir com pouca perda, e a distribuição abaixa para {V} V.'},
+     {fig:'ccEmCasa',t:'Fontes de aparelhos convertem CA em CC (retificação). Inversores fazem o contrário: a CC do painel solar vira CA para a casa.'},
+     {fig:'caGrafico',t:'Os {V} V da tomada são o valor eficaz: equivalem, em aquecimento, a {V} V contínuos. É com esse valor que se calcula na prática.'}],
+    checa:[
+     {q:'A rede tem {Hz} Hz. Quantas vezes por segundo a corrente inverte o sentido?',o:['{2Hz} vezes','{Hz} vezes','A metade de {Hz} vezes'],w:'Cada ciclo tem duas inversões (vai e volta). Com {Hz} ciclos por segundo, são {2Hz} inversões.'},
+     {q:'Um painel solar alimenta as tomadas de uma casa. Qual equipamento é indispensável?',o:['Inversor, que transforma CC em CA','Retificador, que transforma CA em CC','Transformador ligado direto no painel'],w:'O painel gera CC e as tomadas usam CA: o inversor faz a conversão. O retificador faz o contrário, e o transformador não funciona com CC.'},
+     {q:'Por que a transmissão de energia é feita em alta tensão?',o:['Menos corrente para a mesma potência, menos perda nos cabos','A energia em alta tensão viaja mais rápido pelos cabos até as cidades','Os cabos de alta tensão não têm resistência'],w:'P = U × I: com tensão alta, a corrente é baixa, e a perda nos cabos (R × I²) cai muito. A velocidade da energia não muda e todo cabo tem resistência.'}]},
+   full:{quadros:[
+     {fig:'ccGrafico',t:'CC: u(t) = U constante. CA: u(t) = Up × sen(2π × f × t), com f = {Hz} Hz e período T = 1 ÷ f.'},
+     {fig:'caGrafico',t:'Valor eficaz (RMS): Uef = Up ÷ √2. Na rede de {V} V eficazes, o pico passa de {V} × 1,41.'},
+     {fig:'transmissao',t:'Perdas na transmissão: P = R × I². Para a mesma potência, elevar U reduz I; por isso se transmite em kV e se distribui em {V} V.'},
+     {fig:'ccEmCasa',t:'Conversão: retificador (CA → CC) com filtro capacitivo; inversor (CC → CA) com chaveamento eletrônico (PWM).'},
+     {fig:'caGrafico',t:'Em CA, além da resistência, bobinas e capacitores criam reatância: assunto dos próximos capítulos.'}],
+    checa:[
+     comRede(r=>{const T=1000/r.Hz,f=x=>x.toFixed(1).replace('.',',');return {q:'Na rede de '+r.Hz+' Hz, o período da onda é de…',o:[f(T)+' ms',f(2*T)+' ms',r.Hz+' ms'],w:'T = 1 ÷ f = 1 ÷ '+r.Hz+' s ≈ '+f(T)+' ms. '+f(2*T)+' ms seria o período de uma rede de '+(r.Hz/2)+' Hz; '+r.Hz+' ms confunde frequência com tempo.'}}),
+     comRede(r=>{const up=Math.round(r.V*Math.SQRT2),meio=Math.round(r.V/Math.SQRT2);return {q:'O pico de tensão da tomada de '+r.V+' V (eficaz) é de cerca de…',o:[up+' V',meio+' V',r.V+' V'],w:'Up = Uef × √2 ≈ '+r.V+' × 1,414 ≈ '+up+' V. '+r.V+' V é o valor eficaz; dividir por √2 inverte a relação.'}}),
+     {q:'Uma linha transmite a mesma potência em 13,8 kV e depois em 138 kV. A perda R × I² nos cabos…',o:['Cai para 1/100','Cai para 1/10','Continua a mesma'],w:'Com 10 vezes a tensão, a corrente cai 10 vezes e a perda R × I² cai 100 vezes.'}]}
+  }},
+ {id:'ccouca',nome:'CC ou CA?',sub:'Classifique a fonte',kind:'classificar',tipo:'sort',ic:'raio',cor:'#3a2a5e',
+  bins:[{r:1,t:'⎓ Contínua (CC)'},{r:0,t:'∿ Alternada (CA)'}],certo:['É alternada (CA).','É contínua (CC).'],dica:'Quase! Pense: o sentido da corrente fica o mesmo ou troca o tempo todo?',
+  pergunta:{leve:'Essa fonte dá corrente contínua ou alternada?',outro:'Classifique a forma de onda da fonte.'},fig:'formaOnda',
+  card:{leve:'Pilha e bateria: CC. Tomada: CA.',moderado:'Inversor: CC → CA. Retificador: CA → CC.',full:'Link CC do inversor: contínua; gerador síncrono: senoidal.'},
+  dados:{
+   leve:[{t:'Pilha da lanterna',i:'🔋',r:1,w:'A pilha tem + e − fixos.'},{t:'Tomada da casa',i:'🔌',r:0,w:'Vem da rede, que troca de sentido.'},{t:'Bateria do carro',i:'🚗',r:1,w:'Bateria guarda e entrega CC.'},
+     {t:'Bateria do celular',i:'📱',r:1,w:'Ela carrega e descarrega em CC.'},{t:'Fio do poste da rua',i:'⚡',r:0,w:'A rede de distribuição é CA.'},{t:'Placa solar',i:'☀️',r:1,w:'A placa gera CC; um aparelho (inversor) transforma em CA.'}],
+   moderado:[{t:'Saída do carregador de celular (5 V)',i:'🔌',r:1,w:'O carregador retifica a CA e entrega CC.'},{t:'Chuveiro na tomada',i:'🚿',r:0,w:'Ligado direto na rede: CA.'},{t:'Painel fotovoltaico',i:'☀️',r:1,w:'Célula fotovoltaica gera CC.'},
+     {t:'Saída do inversor solar',i:'🔁',r:0,w:'O inversor transforma a CC do painel em CA.'},{t:'Bateria do nobreak',i:'🔋',r:1,w:'Banco de baterias: CC.'},{t:'Secundário de um transformador',i:'🧲',r:0,w:'Transformador só trabalha com CA, nos dois lados.'}],
+   full:[{t:'Barramento interno do inversor',i:'⚙️',r:1,w:'Link CC entre o painel (ou retificador) e a ponte inversora.'},{t:'Rede de distribuição de 13,8 kV',i:'🗼',r:0,w:'Média tensão em CA.'},{t:'Banco de baterias de telecom (48 V)',i:'🔋',r:1,w:'Alimentação CC de centrais.'},
+     {t:'Gerador da hidrelétrica',i:'💧',r:0,w:'Gerador síncrono: tensão senoidal.'},{t:'Saída de um retificador com filtro',i:'〰️',r:1,w:'Retificado e filtrado: CC com pequena ondulação.'},{t:'Alimentação de um motor de indução',i:'⚙️',r:0,w:'O motor de indução depende do campo girante da CA.'}]}}
 ];
 /* Cenas antes das práticas (as aulas já são conduzidas pelo Mestre Chico) */
 const CAP1_CENAS={
+  capbanc:[['chico','Pega esse capacitor, {nome}. Ele guarda carga, igual uma pilha pequenininha que enche e esvazia rápido.'],['chico','Carrega, depois descarrega no LED. E presta atenção no ritmo.']],
+  eletroima:[['chico','Fio, prego e pilha: dá para fazer um ímã que liga e desliga.'],['chico','É o coração da contatora que você vai ver na fábrica. Bora pegar uns clipes.']],
+  ccouca:[['chico','Último teste da oficina: de onde vem cada tipo de corrente.']],
   parcc:[['chico','Duas lâmpadas na bancada, {nome}. Quero as duas fortes.'],['chico','E se uma queimar, a outra continua acesa. Como você liga?']],
   prevcc:[['chico','Antes de mexer, a gente prevê. Eletricista bom sabe o que vai acontecer.']],
   kirchcc:[['chico','Duas lâmpadas em série. Mede cada uma e mede as pilhas.'],['chico','A conta tem que fechar. Se não fechar, tem coisa errada.']],

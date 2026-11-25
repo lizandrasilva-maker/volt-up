@@ -476,6 +476,91 @@ function runCacaCC(p,d){const ROUNDS=2,zm=benchZoom(),res=[],usados=[];let round
   start();
 }
 
+/* ---------- Bancada: capacitor (Cap. 1) ----------
+   Mini-simulação no tempo (a bancada só calcula o regime permanente): pilhas (E = 3 V), resistor R e capacitor C.
+   Chave em CARREGAR: a pilha carrega o capacitor pelo R; em DESCARREGAR: o capacitor alimenta o LED pelo R; em
+   ABERTA: ele guarda a carga. u(t) = E·(1 − e^(−t/τ)) na carga e u(t) = U0·e^(−t/τ) na descarga, τ = R·C = 1 s.
+   d.tarefas: {id, t, cond(U, modo), ok} (cumprida sozinha) ou {q:(medidas)=>({q,o,w})}. d.relogio é para os testes. */
+const CAPC={E:3,R:1000,C:0.001};let CAP_TICK=null;
+function runCapacitor(p,d){
+  const tau=CAPC.R*CAPC.C,agoraMs=d.relogio||(()=>performance.now()),tarefas=d.tarefas,res=[],medidas={};
+  let i=0,ok=0,errou=false,modo='aberta',U0=0,t0=agoraMs(),msg=null;
+  const Uagora=()=>{const t=(agoraMs()-t0)/1000;return modo==='carga'?CAPC.E+(U0-CAPC.E)*Math.exp(-t/tau):modo==='descarga'?U0*Math.exp(-t/tau):U0};
+  const muda=m=>{U0=Uagora();t0=agoraMs();modo=m};
+  const fmt=x=>x.toFixed(2).replace('.',',');
+  const avanca=()=>{res[i]=!errou;if(!errou)ok++;i++;errou=false;if(i>=tarefas.length){CAP_TICK=null;finish(p,ok,tarefas.length);return false}return true};
+  const svg=()=>'<svg viewBox="0 0 320 180" class="capsim" aria-hidden="true">'+fDefs+fPilha(40,100,-90)+
+    '<path d="M40 70 V26 H96 M40 130 V162 H280 V111" class="af-fio"/><circle cx="104" cy="26" r="5" class="af-metal"/>'+
+    '<line id="capChave" x1="104" y1="26" x2="'+(modo==='carga'?146:modo==='descarga'?146:132)+'" y2="'+(modo==='carga'?20:modo==='descarga'?46:4)+'" class="af-chave"/>'+
+    '<circle cx="150" cy="20" r="4" class="af-metal"/><circle cx="150" cy="48" r="4" class="af-metal"/>'+fT(156,40,'carregar',{a:'start',c:'af-sub'})+fT(156,62,'descarregar',{a:'start',c:'af-sub'})+
+    '<path d="M154 20 H222" class="af-fio"/><rect x="222" y="12" width="36" height="16" rx="3" class="af-cartao"/>'+fT(240,44,'R',{c:'af-sub'})+'<path d="M258 20 H280 V84" class="af-fio"/>'+
+    '<rect x="256" y="84" width="48" height="7" rx="2" class="af-metal"/><rect x="256" y="104" width="48" height="7" rx="2" class="af-metal"/>'+fT(250,100,'C',{a:'end',c:'af-sub'})+
+    '<path d="M150 52 V76 H96 V118" class="af-fio"/><g transform="translate(96 132)"><circle id="capBrilho" r="22" fill="url(#afBrilho)" opacity="0"/><circle r="9" class="af-led"/></g>'+fT(112,136,'LED',{a:'start',c:'af-sub'})+'<path d="M96 141 V162" class="af-fio"/>'+
+    '<rect x="206" y="96" width="16" height="44" rx="3" class="af-cartao"/><rect id="capBarra" x="208" y="138" width="12" height="0" rx="2" class="af-barra luz"/>'+fT(214,154,'carga',{c:'af-sub'})+'</svg>';
+  const tick=()=>{const el=document.getElementById('capU');if(!el){CAP_TICK=null;return}const U=Uagora(),T=tarefas[i];
+    el.textContent=fmt(U);const I=modo==='carga'?(CAPC.E-U)/CAPC.R:modo==='descarga'?U/CAPC.R:0;document.getElementById('capI').textContent=(I*1000).toFixed(2).replace('.',',');
+    const b=document.getElementById('capBarra'),h=40*U/CAPC.E;b.setAttribute('y',(138-h).toFixed(1));b.setAttribute('height',h.toFixed(1));
+    document.getElementById('capBrilho').setAttribute('opacity',modo==='descarga'?Math.min(1,(U/CAPC.E)**2).toFixed(2):'0');
+    if(T&&T.cond&&T.cond(U,modo)){medidas[T.id]=U;msg={t:'✓ '+T.ok};if(avanca())render();return}
+    if(!reduzMov())requestAnimationFrame(()=>{if(CAP_TICK===tick)tick()})};
+  const reduzMov=()=>false;
+  const render=()=>{const T=tarefas[i];CAP_TICK=null;
+    if(T.q){const q=T.q(medidas),ordem=shuffle(q.o.map((t,k)=>({t,k})));
+      frame(p,progBar(tarefas.length,i,res)+(msg?'<div class="fb good">'+msg.t+'</div>':'')+'<div class="qcard"><p class="q">'+q.q+'</p></div>'+
+        '<div class="opts">'+ordem.map(o=>'<button class="btn opt" data-k="'+o.k+'">'+o.t+'</button>').join('')+'</div><div id="fb" class="opts"></div>');msg=null;
+      app.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{const certo=+b.dataset.k===0,fb=document.getElementById('fb');
+        if(certo||!L()){app.querySelectorAll('.opt').forEach(x=>{x.disabled=true;if(+x.dataset.k===0)x.classList.add('right')});if(!certo){b.classList.add('wrong','shake');errou=true}
+          if(certo&&!errou)S.xp+=10;save();fb.innerHTML='<div class="fb '+(certo?'good':'bad')+'">'+q.w+'</div>'+nextBtn(i===tarefas.length-1);
+          document.getElementById('nx').onclick=()=>{if(avanca())render()}}
+        else{errou=true;b.classList.add('wrong','shake');b.disabled=true;fb.innerHTML='<div class="fb bad">Quase! Pense no que você viu acontecer.</div>'}});return}
+    frame(p,progBar(tarefas.length,i,res)+missao(T.t,[],null,'TAREFA')+
+      '<div class="mm"><div class="mm-corpo"><div class="mm-lcd"><b id="capU">0,00</b><small>V⎓</small></div><div class="mm-baixo"><span class="chip">I = <b id="capI">0,00</b> mA</span><span class="chip">τ = R × C = 1 s</span></div></div></div>'+
+      '<figure class="lousa">'+svg()+'</figure>'+(msg?'<div class="fb good">'+msg.t+'</div>':'')+
+      '<div class="seg3">'+[['carga','🔋 Carregar'],['aberta','⏸ Aberta'],['descarga','💡 Descarregar']].map(([k,t])=>'<button class="btn" data-chave="'+k+'" aria-pressed="'+(modo===k)+'">'+t+'</button>').join('')+'</div>');
+    msg=null;app.querySelectorAll('[data-chave]').forEach(b=>b.onclick=()=>{muda(b.dataset.chave);render()});
+    CAP_TICK=tick;tick()};
+  render();
+}
+/* ---------- Bancada: eletroímã (Cap. 1) ----------
+   Bobina com N espiras (10, 20 ou 40) sobre núcleo de ar ou de ferro, alimentada por 1 ou 2 pilhas com um resistor
+   de 10 Ω: I = E ÷ 10 Ω. A força cresce com N × I (ampère-espira) e com o núcleo de ferro (μ relativo 8 no modelo).
+   Clipes seguros = ⌊N × I × μ ÷ 2,5⌋, até 12. Chave aberta: I = 0 e os clipes caem. */
+const EIMA={R:10,mu:{ar:1,ferro:8},max:12};
+function estadoEletroima(c){const I=c.lig?c.pilhas*1.5/EIMA.R:0,ae=c.N*I;return {I,ae,clipes:Math.min(EIMA.max,Math.floor(ae*EIMA.mu[c.nucleo]/2.5))}}
+function runEletroima(p,d){
+  const tarefas=d.tarefas,res=[],c={pilhas:1,N:10,nucleo:'ar',lig:false},fmt=(x,k)=>x.toFixed(k).replace('.',',');
+  let i=0,ok=0,errou=false,msg=null,feitas={};
+  const avanca=()=>{res[i]=!errou;if(!errou)ok++;i++;errou=false;if(i>=tarefas.length){finish(p,ok,tarefas.length);return false}return true};
+  const desenho=e=>'<svg viewBox="0 0 320 180" aria-hidden="true">'+fDefs+'<rect x="70" y="40" width="180" height="30" rx="5" class="'+(c.nucleo==='ferro'?'af-metal':'af-cota')+'"/>'+
+    Array.from({length:c.N/5+2},(_,k)=>'<ellipse cx="'+(80+k*(160/(c.N/5+1)))+'" cy="55" rx="5" ry="22" class="af-fio vermelho'+(c.lig?'':' apagado')+'"/>').join('')+
+    fT(160,26,c.N+' espiras · núcleo de '+c.nucleo,{c:'af-sub'})+
+    Array.from({length:e.clipes},(_,k)=>fEmo(84+(k%6)*30,106+Math.floor(k/6)*26,'📎',18)).join('')+
+    '<line x1="40" y1="170" x2="280" y2="170" class="af-cota"/>'+fT(160,164,e.clipes?'':'os clipes ficam na mesa',{c:'af-sub'})+'</svg>';
+  const render=()=>{const T=tarefas[i],e=estadoEletroima(c);
+    if(T.q){const q=T.q(feitas),ordem=shuffle(q.o.map((t,k)=>({t,k})));
+      frame(p,progBar(tarefas.length,i,res)+(msg?'<div class="fb good">'+msg.t+'</div>':'')+'<div class="qcard"><p class="q">'+q.q+'</p></div>'+
+        '<div class="opts">'+ordem.map(o=>'<button class="btn opt" data-k="'+o.k+'">'+o.t+'</button>').join('')+'</div><div id="fb" class="opts"></div>');msg=null;
+      app.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{const certo=+b.dataset.k===0,fb=document.getElementById('fb');
+        if(certo||!L()){app.querySelectorAll('.opt').forEach(x=>{x.disabled=true;if(+x.dataset.k===0)x.classList.add('right')});if(!certo){b.classList.add('wrong','shake');errou=true}
+          if(certo&&!errou)S.xp+=10;save();fb.innerHTML='<div class="fb '+(certo?'good':'bad')+'">'+q.w+'</div>'+nextBtn(i===tarefas.length-1);
+          document.getElementById('nx').onclick=()=>{if(avanca())render()}}
+        else{errou=true;b.classList.add('wrong','shake');b.disabled=true;fb.innerHTML='<div class="fb bad">Quase! Lembre o que fez o eletroímã ficar mais forte.</div>'}});return}
+    frame(p,progBar(tarefas.length,i,res)+missao(T.t,[],null,'TAREFA')+'<figure class="lousa eima">'+desenho(e)+'</figure>'+
+      '<div class="status"><span class="chip'+(e.clipes?' lit':'')+'">📎 '+e.clipes+' de '+EIMA.max+' clipes</span>'+(L()?'':'<span class="chip">I = '+fmt(e.I,2)+' A · N × I = '+fmt(e.ae,1)+' A·esp</span>')+'</div>'+
+      (msg?'<div class="fb good">'+msg.t+'</div>':'')+
+      '<span class="eyebrow">Pilhas</span><div class="seg">'+[1,2].map(n=>'<button class="btn" data-pilhas="'+n+'" aria-pressed="'+(c.pilhas===n)+'">'+n+' pilha'+(n>1?'s':'')+' ('+fmt(1.5*n,1)+' V)</button>').join('')+'</div>'+
+      '<span class="eyebrow">Espiras</span><div class="seg3">'+[10,20,40].map(n=>'<button class="btn" data-esp="'+n+'" aria-pressed="'+(c.N===n)+'">'+n+' voltas</button>').join('')+'</div>'+
+      '<span class="eyebrow">Núcleo</span><div class="seg">'+[['ar','Ar (vazio)'],['ferro','Prego de ferro']].map(([k,t])=>'<button class="btn" data-nuc="'+k+'" aria-pressed="'+(c.nucleo===k)+'">'+t+'</button>').join('')+'</div>'+
+      '<div class="row"><button class="btn main" id="chave">'+(c.lig?'⏹ Desligar a chave':'⚡ Ligar a chave')+'</button></div>');
+    msg=null;
+    const muda=f=>{f();const e2=estadoEletroima(c),T2=tarefas[i];if(T2.cond&&T2.cond(c,e2)){feitas[T2.id]={...c,...e2};msg={t:'✓ '+T2.ok};if(!avanca())return}render()};
+    app.querySelectorAll('[data-pilhas]').forEach(b=>b.onclick=()=>muda(()=>{c.pilhas=+b.dataset.pilhas}));
+    app.querySelectorAll('[data-esp]').forEach(b=>b.onclick=()=>muda(()=>{c.N=+b.dataset.esp}));
+    app.querySelectorAll('[data-nuc]').forEach(b=>b.onclick=()=>muda(()=>{c.nucleo=b.dataset.nuc}));
+    document.getElementById('chave').onclick=()=>muda(()=>{c.lig=!c.lig})};
+  render();
+}
+
 /* ---------- Bancada: caça-defeito ---------- */
 function diagCircuit(V){return withPE({comps:[BAT(),C('F','fuse',125,48,0,{lab:'DJ'}),C('S1','sw',225,48,0,{closed:true}),C('L1','lamp',300,140,1)],
   wires:[W('B.0','F.0','v'),W('F.1','S1.0'),W('S1.1','L1.0','h'),W('L1.1','B.1','h')]})}
