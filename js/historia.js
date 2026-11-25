@@ -42,9 +42,8 @@ Object.assign(NPC,{
 ['chico','fatima','lia','socorro','damiao','rayane','raimundo'].forEach(k=>{if(IMG[k]&&IMG[k+'_body']){NPC[k].body=IMG[k+'_body'];NPC[k].svg=picSVG(IMG[k])}});
 const CHAPTERS=[
  {id:'cap1',nome:'A Oficina do Mestre Chico',tema:'Corrente contínua e fundamentos',
-  fases:['energia','renovavel','carga','macaneta','condutor','continuidade','grandezas','lanterna','medicao','medir','leiohm','ohmcc'],
-  breve:['📘 Série e paralelo · 🔧 Série ou Paralelo na bancada CC','🔧 Previsão na bancada CC',
-    '📘 Kirchhoff · 🔧 Kirchhoff na bancada','🔧 Caça-Defeito da lanterna de emergência','📘 Capacitor · 🔧 Capacitor na bancada','📘 Ímã e bobina · 🔧 Eletroímã','📘 CC × CA · 🔧 CC ou CA?'],
+  fases:['energia','renovavel','carga','macaneta','condutor','continuidade','grandezas','lanterna','medicao','medir','leiohm','ohmcc','seriepar','parcc','prevcc','kirchhoff','kirchcc','emergencia'],
+  breve:['📘 Capacitor · 🔧 Capacitor na bancada','📘 Ímã e bobina · 🔧 Eletroímã','📘 CC × CA · 🔧 CC ou CA?'],
   intro:[['chico','Gente nova na oficina! Boas-vindas, {nome}.'],['eu','Bom dia, Mestre! Pronto pra começar o serviço!'],
     ['chico','Calma. Antes de atender cliente, você aprende o básico aqui na bancada: pilha, bateria, fio e lâmpada pequena.'],
     ['chico','É corrente contínua: a mais simples de entender e segura para treinar. A energia da tomada fica para depois.'],

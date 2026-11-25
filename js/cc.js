@@ -24,7 +24,8 @@ const CC={R_INTERNA:0.2,VN:3,IN:0.3,QUEIMA:1.35,I_CURTO:2,
     const I=n=>n===ref?-1:idx[n];
     const cond=(a,b,g)=>{const A=I(a),B=I(b);if(A>=0){G[A][A]+=g;if(B>=0)G[A][B]-=g}if(B>=0){G[B][B]+=g;if(A>=0)G[B][A]-=g}};
     const inj=(n,i)=>{const A=I(n);if(A>=0)G[A][m]+=i};
-    const Vp=c=>pilhaV&&pilhaV[c.id]!==undefined?pilhaV[c.id]:(c.V||1.5);
+    /* fem: a pilha fraca (caça-defeito) tem fem própria; o rótulo continua mostrando a tensão nominal c.V */
+    const Vp=c=>pilhaV&&pilhaV[c.id]!==undefined?pilhaV[c.id]:c.fem!==undefined?c.fem:(c.V||1.5);
     comps.forEach(c=>{
       if(c.type==='lamp'&&!c.broken)cond(u.find(c.id+'.0'),u.find(c.id+'.1'),1/CC.rLamp(c));
       if(c.type==='resistor')cond(u.find(c.id+'.0'),u.find(c.id+'.1'),1/(c.R||100));

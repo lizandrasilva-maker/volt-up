@@ -183,6 +183,19 @@ try{
    sv().querySelector('[data-sw="S1"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));m.aberto=lcd()==='3,00';reg();
    const q=(document.querySelector('.qcard .q')||{}).textContent||'';m.perguntaComMedidas=q.includes('2,88')&&q.includes('3,00');
    const ph=new Set(PHASES.map(x=>x.id));m.fases=['medicao','medir','leiohm','ohmcc'].every(x=>ph.has(x));R.medir=m;}
+  /* Ato 3: montagem em paralelo (a série é recusada), previsão em CC e caça-defeito da lanterna de emergência */
+  {const a={};S.mode='moderado';S.vista={moderado:'real'};
+   const p=phaseById('parcc'),d=comARede(p.dados.moderado);
+   a.recusaSerie=/série/i.test(d.check({comps:clone(d.comps),wires:[W('P1.0','S1.0'),W('S1.1','L1.0'),W('L1.1','L2.0'),W('L2.1','P2.1'),W('P1.1','P2.0')]},2)||'');
+   a.aprovaParalelo=d.check({comps:clone(d.comps),wires:testeSol('parcc')},1)===null;
+   const pv=phaseById('prevcc');runPredict(pv,comARede(pv.dados.moderado));a.prevBancada=!!document.querySelector('#bd .bench svg');
+   document.querySelector('.opt[data-k="0"]').click();a.prevApagou=/apaga/i.test(document.getElementById('fb').textContent);
+   const pe=phaseById('emergencia'),de=comARede(pe.dados.moderado);de.cand=['L1'];runCacaCC(pe,de);
+   const sv=()=>document.querySelector('.bench svg'),t=id=>sv().querySelector('[data-t="'+id+'"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));
+   t('L1.0');t('L1.1');a.mede3=document.querySelector('.mm-lcd b').textContent==='3,00';document.getElementById('reg').click();a.anotou=document.querySelectorAll('.medidas li').length===1;
+   document.querySelector('[data-def="S1"]').click();a.erroExplica=/Não é o interruptor/.test(document.getElementById('app').textContent);
+   document.querySelector('[data-def="L1"]').click();a.achou=!!document.getElementById('nx')&&/L1 aberta/.test(document.getElementById('app').textContent);
+   R.ato3=a;}
   // 8c) Caça-Defeito com multímetro e ponteiras: sem letras nos parafusos; arrastar a vermelha, tocar para a preta, o visor mede
   {const mm={};S.mode='moderado';const pd=phaseById('defeito');runDiag(pd,pd.dados.moderado);
     const svg=()=>document.querySelector('.bench svg'),lcd=()=>(document.querySelector('.mm-lcd b')||{}).textContent;
