@@ -196,6 +196,16 @@ try{
    document.querySelector('[data-def="S1"]').click();a.erroExplica=/Não é o interruptor/.test(document.getElementById('app').textContent);
    document.querySelector('[data-def="L1"]').click();a.achou=!!document.getElementById('nx')&&/L1 aberta/.test(document.getElementById('app').textContent);
    R.ato3=a;}
+  /* Ato 4: capacitor (relógio de teste: 1τ = 63 %), eletroímã (clipes por N × I × núcleo) e fim do capítulo */
+  {const c={};let rel=0;const p=phaseById('capbanc'),d=comARede(p.dados.moderado);d.relogio=()=>rel;runCapacitor(p,d);
+   document.querySelector('[data-chave="carga"]').click();rel+=1000;CAP_TICK();c.umTau=document.getElementById('capU').textContent==='1,90';
+   rel+=3000;CAP_TICK();c.carregou=/Carregado/.test(document.getElementById('app').textContent);
+   document.querySelector('[data-chave="descarga"]').click();rel+=1000;CAP_TICK();c.ledAceso=+document.getElementById('capBrilho').getAttribute('opacity')>0;
+   rel+=4000;CAP_TICK();c.descarregou=!!document.querySelector('.qcard');CAP_TICK=null;R.capacitor=c;}
+  {const e={},p=phaseById('eletroima');runEletroima(p,comARede(p.dados.moderado));const cl=s=>document.querySelector(s).click(),txt=()=>document.getElementById('app').textContent;
+   cl('#chave');e.fraco=/📎 0 de 12/.test(txt());cl('[data-nuc="ferro"]');e.quatro=/Força suficiente/.test(txt());
+   cl('[data-pilhas="2"]');cl('[data-esp="40"]');e.doze=/Máximo/.test(txt());cl('#chave');e.solta=!!document.querySelector('.qcard');
+   e.fimCap=!!(CHAPTERS[0].fim&&CHAPTERS[0].fim.length)&&!CHAPTERS[0].breve;R.eletroima=e;}
   // 8c) Caça-Defeito com multímetro e ponteiras: sem letras nos parafusos; arrastar a vermelha, tocar para a preta, o visor mede
   {const mm={};S.mode='moderado';const pd=phaseById('defeito');runDiag(pd,pd.dados.moderado);
     const svg=()=>document.querySelector('.bench svg'),lcd=()=>(document.querySelector('.mm-lcd b')||{}).textContent;

@@ -42,12 +42,15 @@ Object.assign(NPC,{
 ['chico','fatima','lia','socorro','damiao','rayane','raimundo'].forEach(k=>{if(IMG[k]&&IMG[k+'_body']){NPC[k].body=IMG[k+'_body'];NPC[k].svg=picSVG(IMG[k])}});
 const CHAPTERS=[
  {id:'cap1',nome:'A Oficina do Mestre Chico',tema:'Corrente contínua e fundamentos',
-  fases:['energia','renovavel','carga','macaneta','condutor','continuidade','grandezas','lanterna','medicao','medir','leiohm','ohmcc','seriepar','parcc','prevcc','kirchhoff','kirchcc','emergencia'],
-  breve:['📘 Capacitor · 🔧 Capacitor na bancada','📘 Ímã e bobina · 🔧 Eletroímã','📘 CC × CA · 🔧 CC ou CA?'],
+  fases:['energia','renovavel','carga','macaneta','condutor','continuidade','grandezas','lanterna','medicao','medir','leiohm','ohmcc','seriepar','parcc','prevcc','kirchhoff','kirchcc','emergencia','capacitor','capbanc','imabobina','eletroima','ccca','ccouca'],
   intro:[['chico','Gente nova na oficina! Boas-vindas, {nome}.'],['eu','Bom dia, Mestre! Pronto pra começar o serviço!'],
     ['chico','Calma. Antes de atender cliente, você aprende o básico aqui na bancada: pilha, bateria, fio e lâmpada pequena.'],
     ['chico','É corrente contínua: a mais simples de entender e segura para treinar. A energia da tomada fica para depois.'],
-    ['chico','Cada assunto tem uma aula e depois uma prática para você provar que entendeu.']]},
+    ['chico','Cada assunto tem uma aula e depois uma prática para você provar que entendeu.']],
+  fim:[['chico','Pilha, medição, lei de Ohm, Kirchhoff, capacitor e eletroímã. A oficina ficou pequena para você, {nome}.'],
+    ['chico','Tem uma cliente, a Dona Fátima, com a casa antiga cheia de problema. Amanhã a gente vai lá.'],
+    ['eu','Casa? Então é a corrente alternada da tomada!'],
+    ['chico','Isso. Bem mais forte que a pilha. Lá, segurança vem antes de tudo.']]},
 
  /* Cada capítulo é uma história própria, com personagens e biblioteca de peças (BIBLIOTECAS em fases.js).
     Um capítulo só abre quando o anterior estiver completo (no modo teste, tudo abre). */

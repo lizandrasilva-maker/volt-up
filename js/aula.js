@@ -125,6 +125,43 @@ const FIG={
     fT(160,176,'amperímetro em paralelo: vira um curto',{c:'af-erro'}),
   ohmimetro:()=>fDefs+fLamp(110,78,false)+'<path d="M104 98 V132 H222 V97" class="af-fio vermelho"/><path d="M116 98 V120 H238 V97" class="af-fio"/>'+fMed(230,80,'Ω')+
     fEmo(262,36,'🔋',20)+'<path d="M250 22 l26 28 M276 22 l-26 28" class="af-seta af-erro"/>'+fT(160,176,'ohmímetro: peça sem energia (pilha fora)',{c:'af-sub'}),
+  /* ---- Ato 4: capacitor, ímã e bobina, CC × CA ---- */
+  capCarga:()=>fDefs+fPilha(40,100,-90)+fFluxo('M40 70 V30 H150',false)+'<rect x="150" y="22" width="40" height="16" rx="3" class="af-cartao"/>'+fT(170,52,'R',{c:'af-sub'})+fFluxo('M190 30 H250 V72',false)+
+    '<rect x="226" y="72" width="48" height="7" rx="2" class="af-metal"/><rect x="226" y="90" width="48" height="7" rx="2" class="af-metal"/>'+fFluxo('M250 97 V160 H40 V130',true)+
+    [0,1,2,3].map(k=>fCarga(234+k*12,66,1,4)).join('')+[0,1,2,3].map(k=>fCarga(234+k*12,103,-1,4)).join('')+fT(160,176,'as placas vão juntando carga',{c:'af-sub'}),
+  capCurva:()=>fDefs+'<path d="M40 150 H290 M40 150 V24" class="af-cota"/><path d="M40 150 C80 60 140 40 290 34" class="af-fio vermelho"/><line x1="40" y1="34" x2="290" y2="34" class="af-cota"/>'+
+    '<line x1="90" y1="150" x2="90" y2="78" class="af-cota"/>'+fT(90,166,'τ',{c:'af-amb'})+fT(96,74,'63 %',{a:'start',c:'af-amb'})+fT(286,28,'tensão da pilha',{a:'end',c:'af-sub'})+fT(292,166,'tempo',{a:'end',c:'af-sub'})+fT(150,120,'rápido no começo, devagar no fim',{c:'af-sub'}),
+  capDescarga:()=>fDefs+'<rect x="56" y="72" width="48" height="7" rx="2" class="af-metal"/><rect x="56" y="90" width="48" height="7" rx="2" class="af-metal"/>'+
+    [0,1,2].map(k=>fCarga(66+k*14,66,1,4)).join('')+[0,1,2].map(k=>fCarga(66+k*14,103,-1,4)).join('')+fFluxo('M80 72 V30 H240 V58',false)+fFluxo('M240 100 V150 H80 V97',true)+fLamp(240,80,true)+
+    fT(160,176,'sem pilha: o capacitor devolve a carga e o LED vai apagando',{c:'af-sub'}),
+  capPerigo:()=>fDefs+'<rect x="70" y="30" width="180" height="110" rx="10" class="af-cartao"/>'+'<rect x="96" y="70" width="34" height="50" rx="6" class="af-metal"/><rect x="146" y="70" width="34" height="50" rx="6" class="af-metal"/>'+
+    fEmo(220,62,'⚠️',26)+fEmo(214,120,'🔌',20)+'<path d="M200 108 l26 26 M226 108 l-26 26" class="af-seta af-erro"/>'+fT(160,22,'fonte desligada da tomada',{c:'af-sub'})+fT(160,166,'os capacitores podem continuar carregados',{c:'af-erro'}),
+  ima:()=>fDefs+'<rect x="110" y="74" width="50" height="34" rx="4" class="af-pos"/><rect x="160" y="74" width="50" height="34" rx="4" class="af-neg"/>'+fT(135,97,'N',{s:16,c:'af-escuro'})+fT(185,97,'S',{s:16})+
+    [18,34,50].map(d=>'<path d="M110 91 C'+(110-d*2)+' '+(91-d*1.6)+' '+(210+d*2)+' '+(91-d*1.6)+' 210 91" class="af-cota" style="fill:none"/><path d="M110 91 C'+(110-d*2)+' '+(91+d*1.6)+' '+(210+d*2)+' '+(91+d*1.6)+' 210 91" class="af-cota" style="fill:none"/>').join('')+
+    fT(160,174,'o campo sai do norte e entra no sul',{c:'af-sub'}),
+  oersted:()=>fDefs+fFluxo('M30 90 H290',false)+'<ellipse cx="160" cy="90" rx="44" ry="16" class="af-cota" style="fill:none"/><ellipse cx="160" cy="90" rx="70" ry="26" class="af-cota" style="fill:none"/>'+
+    '<g transform="translate(160 140)"><circle r="20" class="af-bola"/><g class="af-gira"><path d="M0 -15 L5 0 L0 15 L-5 0 Z" class="af-pos"/></g></g>'+fT(160,24,'corrente no fio cria campo em volta dele',{c:'af-sub'}),
+  bobina:()=>fDefs+'<rect x="80" y="70" width="160" height="28" rx="5" class="af-metal"/>'+Array.from({length:9},(_,k)=>'<ellipse cx="'+(96+k*16)+'" cy="84" rx="7" ry="22" class="af-fio vermelho"/>').join('')+
+    fPilha(160,150,0)+'<path d="M134 150 H70 V84 H89 M186 150 H250 V84 H231" class="af-fio"/>'+[0,1,2].map(k=>'<g class="af-pula" style="animation-delay:'+(k*.3)+'s">'+fEmo(264,108+k*16,'📎',14)+'</g>').join('')+
+    fT(160,30,'muitas voltas + ferro no meio = eletroímã forte',{c:'af-sub'}),
+  inducao:()=>fDefs+Array.from({length:7},(_,k)=>'<ellipse cx="'+(150+k*16)+'" cy="90" rx="7" ry="24" class="af-fio vermelho"/>').join('')+
+    '<g class="af-afasta r"><rect x="60" y="78" width="30" height="24" rx="3" class="af-pos"/><rect x="90" y="78" width="30" height="24" rx="3" class="af-neg"/></g>'+fLamp(290,60,true)+'<path d="M150 66 V40 H290 M246 114 V150 H300 V82" class="af-fio"/>'+
+    fT(160,176,'ímã mexendo dentro da bobina: aparece tensão',{c:'af-sub'}),
+  contatoraIma:()=>fDefs+'<rect x="60" y="100" width="100" height="44" rx="6" class="af-metal"/>'+Array.from({length:6},(_,k)=>'<ellipse cx="'+(74+k*14)+'" cy="122" rx="6" ry="20" class="af-fio vermelho"/>').join('')+
+    '<g class="af-pula"><rect x="60" y="62" width="100" height="14" rx="3" class="af-metal"/></g>'+'<path d="M110 62 V36 H210" class="af-fio"/><circle cx="214" cy="36" r="5" class="af-metal"/><line x1="220" y1="36" x2="262" y2="36" class="af-chave"/><circle cx="266" cy="36" r="5" class="af-metal"/>'+
+    fT(110,164,'bobina A1-A2',{c:'af-sub'})+fT(240,62,'contato fecha',{c:'af-ok'})+fT(160,176,'sem corrente, a mola abre',{c:'af-sub'}),
+  ccGrafico:()=>fDefs+'<path d="M30 110 H296 M40 170 V20" class="af-cota"/><line x1="40" y1="54" x2="290" y2="54" class="af-fio vermelho"/>'+fT(46,46,'+1,5 V',{a:'start',c:'af-amb'})+fT(292,126,'tempo',{a:'end',c:'af-sub'})+fT(160,160,'contínua: o mesmo sentido o tempo todo',{c:'af-sub'}),
+  caGrafico:()=>fDefs+'<path d="M30 92 H296 M40 170 V14" class="af-cota"/><path d="M40 92 C60 22 80 22 100 92 S140 162 160 92 S200 22 220 92 S260 162 280 92" class="af-fio vermelho"/>'+
+    fT(70,34,'+',{c:'af-amb'})+fT(130,160,'−',{c:'af-amb'})+fT(292,108,'tempo',{a:'end',c:'af-sub'})+fT(160,178,'alternada: vai e volta {Hz} vezes por segundo',{c:'af-sub'}),
+  transmissao:()=>fDefs+fEmo(30,70,'🏭',24)+fEmo(100,70,'🔺',20)+fEmo(200,70,'🔻',20)+fEmo(276,70,'🏠',24)+'<path d="M46 70 H86 M114 70 H186 M214 70 H260" class="af-fio vermelho"/>'+
+    fT(100,104,'eleva',{c:'af-sub'})+fT(150,58,'alta tensão',{c:'af-amb'})+fT(200,104,'abaixa',{c:'af-sub'})+fT(276,104,'{V} V',{c:'af-amb'})+fT(160,160,'transformador só funciona com corrente alternada',{c:'af-sub'}),
+  ccEmCasa:()=>fDefs+fEmo(40,90,'🔌',26)+'<path d="M58 90 H100" class="af-fio vermelho"/><rect x="100" y="64" width="90" height="52" rx="8" class="af-cartao"/>'+fT(145,86,'CA → CC',{c:'af-amb'})+fT(145,104,'carregador',{c:'af-sub'})+
+    '<path d="M190 90 H240" class="af-fio"/>'+fEmo(262,92,'📱',30)+fT(80,130,'CA',{c:'af-sub'})+fT(215,130,'CC',{c:'af-sub'})+fT(160,170,'muitos aparelhos usam CC por dentro',{c:'af-sub'}),
+  /* forma de onda da fonte (classificar CC ou CA): "?" antes, reta (CC) ou senoide (CA) depois */
+  formaOnda:(f)=>{const e=f.estado;return fDefs+fEmo(46,60,f.e||'❓',30)+'<path d="M90 100 H300 M100 160 V30" class="af-cota"/>'+
+    (e==='conduz'?'<line x1="100" y1="58" x2="296" y2="58" class="af-fio vermelho"/>'+fT(200,48,'contínua (CC)',{c:'af-ok'})
+     :e==='isola'?'<path d="M100 100 C116 40 132 40 148 100 S180 160 196 100 S228 40 244 100 S276 160 292 100" class="af-fio vermelho"/>'+fT(200,30,'alternada (CA)',{c:'af-ok'})
+     :fT(200,90,'?',{s:34,c:'af-amb'}))},
   /* ---- Ato 3: série, paralelo e Kirchhoff ---- */
   serieLamp:()=>fDefs+fPilha(40,100,-90)+fFluxo('M40 70 V30 H290 V160 H40 V130',false)+fLamp(130,30,true)+fLamp(220,30,true)+fT(160,110,'a mesma corrente passa pelas duas',{c:'af-sub'})+fT(160,176,'série: um caminho só',{c:'af-sub'}),
   serieQueima:()=>fDefs+fPilha(40,100,-90)+'<path d="M40 70 V30 H290 V160 H40 V130" class="af-fio"/>'+fLamp(130,30,false)+'<path d="M122 14 l7 7 l-5 4 l9 7" class="af-raio af-pisca"/>'+fLamp(220,30,false)+fT(160,176,'uma abre, as duas apagam',{c:'af-erro'}),

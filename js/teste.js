@@ -100,7 +100,7 @@ TESTE_SOL['quadronovo:full']=TESTE_SOL['quadronovo:moderado'];TESTE_SOL['impulso
 function testeSol(pid){const s=TESTE_SOL[pid+':'+S.mode];return s?s.map(([a,b,cor])=>Object.assign(W(a,b),{cor})):null}
 
 /* ---------- Roteiro: a história inteira em texto, com atalho para ver cada cena ou jogar a fase ---------- */
-const TIPO_NOME={aula:'Aula',quiz:'Quiz',sort:'Classificar',build:'Bancada: montar',medir:'Bancada: medir',cacacc:'Bancada: caça-defeito (CC)',predict:'Bancada: prever',diag:'Bancada: diagnóstico'};
+const TIPO_NOME={aula:'Aula',quiz:'Quiz',sort:'Classificar',build:'Bancada: montar',medir:'Bancada: medir',cacacc:'Bancada: caça-defeito (CC)',capacitor:'Bancada: capacitor',eletroima:'Bancada: eletroímã',predict:'Bancada: prever',diag:'Bancada: diagnóstico'};
 function falasHTML(lines){
   const nm=esc(S.name||charOf().nome);
   return '<div class="falas">'+lines.map(([who,t])=>'<p><b>'+(who==='eu'?nm:NPC[who].nome)+':</b> '+esc(rd(t)).replace(/\{nome\}/g,nm)+'</p>').join('')+'</div>';

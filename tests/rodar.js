@@ -34,7 +34,8 @@ function abrir(chrome,url,webgl){return new Promise((ok,falha)=>{
   const args=['--headless=new',...(webgl?['--use-angle=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist']:['--disable-gpu']),'--no-first-run','--no-default-browser-check','--user-data-dir='+perfil,'--virtual-time-budget=20000','--dump-dom',url];
   if(process.env.CI||process.platform==='linux')args.unshift('--no-sandbox');
   const p=spawn(chrome,args,{stdio:['ignore','pipe','ignore']});let html='';
-  const t=setTimeout(()=>{p.kill();falha(new Error('Chrome demorou demais em '+url))},90000);
+  /* a página da 3D monta dezenas de bancadas (WebGL por software e traçado dos fios): tem mais tempo */
+  const t=setTimeout(()=>{p.kill();falha(new Error('Chrome demorou demais em '+url))},webgl?180000:90000);
   p.stdout.on('data',d=>html+=d);
   p.on('close',()=>{clearTimeout(t);try{fs.rmSync(perfil,{recursive:true,force:true})}catch{}
     const m=html.match(/<pre id="out">([\s\S]*?)<\/pre>/);
@@ -64,7 +65,7 @@ let pistas={};
     for(const[k,v]of Object.entries(t.previsao||{}))confere('Previsões',v==='girando → parado',k,v);
     for(const[k,v]of Object.entries(t.quizzes||{}))confere('Estrutura dos quizzes',v==='3q/333',k,v);
     const p=pistas=t.pistas||{};
-    confere('Pistas nos quizzes',p.perguntas===153,'153 perguntas (quizzes e fim das aulas)',p.perguntas+' encontradas');
+    confere('Pistas nos quizzes',p.perguntas===180,'180 perguntas (quizzes e fim das aulas)',p.perguntas+' encontradas');
     confere('Pistas nos quizzes',p.certaMaisLonga/p.perguntas<=1/3,'certa não é a mais longa além do acaso (≤ 33 %)',p.certaMaisLonga+' de '+p.perguntas);
     confere('Pistas nos quizzes',p.absolutaSoNasErradas<=Math.max(4,p.absolutaNaCerta+3),'palavras absolutas não denunciam as erradas',p.absolutaSoNasErradas+' só nas erradas, '+p.absolutaNaCerta+' na certa');
     confere('Pistas nos quizzes',p.ecoDoEnunciado/p.perguntas<=0.10,'certa não é a única a repetir o enunciado (≤ 10 %)',p.ecoDoEnunciado+' de '+p.perguntas);
@@ -115,7 +116,11 @@ let pistas={};
      confere('Corrente contínua (Pilha e Lanterna)',J(k.curto)==='[true,7.5]','fio direto na pilha: curto de 7,5 A (1,5 V ÷ 0,2 Ω)',J(k.curto));
      confere('Corrente contínua (Pilha e Lanterna)',J(k.etapas)==='[true,true,true,true]','retorno em etapas (pista → explicação) e com linguagem diferente por nível',J(k.etapas));
      confere('Corrente contínua (Pilha e Lanterna)',k.troca===true&&k.tela===true,'lâmpada queimada troca com um toque; bancada CC sem a faixa do poste, com aviso do modelo e fios + e −');
-     confere('Corrente contínua (Pilha e Lanterna)',k.ordemCap1==='energia,renovavel,carga,macaneta,condutor,continuidade,grandezas,lanterna,medicao,medir,leiohm,ohmcc,seriepar,parcc,prevcc,kirchhoff,kirchcc,emergencia','Capítulo 1 só de CC, alternando aula e prática (Atos 1 a 3)',k.ordemCap1);}
+     confere('Corrente contínua (Pilha e Lanterna)',k.ordemCap1==='energia,renovavel,carga,macaneta,condutor,continuidade,grandezas,lanterna,medicao,medir,leiohm,ohmcc,seriepar,parcc,prevcc,kirchhoff,kirchcc,emergencia,capacitor,capbanc,imabobina,eletroima,ccca,ccouca','Capítulo 1 só de CC, alternando aula e prática (Atos 1 a 4)',k.ordemCap1);}
+    {const c=t.capacitor||{},e=t.eletroima||{};
+     confere('Corrente contínua (Pilha e Lanterna)',c.umTau===true&&c.carregou===true&&c.ledAceso===true&&c.descarregou===true,'Capacitor na bancada: em 1τ chega a 63 % (1,90 V de 3 V), carrega, descarrega acendendo o LED',JSON.stringify(c));
+     confere('Corrente contínua (Pilha e Lanterna)',e.fraco===true&&e.quatro===true&&e.doze===true&&e.solta===true,'Eletroímã: 1 pilha e 10 espiras no ar não pegam clipe; o ferro, mais pilhas e mais espiras pegam 12; desligar solta',JSON.stringify(e));
+     confere('Corrente contínua (Pilha e Lanterna)',e.fimCap===true,'Capítulo 1 completo: tem a cena de fim e não sobra nada "em breve"');}
     {const a=t.ato3||{};
      confere('Corrente contínua (Pilha e Lanterna)',a.recusaSerie===true&&a.aprovaParalelo===true,'Série ou Paralelo: lâmpadas em série são recusadas com a explicação; o paralelo do gabarito é aprovado',JSON.stringify(a));
      confere('Corrente contínua (Pilha e Lanterna)',a.prevBancada===true&&a.prevApagou===true,'Previsão na bancada CC: a cena abre e a ação acontece (L1 abre, a L2 apaga na série)',JSON.stringify(a));
