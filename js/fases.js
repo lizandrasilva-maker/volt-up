@@ -346,12 +346,12 @@ function runPredict(p,list){
     const it=list[i],st=it.sc(),opts=shuffle(it.o.map((t,k)=>({t,k})));
     let after=false,ultimo=null;
     /* a mesma bancada das fases de montar (3D ou 2D com as peças novas), só para olhar; sem WebGL, o desenho antigo */
-    const draw=()=>{const r=solve(st.comps,st.wires),p3=pode3D(st),v3=quer3D(st),aguarda=!v3&&p3&&VISTA3D.ligada&&VISTA3D.baixavel&&!VISTA3D.vista&&!VISTA3D.erro;
+    const draw=()=>{const r=p.cc?CC.paraBancada(CC.resolver(st.comps,st.wires)):solve(st.comps,st.wires),p3=pode3D(st),v3=quer3D(st),aguarda=!v3&&p3&&VISTA3D.ligada&&VISTA3D.baixavel&&!VISTA3D.vista&&!VISTA3D.erro;
       if(aguarda)carrega3D();ultimo={r,v3};const est=Object.values(r.lamp||{}).some(b=>b>.04)?'on':'';
-      return benchWrap(v3||aguarda?'':board(st,{res:r,cls:after?'flash':'',real:vistaReal(),vb:zm.vb()}),'',zm,false,v3||aguarda,p3,aguarda,est)+statusChips(st,r,true)};
+      return benchWrap(v3||aguarda?'':board(st,{res:r,cls:after?'flash':'',real:p.cc||vistaReal(),vb:zm.vb()}),'',zm,!!p.cc,v3||aguarda,p3,aguarda,est)+(p.cc?chipsCC(st,r):statusChips(st,r,true))};
     const redesenha=()=>{document.getElementById('bd').innerHTML=draw();bindBd()};
     const bindBd=()=>{VISTA3D.redesenha={id:bid,f:redesenha};
-      if(ultimo.v3)encaixa3D({st,res:ultimo.r,sel:null,curto:null,cor:'fase',editavel:false,ctl:CTL_VAZIO,bancada:'prev:'+bid+':'+i,girar:!VISTA3D.plano&&!!VISTA3D.girar,plano:!!VISTA3D.plano,cc:false,pontos:null,dica:'ponto'});
+      if(ultimo.v3)encaixa3D({st,res:ultimo.r,sel:null,curto:null,cor:'fase',editavel:false,ctl:CTL_VAZIO,bancada:'prev:'+bid+':'+i,girar:!VISTA3D.plano&&!!VISTA3D.girar,plano:!!VISTA3D.plano,cc:!!p.cc,pontos:null,dica:'ponto'});
       else if(document.querySelector('#bd .bench svg'))zm.bind(document.querySelector('#bd .bench'),app);
       app.querySelectorAll('#bd [data-vista]').forEach(b=>b.onclick=()=>{setVista(b.dataset.vista==='real');after=false;redesenha()});
       app.querySelectorAll('#bd [data-modo]').forEach(b=>b.onclick=()=>{const m=b.dataset.modo;escolheVista(m);if(m==='multi')setVista(false);if(VISTA3D.ligada&&!VISTA3D.vista)carrega3D();redesenha()});
@@ -440,6 +440,40 @@ function runMedir(p,d){
       else{errou=true;msg={bad:1,t:a===B&&b===A?'O visor mostra '+fmtV(v)+' V: o sinal de menos quer dizer que as pontas estão trocadas. A vermelha vai no +.':T.dica};render()}};
   };
   render();
+}
+
+/* ---------- Caça-defeito em corrente contínua (Cap. 1) ----------
+   Lanterna de emergência com um defeito escondido (pilha fraca, interruptor com mau contato, lâmpada queimada ou fio
+   rompido). O aluno mede com o multímetro (cada leitura anotada vira uma linha) e aponta onde está o defeito.
+   2 chamados, com defeitos diferentes; ponto por acertar de primeira e por não passar do limite de medições. */
+function nomePonto(st,t){const [id,k]=t.split('.'),c=st.comps.find(x=>x.id===id),T=c&&typeof REAL_TERMS!=='undefined'&&REAL_TERMS[c.type];return id+' '+((T&&T[+k]&&T[+k].n)||k)}
+function runCacaCC(p,d){const ROUNDS=2,zm=benchZoom(),res=[],usados=[];let round=0,score=0;
+  const start=()=>{const st=d.circuito(),livres=d.cand.filter(x=>!usados.includes(x)),f=pick(livres.length?livres:d.cand);usados.push(f);
+    if(f==='P2')st.comps.find(c=>c.id==='P2').fem=0.2;else if(f==='fio')st.wires[1].broken=true;else st.comps.find(c=>c.id===f).broken=true;
+    let pt=novasPonteiras(),ultima=null,log=[],msg=null,errado=0,feito=false,drawn=false;
+    const render=()=>{const r=CC.resolver(st.comps,st.wires),rb=CC.paraBancada(r),v=pt.r.t&&pt.k.t?r.v(pt.r.t)-r.v(pt.k.t):null;
+      frame(p,progBar(ROUNDS,round,res)+missao(d.chamado,d.real||[],null,'CHAMADO')+multimetroHTML(v,dicaCC(pt),{cc:true})+
+        benchWrap(board(st,{res:rb,ponteiras:pt,real:true,vb:zm.vb(),pickTerm:!feito,toggle:!feito}),'',zm,true)+
+        '<div class="status"><span class="chip">Medições anotadas: '+log.length+(L()?'':' / '+d.limite)+'</span></div>'+
+        (log.length?'<ul class="medidas">'+log.map(x=>'<li>'+x+'</li>').join('')+'</ul>':'')+
+        (msg?'<div class="fb '+(msg.bad?'bad':'good')+'">'+msg.t+'</div>':'')+
+        (feito?'<button class="btn main" id="nx">'+(round<ROUNDS-1?'Próximo chamado →':'Concluir')+'</button>':
+          '<div class="row"><button class="btn" id="reg"'+(v===null?' disabled':'')+'>📏 Anotar medição</button></div>'+
+          '<span class="eyebrow">Onde está o defeito?</span><div class="seg3 defeitos">'+d.opcoes.map(([k,t])=>'<button class="btn" data-def="'+k+'">'+t+'</button>').join('')+'</div>'));
+      keepScroll(drawn);drawn=true;
+      if(feito){document.getElementById('nx').onclick=()=>{round++;round<ROUNDS?start():finish(p,score,ROUNDS*2)};return}
+      const svg=app.querySelector('.bench svg');zm.bind(app.querySelector('.bench'),app);
+      svg.querySelectorAll('[data-t]').forEach(h=>h.addEventListener('click',()=>{if(zm.busy())return;ultima=tocaPonteira(st.comps,pt,h.dataset.t,ultima);msg=null;render()}));
+      ligaPonteiras(svg,st.comps,pt,id=>{ultima=id;msg=null;render()},zm);
+      svg.querySelectorAll('[data-sw]').forEach(h=>h.addEventListener('click',()=>{if(zm.busy())return;const c=st.comps.find(x=>x.id===h.dataset.sw);if(c){acionarPeca(c,0);msg=null;render()}}));
+      document.getElementById('reg').onclick=()=>{log.push(nomePonto(st,pt.r.t)+' → '+nomePonto(st,pt.k.t)+(st.comps.find(c=>c.id==='S1').closed?' (S1 fechado)':' (S1 aberto)')+': '+fmtV(v)+' V');msg=null;render()};
+      app.querySelectorAll('[data-def]').forEach(b=>b.onclick=()=>{const k=b.dataset.def;
+        if(k===f){feito=true;const pts=(errado===0?1:0)+(log.length<=d.limite?1:0);score+=pts;res[round]=pts===2;S.xp+=10*pts+5;save();msg={t:d.explica[f]}}
+        else{errado++;msg={bad:1,t:d.errou(k)}}
+        render()});
+    };
+    render()};
+  start();
 }
 
 /* ---------- Bancada: caça-defeito ---------- */

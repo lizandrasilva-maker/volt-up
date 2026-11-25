@@ -77,7 +77,10 @@ TESTE_SOL['lanterna:leve']=[['P1.0','L1.0','pos'],['L1.1','P2.1','neg'],['P1.1',
 TESTE_SOL['lanterna:moderado']=TESTE_SOL['lanterna:full']=[['P1.0','S1.0','pos'],['S1.1','L1.0','pos'],['L1.1','P2.1','neg'],['P1.1','P2.0','neg']];
 /* capítulo 2 */
 Object.assign(TESTE_SOL,{
-  'quadronovo:leve':[['B.0','DG.0','fase'],['DG.1','DR.0','fase'],['B.1','DR.1','neutro'],['DR.2','L1.0','fase'],['L1.1','DR.3','neutro']],
+  /* capítulo 1 · Ato 3: duas lâmpadas em paralelo (com o S1 no trecho comum nos níveis moderado e full) */
+  'parcc:leve':[['P1.0','L1.0','pos'],['P1.0','L2.0','pos'],['L1.1','P2.1','neg'],['L2.1','P2.1','neg'],['P1.1','P2.0','neg']],
+  'parcc:moderado':[['P1.0','S1.0','pos'],['S1.1','L1.0','pos'],['S1.1','L2.0','pos'],['L1.1','P2.1','neg'],['L2.1','P2.1','neg'],['P1.1','P2.0','neg']],
+  'parcc:full':[['P1.0','S1.0','pos'],['S1.1','L1.0','pos'],['S1.1','L2.0','pos'],['L1.1','P2.1','neg'],['L2.1','P2.1','neg'],['P1.1','P2.0','neg']],  'quadronovo:leve':[['B.0','DG.0','fase'],['DG.1','DR.0','fase'],['B.1','DR.1','neutro'],['DR.2','L1.0','fase'],['L1.1','DR.3','neutro']],
   'quadronovo:moderado':[['B.0','DG.0','fase'],['DG.1','DR.0','fase'],['B.1','DR.1','neutro'],['DR.2','D1.0','fase'],['DR.2','D2.0','fase'],['D1.1','L1.0','fase'],['D2.1','L2.0','fase'],['L1.1','DR.3','neutro'],['L2.1','DR.3','neutro']],
   'escada:leve':[['B.0','SP1.0','fase'],['SP1.1','SP2.1','retorno'],['SP1.2','SP2.2','retorno'],['SP2.0','L1.0','retorno'],['L1.1','B.1','neutro']],
   'corredor:leve':[['B.0','SP1.0','fase'],['SP1.1','SI.0','retorno'],['SP1.2','SI.1','retorno'],['SI.2','SP2.1','retorno'],['SI.3','SP2.2','retorno'],['SP2.0','L1.0','retorno'],['L1.1','B.1','neutro']],
@@ -97,7 +100,7 @@ TESTE_SOL['quadronovo:full']=TESTE_SOL['quadronovo:moderado'];TESTE_SOL['impulso
 function testeSol(pid){const s=TESTE_SOL[pid+':'+S.mode];return s?s.map(([a,b,cor])=>Object.assign(W(a,b),{cor})):null}
 
 /* ---------- Roteiro: a história inteira em texto, com atalho para ver cada cena ou jogar a fase ---------- */
-const TIPO_NOME={aula:'Aula',quiz:'Quiz',sort:'Classificar',build:'Bancada: montar',medir:'Bancada: medir',predict:'Bancada: prever',diag:'Bancada: diagnóstico'};
+const TIPO_NOME={aula:'Aula',quiz:'Quiz',sort:'Classificar',build:'Bancada: montar',medir:'Bancada: medir',cacacc:'Bancada: caça-defeito (CC)',predict:'Bancada: prever',diag:'Bancada: diagnóstico'};
 function falasHTML(lines){
   const nm=esc(S.name||charOf().nome);
   return '<div class="falas">'+lines.map(([who,t])=>'<p><b>'+(who==='eu'?nm:NPC[who].nome)+':</b> '+esc(rd(t)).replace(/\{nome\}/g,nm)+'</p>').join('')+'</div>';

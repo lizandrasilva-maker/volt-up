@@ -64,7 +64,7 @@ let pistas={};
     for(const[k,v]of Object.entries(t.previsao||{}))confere('Previsões',v==='girando → parado',k,v);
     for(const[k,v]of Object.entries(t.quizzes||{}))confere('Estrutura dos quizzes',v==='3q/333',k,v);
     const p=pistas=t.pistas||{};
-    confere('Pistas nos quizzes',p.perguntas===135,'135 perguntas (quizzes e fim das aulas)',p.perguntas+' encontradas');
+    confere('Pistas nos quizzes',p.perguntas===153,'153 perguntas (quizzes e fim das aulas)',p.perguntas+' encontradas');
     confere('Pistas nos quizzes',p.certaMaisLonga/p.perguntas<=1/3,'certa não é a mais longa além do acaso (≤ 33 %)',p.certaMaisLonga+' de '+p.perguntas);
     confere('Pistas nos quizzes',p.absolutaSoNasErradas<=Math.max(4,p.absolutaNaCerta+3),'palavras absolutas não denunciam as erradas',p.absolutaSoNasErradas+' só nas erradas, '+p.absolutaNaCerta+' na certa');
     confere('Pistas nos quizzes',p.ecoDoEnunciado/p.perguntas<=0.10,'certa não é a única a repetir o enunciado (≤ 10 %)',p.ecoDoEnunciado+' de '+p.perguntas);
@@ -115,7 +115,11 @@ let pistas={};
      confere('Corrente contínua (Pilha e Lanterna)',J(k.curto)==='[true,7.5]','fio direto na pilha: curto de 7,5 A (1,5 V ÷ 0,2 Ω)',J(k.curto));
      confere('Corrente contínua (Pilha e Lanterna)',J(k.etapas)==='[true,true,true,true]','retorno em etapas (pista → explicação) e com linguagem diferente por nível',J(k.etapas));
      confere('Corrente contínua (Pilha e Lanterna)',k.troca===true&&k.tela===true,'lâmpada queimada troca com um toque; bancada CC sem a faixa do poste, com aviso do modelo e fios + e −');
-     confere('Corrente contínua (Pilha e Lanterna)',k.ordemCap1==='energia,renovavel,carga,macaneta,condutor,continuidade,grandezas,lanterna,medicao,medir,leiohm,ohmcc','Capítulo 1 só de CC, alternando aula e prática (Atos 1 e 2)',k.ordemCap1);}
+     confere('Corrente contínua (Pilha e Lanterna)',k.ordemCap1==='energia,renovavel,carga,macaneta,condutor,continuidade,grandezas,lanterna,medicao,medir,leiohm,ohmcc,seriepar,parcc,prevcc,kirchhoff,kirchcc,emergencia','Capítulo 1 só de CC, alternando aula e prática (Atos 1 a 3)',k.ordemCap1);}
+    {const a=t.ato3||{};
+     confere('Corrente contínua (Pilha e Lanterna)',a.recusaSerie===true&&a.aprovaParalelo===true,'Série ou Paralelo: lâmpadas em série são recusadas com a explicação; o paralelo do gabarito é aprovado',JSON.stringify(a));
+     confere('Corrente contínua (Pilha e Lanterna)',a.prevBancada===true&&a.prevApagou===true,'Previsão na bancada CC: a cena abre e a ação acontece (L1 abre, a L2 apaga na série)',JSON.stringify(a));
+     confere('Corrente contínua (Pilha e Lanterna)',a.mede3===true&&a.anotou===true&&a.erroExplica===true&&a.achou===true,'Lanterna de Emergência: a lâmpada aberta mede 3,00 V, a medição é anotada, o chute errado é explicado e apontar a L1 resolve',JSON.stringify(a));}
     {const m=t.medir||{};
      confere('Corrente contínua (Pilha e Lanterna)',m.fases===true&&m.unidade===true&&m.negativo===true&&m.recusaInvertida===true,'Medir de Verdade: multímetro em V⎓; pontas invertidas mostram o sinal de menos e a medição é recusada',JSON.stringify(m));
      confere('Corrente contínua (Pilha e Lanterna)',m.positivo===true&&m.avancou===true&&m.lampada===true,'Medir de Verdade: P1 ≈ 1,44 V sob carga, conjunto em série e lâmpada 2,88 V (valores do simulador)',JSON.stringify(m));

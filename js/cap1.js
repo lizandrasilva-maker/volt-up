@@ -49,6 +49,105 @@ function tarefasOhm(n){
        w:'r = (E − U) ÷ I = (1,50 − '+fmtV(m.p1)+') ÷ '+fmtA(I(m))+' ≈ 0,2 Ω. Dividir a tensão medida pela corrente dá outra resistência, não a interna.'},
      full:{q:'Com U(P1) = '+fmtV(m.p1)+' V, I = '+fmtA(I(m))+' A e E = 1,5 V, a potência perdida dentro de P1 é de cerca de…',o:[(.2*I(m)*I(m)).toFixed(3).replace('.',',')+' W',fmtW(m.p1*I(m))+' W',fmtW(1.5-m.p1)+' W'],
        w:'P = r × I² = 0,2 × '+fmtA(I(m))+'² ≈ '+(.2*I(m)*I(m)).toFixed(3).replace('.',',')+' W. '+fmtW(m.p1*I(m))+' W é a potência que P1 entrega à lâmpada; '+fmtW(1.5-m.p1)+' é a queda de tensão (em volt), não potência.'}})[n]}]}
+/* ---------- Ato 3: série, paralelo, Kirchhoff e caça-defeito (bancada de pilhas) ---------- */
+const LAMP_CC=(id,x,y)=>C(id,'lamp',x,y,0,{Vn:3,In:0.3,lab:id+' 3 V'});
+/* duas pilhas (P1, P2), duas lâmpadas (L1, L2) e, se pedido, o interruptor S1 */
+function pecasDuas(interruptor){const c=[C('P1','pilha',70,80,0,{V:1.5}),C('P2','pilha',70,175,0,{V:1.5}),LAMP_CC('L1',215,150),LAMP_CC('L2',290,150)];
+  if(interruptor)c.push(C('S1','sw',175,60,0,{closed:false}));return c}
+const DUAS_REAL=[['P1','🔋','pilha AA de 1,5 V'],['L1','💡','lâmpada de 3 V'],['L2','💡','lâmpada de 3 V'],['S1','🔘','interruptor']];
+/* cenas prontas (previsão e medir): pilhas em série com as lâmpadas em série ou em paralelo; pilhas em paralelo */
+function cenaSerieCC(){const st={comps:pecasDuas(false),wires:[W('P1.0','L1.0'),W('L1.1','L2.0'),W('L2.1','P2.1'),W('P1.1','P2.0')]};corCC(st);return st}
+function cenaParaleloCC(){const st={comps:pecasDuas(false),wires:[W('P1.0','L1.0'),W('P1.0','L2.0'),W('L1.1','P2.1'),W('L2.1','P2.1'),W('P1.1','P2.0')]};corCC(st);return st}
+function cenaPilhasPar(){const st={comps:[C('P1','pilha',70,80,0,{V:1.5}),C('P2','pilha',70,175,0,{V:1.5}),LAMP_CC('L1',255,125)],wires:[W('P1.0','L1.0'),W('P2.0','P1.0'),W('P2.1','P1.1'),W('L1.1','P1.1')]};corCC(st);return st}
+/* cor dos fios na bancada CC: o que sai do + é vermelho; o resto, preto */
+function corCC(st){const r=CC.resolver(st.comps,st.wires),pos=new Set(st.comps.filter(c=>c.type==='pilha').map(c=>r.net(c.id+'.0')));
+  const mais=r.net('P1.0');st.wires.forEach(w=>{w.cor=r.net(w.a)===mais||r.net(w.b)===mais?'pos':'neg'})}
+const queimaLamp=id=>st=>{const c=st.comps.find(x=>x.id===id);c.broken=true;c.show=true};
+/* conferência da montagem em paralelo (L1 e L2 fortes e independentes; com S1, ele comanda as duas) */
+const RETORNO_PARALELO={
+  aberto:{leve:['Nenhuma lâmpada acendeu. Siga o caminho com o dedo: do + das pilhas, pela lâmpada, até o −.','Falta fechar o caminho. Ligue o − de uma pilha no + da outra e as duas pontas que sobram nas lâmpadas.'],
+    moderado:['Nenhuma das duas lâmpadas recebe corrente.','O circuito está aberto: confira a série das pilhas (− de P1 no + de P2) e se cada lâmpada fecha o caminho até as duas pontas do conjunto.'],
+    full:['I = 0 nas duas cargas.','Malha aberta: associe P1 e P2 em série e ligue cada lâmpada entre os dois polos do arranjo.']},
+  uma:{leve:['Só uma lâmpada acendeu.','A outra lâmpada ficou sem caminho. Cada lâmpada precisa de um fio do + e um fio do −, as duas ligadas nas mesmas pontas.'],
+    moderado:['Uma lâmpada está sem corrente.','Um dos ramos está aberto: cada lâmpada vai ligada aos mesmos dois pontos (+ e − do conjunto de pilhas).'],
+    full:['Um ramo com I = 0.','Ramo aberto: em paralelo, cada carga é ligada diretamente entre os mesmos dois nós da fonte.']},
+  serie:{leve:['As duas acenderam, mas fraquinhas.','Elas estão uma atrás da outra (em série) e dividem a força das pilhas. Ligue cada uma direto nas pilhas: aí cada uma recebe tudo.'],
+    moderado:['As duas lâmpadas estão com brilho baixo e dependem uma da outra.','Estão em série: a tensão de 3 V se divide (cerca de 1,5 V em cada). Em paralelo, cada uma recebe a tensão inteira.'],
+    full:['U ≈ 1,5 V em cada lâmpada; um ramo único.','Associação série: U(L1) + U(L2) = E. Para 3 V em cada uma, ligue-as em paralelo entre os mesmos dois nós.']},
+  fraca:{leve:['As lâmpadas acenderam fracas.','As pilhas não estão somando: o − de uma tem que ir no + da outra. Lado a lado (em paralelo) elas dão só 1,5 V.'],
+    moderado:['Brilho baixo nas duas, mesmo em paralelo.','A fonte está com 1,5 V: as pilhas estão em paralelo, ou só uma está no circuito. Em série elas dão 3 V.'],
+    full:['U ≈ 1,5 V nos ramos.','Fonte com uma célula efetiva (pilhas em paralelo ou uma só). Associe em série: E = 3 V.']},
+  curto:{leve:['Opa! Tem um fio ligando o + direto no −.','É um curto-circuito: a energia não passa pelas lâmpadas e a pilha esquenta. Tire o fio que liga o + direto no −.'],
+    moderado:['Curto-circuito na fonte.','Há um caminho sem carga entre os polos: retire o fio do curto. A corrente tem que passar pelas lâmpadas.'],
+    full:['Curto: I limitada só por r.','Icc ≈ E ÷ r. Elimine o condutor sem carga entre os polos.']},
+  queima:{leve:['Uma lâmpada queimou!','Ela recebeu força demais. Use duas pilhas (3 V) e troque a lâmpada (toque nela).'],
+    moderado:['Lâmpada queimada por sobretensão.','Com mais de 3 V a lâmpada de 3 V queima. Use duas pilhas em série e troque a lâmpada (toque nela).'],
+    full:['Filamento rompido.','Sobretensão acima de 1,35 × Vn. Fonte de 3 V e troque a lâmpada (toque nela).']},
+  invertida:{leve:['Tudo ligado, mas nada acende. Olhe o + e o − das pilhas.','Uma pilha está virada: uma empurra para um lado e a outra para o outro. O − de uma vai no + da outra.'],
+    moderado:['Malha fechada e lâmpadas apagadas: polaridade.','Uma pilha invertida anula a outra (1,5 V − 1,5 V = 0 V). Ligue em série aditiva.'],
+    full:['U ≈ 0 V com a malha fechada.','Fontes em oposição: Σ fem = 0. Corrija a polaridade (série aditiva).']},
+  semComando:{leve:['O interruptor não apaga as duas.','O interruptor tem que ficar no caminho que alimenta as duas lâmpadas, antes de o fio se dividir.'],
+    moderado:['S1 aberto e alguma lâmpada continua acesa.','O S1 vai em série com a fonte, antes da divisão dos ramos: assim ele comanda as duas.'],
+    full:['S1 não interrompe todos os ramos.','Coloque S1 no trecho comum (série com a fonte), antes do nó de derivação.']}};
+function eventoParalelo(st){const sw=st.comps.find(c=>c.type==='sw'),lig=sw?copia(st,{[sw.id]:{closed:true}}):st;
+  const r=CC.resolver(lig.comps,lig.wires),l1=r.lampadas.L1||{I:0,brilho:0},l2=r.lampadas.L2||{I:0,brilho:0};
+  if(r.eventos.includes('curto'))return 'curto';
+  if(st.comps.some(c=>c.queima)||r.eventos.includes('queima'))return 'queima';
+  if(l1.I<.01&&l2.I<.01)return CC.pilhaInvertida(lig.comps,lig.wires)?'invertida':'aberto';
+  if(l1.I<.01||l2.I<.01)return 'uma';
+  const t=copia(lig,{L1:{broken:true}}),r2=CC.resolver(t.comps,t.wires),indep=(r2.lampadas.L2||{I:0}).I>.01;
+  if(!indep)return 'serie';
+  if(l1.brilho<.5||l2.brilho<.5)return 'fraca';
+  if(sw){const des=copia(st,{[sw.id]:{closed:false}}),r3=CC.resolver(des.comps,des.wires);if(Object.values(r3.lampadas).some(l=>l.I>.01))return 'semComando'}
+  return null}
+function paraleloCheck(st,tentativas){const e=eventoParalelo(st);if(!e)return null;const txt=(RETORNO_PARALELO[e][S.mode]||RETORNO_PARALELO[e].moderado),etapa=Math.max(1,tentativas||1);
+  return (etapa<2?'💡 Pista: '+txt[0]:'📘 Explicação: '+txt[1])}
+function paraleloSucesso(st){const sw=st.comps.find(c=>c.type==='sw'),lig=sw?copia(st,{[sw.id]:{closed:true}}):st,r=CC.resolver(lig.comps,lig.wires),a=r.lampadas.L1,b=r.lampadas.L2;
+  if(L())return 'As duas acesas e fortes! Cada lâmpada tem o seu caminho: se uma queimar, a outra continua.';
+  if(S.mode==='moderado')return 'Aprovado: '+ccN(a.V)+' V em cada lâmpada e '+ccN(a.I+b.I)+' A saindo das pilhas (a soma das duas correntes).';
+  return 'Aprovado: U = '+ccN(a.V)+' V nos ramos, I1 = '+ccN(a.I)+' A, I2 = '+ccN(b.I)+' A e I = I1 + I2 = '+ccN(a.I+b.I)+' A (Req = 5 Ω).'}
+/* Kirchhoff na bancada: as lâmpadas em série (malha) */
+function tarefasKirch(n){const T={leve:['Meça a tensão na lâmpada L1.','Meça a tensão na lâmpada L2.','Meça as duas pilhas juntas: do + da P1 ao − da P2.'],
+    moderado:['Meça U(L1).','Meça U(L2).','Meça a tensão do conjunto de pilhas (+ de P1 ao − de P2).'],full:['Meça U(L1).','Meça U(L2).','Meça a tensão nos terminais da fonte.']}[n];
+  return [
+   {id:'l1',t:T[0],entre:['L1.0','L1.1'],dica:'As pontas vão nos dois parafusos da L1.',ok:v=>'L1: '+fmtV(v)+' V.'},
+   {id:'l2',t:T[1],entre:['L2.0','L2.1'],dica:'As pontas vão nos dois parafusos da L2.',ok:v=>'L2: '+fmtV(v)+' V.'},
+   {id:'pil',t:T[2],entre:['P1.0','P2.1'],dica:'Uma ponta no + da P1, a outra no − da P2.',ok:v=>'Pilhas: '+fmtV(v)+' V.'},
+   {q:m=>({leve:{q:'L1 mediu '+fmtV(m.l1)+' V, L2 mediu '+fmtV(m.l2)+' V e as pilhas '+fmtV(m.pil)+' V. Somando as duas lâmpadas, dá…',o:[fmtV(m.l1+m.l2)+' V, a mesma tensão das pilhas',fmtV(m.l1)+' V, porque é igual em cada uma',fmtV(m.l1+m.l2+m.pil)+' V, somando tudo'],
+       w:'Dando a volta no caminho, a força das pilhas é usada pelas lâmpadas: '+fmtV(m.l1)+' + '+fmtV(m.l2)+' = '+fmtV(m.l1+m.l2)+' V, igual às pilhas.'},
+     moderado:{q:'U(L1) = '+fmtV(m.l1)+' V, U(L2) = '+fmtV(m.l2)+' V e U(pilhas) = '+fmtV(m.pil)+' V. A lei das malhas diz que…',o:['U(pilhas) = U(L1) + U(L2)','U(pilhas) = U(L1) = U(L2)','U(L1) + U(L2) + U(pilhas) = 0'],
+       w:'Na malha, a tensão da fonte é igual à soma das quedas: '+fmtV(m.l1)+' + '+fmtV(m.l2)+' = '+fmtV(m.l1+m.l2)+' V. Tensões iguais em tudo é característica do paralelo; a soma zero só vale com os sinais (fonte + e quedas −).'},
+     full:{q:'Com os valores medidos, a soma algébrica na malha (fonte positiva, quedas negativas) dá…',o:[fmtV(m.pil-m.l1-m.l2)+' V',fmtV(m.pil+m.l1+m.l2)+' V',fmtV(m.pil-m.l1)+' V'],
+       w:'LTK: '+fmtV(m.pil)+' − '+fmtV(m.l1)+' − '+fmtV(m.l2)+' = '+fmtV(m.pil-m.l1-m.l2)+' V. Somar tudo ignora os sinais; esquecer a L2 deixa a malha incompleta.'}})[n]},
+   {q:m=>({q:{leve:'Cada lâmpada tem 10 Ω. Quanta corrente passa na L2?',moderado:'R(L1) = R(L2) = 10 Ω. A corrente em L2 é…',full:'Com R = 10 Ω, I(L2) vale…'}[n],
+     o:[fmtA(m.l2/10)+' A',fmtA(2*m.l2/10)+' A',fmtA(m.l2/20)+' A'],
+     w:'I = U ÷ R = '+fmtV(m.l2)+' ÷ 10 ≈ '+fmtA(m.l2/10)+' A, a mesma corrente da L1: em série, um caminho só. O dobro ou a metade não respeitam a lei dos nós (não há divisão de corrente).'})}]}
+/* caça-defeito da lanterna de emergência */
+const EMERG={
+  chamado:{leve:'A lanterna de emergência da escada não acende. Meça com o multímetro e descubra o que estragou.',moderado:'Chamado: lanterna de emergência apagada. Ache o defeito com até 4 medições anotadas.',full:'Lanterna de emergência inoperante. Diagnostique com até 3 medições anotadas.'},
+  limite:{leve:99,moderado:4,full:3},
+  explica:{
+    leve:{P2:'Era a pilha P2: ela está fraca, quase sem força. Em série, uma pilha fraca derruba a lanterna inteira.',S1:'Era o interruptor S1: ele não fecha o contato. Com ele ligado, a tensão inteira aparece nele, como se estivesse aberto.',L1:'Era a lâmpada: o filamento rompeu. A tensão inteira aparece nos parafusos dela, mas nada passa.',fio:'Era o fio entre o S1 e a lâmpada: está rompido por dentro. A tensão aparece entre as duas pontas dele.'},
+    moderado:{P2:'P2 descarregada: mede bem abaixo de 1,5 V e a série inteira fica sem tensão suficiente.',S1:'S1 com mau contato: fechado, ele mede a tensão inteira (circuito aberto nele).',L1:'L1 aberta (filamento rompido): a tensão da fonte aparece inteira nos bornes dela.',fio:'Condutor S1–L1 rompido: a tensão da fonte aparece entre as duas pontas do fio.'},
+    full:{P2:'P2 com fem baixa: a soma das fem cai e a lâmpada fica praticamente apagada.',S1:'S1 com contato aberto: I = 0 e toda a fem aparece nos bornes dele.',L1:'L1 aberta: I = 0 e U(L1) = E (toda a fem no ponto aberto).',fio:'Condutor aberto entre S1 e L1: U = E entre as extremidades do fio.'}},
+  nome:{P1:'a pilha P1',P2:'a pilha P2',S1:'o interruptor S1',L1:'a lâmpada L1',fio:'um fio'},
+  errou:{leve:k=>'Não é '+EMERG.nome[k]+'. Procure onde aparece a força inteira das pilhas: ali o caminho está aberto.',
+    moderado:k=>'Não é '+EMERG.nome[k]+'. Num circuito série aberto, a tensão da fonte aparece no ponto aberto; peças boas medem quase 0 V.',
+    full:k=>'Não é '+EMERG.nome[k]+'. Com I = 0, só o elemento aberto apresenta U = E; os demais medem ≈ 0 V.'}};
+function dadosEmergencia(n){return {real:LANTERNA_REAL,circuito:lanternaMontada,cand:['P2','S1','L1','fio'],limite:EMERG.limite[n],chamado:EMERG.chamado[n],explica:EMERG.explica[n],errou:EMERG.errou[n],
+  opcoes:[['P1','🔋 P1'],['P2','🔋 P2'],['S1','🔘 S1'],['L1','💡 L1'],['fio','〰️ Um fio']]}}
+const PREV=n=>{const t={
+  leve:[['Duas lâmpadas em série nas pilhas. A L1 vai queimar.','O que acontece com a L2?',['Apaga também','Continua acesa, com o mesmo brilho','Fica mais forte, porque recebe tudo'],'Em série é um caminho só: a L1 queimada abre o caminho e a L2 apaga também.'],
+    ['Agora as duas estão em paralelo. A L1 vai queimar.','E a L2?',['Continua acesa','Apaga também','Pisca e apaga depois de um tempo'],'Em paralelo cada lâmpada tem o seu caminho até as pilhas. A L2 nem percebe que a L1 queimou.'],
+    ['Duas pilhas em paralelo acendem a lâmpada. Vamos tirar a P2.','O brilho da lâmpada…',['Fica praticamente igual','Cai pela metade','A lâmpada apaga'],'Lado a lado, as duas pilhas dão a mesma força de uma só (1,5 V). Tirando uma, o brilho quase não muda; a pilha que fica só vai durar menos.']],
+  moderado:[['L1 e L2 em série com as pilhas. L1 vai abrir (filamento rompido).','Com L1 aberta, a L2…',['Apaga: a malha abriu','Continua igual, pois tem tensão própria','Brilha mais, recebendo os 3 V'],'Em série a corrente é única. L1 aberta interrompe a malha: I = 0 e a L2 apaga.'],
+    ['L1 e L2 em paralelo. L1 vai abrir.','Com L1 aberta, a L2…',['Continua acesa','Apaga: a corrente é a mesma nas duas','Fica com metade da tensão'],'Em paralelo cada ramo é independente: a L2 continua com a tensão das pilhas.'],
+    ['Duas pilhas em paralelo alimentam L1. P2 vai ser retirada.','A tensão em L1…',['Praticamente não muda','Cai para cerca de 0,75 V','Cai para zero'],'Pilhas iguais em paralelo mantêm 1,5 V. Retirando uma, a tensão quase não muda (só a resistência interna dobra); muda a capacidade, não a tensão.']],
+  full:[['Malha série E = 3 V com L1 e L2. L1 vai abrir.','Após a abertura de L1, U(L2) e U(L1) ficam…',['U(L2) = 0 e U(L1) ≈ E','U(L2) = E e U(L1) = 0','As duas com E ÷ 2'],'Com I = 0, não há queda em L2 (U = R × I = 0) e toda a fem aparece no ponto aberto, que é a L1.'],
+    ['L1 e L2 em paralelo, fonte real (r = 0,4 Ω). L1 vai abrir.','A tensão em L2…',['Sobe um pouco','Cai pela metade','Fica exatamente igual'],'Abrindo um ramo, a corrente da fonte cai e a queda em r diminui: U = E − r × I sobe um pouco (de ≈ 2,78 V para ≈ 2,88 V).'],
+    ['Duas células iguais em paralelo alimentam L1. P2 vai ser retirada.','Em relação a antes, U(L1)…',['Cai alguns centésimos de volt','Cai pela metade','Não muda nada, em teoria nem na prática'],'Em paralelo, r equivalente = 0,1 Ω; com uma célula só, r = 0,2 Ω. A queda r × I aumenta um pouco e U(L1) cai alguns centésimos.']]}[n];
+  const cenas=[cenaSerieCC,cenaParaleloCC,cenaPilhasPar],acts=[queimaLamp('L1'),queimaLamp('L1'),st=>{st.wires=st.wires.filter(w=>!w.a.startsWith('P2.')&&!w.b.startsWith('P2.'))}];
+  return t.map(([acao,q,o,w],k)=>({sc:cenas[k],act:acts[k],acao,q,o,w}))};
 const CAP1_FASES=[
  {id:'energia',nome:'De Onde Vem a Energia',sub:'Formas de energia',kind:'aula',tipo:'aula',ic:'livro',cor:'#2f4a6e',
   card:{leve:'Energia não some: muda de forma. A pilha transforma química em elétrica.',moderado:'Pilha: energia química → elétrica. Lâmpada: elétrica → luz e calor.',full:'Conservação: Eentrada = Eútil + perdas. Rendimento η = Eútil ÷ Eentrada.'},
@@ -289,10 +388,98 @@ const CAP1_FASES=[
   }},
  {id:'ohmcc',nome:'Mestre Ohm na Bancada',sub:'Medir e calcular',kind:'bancada',tipo:'medir',ic:'ohm',cor:'#6b3a1f',cc:true,
   card:{leve:'Mediu a tensão e sabe a resistência? Dá para achar a corrente.',moderado:'I = U ÷ R e P = U × I com os valores medidos.',full:'r interna = (E − U) ÷ I, a partir de duas medições.'},
-  dados:Object.fromEntries(['leve','moderado','full'].map(n=>[n,{real:LANTERNA_REAL,circuito:lanternaMontada,tarefas:tarefasOhm(n)}]))}
+  dados:Object.fromEntries(['leve','moderado','full'].map(n=>[n,{real:LANTERNA_REAL,circuito:lanternaMontada,tarefas:tarefasOhm(n)}]))},
+ /* ---------------- Ato 3 · Série, paralelo e Kirchhoff ---------------- */
+ {id:'seriepar',nome:'Série e Paralelo',sub:'Um caminho ou vários',kind:'aula',tipo:'aula',ic:'livro',cor:'#2b3f6e',
+  card:{leve:'Em série: um caminho só. Em paralelo: cada lâmpada tem o seu.',moderado:'Série: mesma corrente, tensões somam. Paralelo: mesma tensão, correntes somam.',full:'Série: Req = R1 + R2. Paralelo: 1 ÷ Req = 1 ÷ R1 + 1 ÷ R2.'},
+  dados:{
+   leve:{quadros:[
+     {fig:'serieLamp',t:'Em série, a corrente passa por uma lâmpada e depois pela outra: é um caminho só.'},
+     {fig:'serieQueima',t:'Se uma lâmpada em série queima, o caminho abre e as duas apagam. Era assim nos pisca-piscas antigos de Natal.'},
+     {fig:'paraleloLamp',t:'Em paralelo, cada lâmpada tem o seu próprio caminho até as pilhas.'},
+     {fig:'paraleloQueima',t:'Se uma lâmpada em paralelo queima, a outra continua acesa. É assim que as lâmpadas de uma casa são ligadas.'},
+     {fig:'pilhasArranjo',t:'Pilhas também: uma atrás da outra somam a força; lado a lado, a força é a de uma só, mas elas duram mais.'}],
+    checa:[
+     {q:'Num pisca-pisca antigo, uma lampadinha queimou e todas apagaram. Como elas estavam ligadas?',o:['Em série, num caminho só','Em paralelo, cada uma no seu caminho','Metade em série e metade em paralelo'],w:'Num caminho só, a lâmpada queimada abre o circuito e a corrente para em todas. Em paralelo, as outras continuariam acesas.'},
+     {q:'Duas lâmpadas iguais ligadas em série numa lanterna de 3 V. Como fica o brilho?',o:['Fraco nas duas, que dividem a tensão','Forte nas duas, cada uma recebendo os 3 V','Forte na primeira e fraco na segunda'],w:'Em série, a tensão das pilhas se divide entre as lâmpadas: cerca de 1,5 V em cada. A corrente é a mesma nas duas, então o brilho é igual (e fraco).'},
+     {q:'Na sua casa, uma lâmpada queimou e as outras continuam acesas. Por quê?',o:['Cada lâmpada está no seu próprio caminho','Estão num caminho só, como o pisca-pisca','A lâmpada queimada passa a força para as outras'],w:'Em casa, as lâmpadas ficam em paralelo: cada uma tem o seu caminho. Se uma abre, as outras continuam. Lâmpada queimada não passa nada para ninguém.'}]},
+   moderado:{quadros:[
+     {fig:'serieLamp',t:'Associação em série: um único caminho. A mesma corrente passa por todas as cargas, e a tensão da fonte se divide entre elas.'},
+     {fig:'serieQueima',t:'Uma carga aberta em série interrompe o circuito inteiro: I = 0 em todas.'},
+     {fig:'paraleloLamp',t:'Associação em paralelo: as cargas ligadas aos mesmos dois pontos. Cada uma recebe a tensão inteira, e as correntes se somam na fonte.'},
+     {fig:'paraleloQueima',t:'Em paralelo, uma carga aberta não afeta as outras. Por isso as instalações são em paralelo.'},
+     {fig:'pilhasArranjo',t:'Pilhas em série somam tensão (1,5 V + 1,5 V = 3 V). Em paralelo a tensão continua 1,5 V, mas a capacidade aumenta.'}],
+    checa:[
+     {q:'Duas lâmpadas de 10 Ω em paralelo nas pilhas de 3 V. A corrente total que sai das pilhas é de cerca de…',o:['0,6 A','0,3 A','0,15 A'],w:'Cada lâmpada recebe 3 V e puxa 3 ÷ 10 = 0,3 A; em paralelo as correntes somam: 0,6 A (um pouco menos na prática, por causa da resistência interna). 0,15 A seria em série.'},
+     {q:'Duas lâmpadas iguais estão em série com 3 V. A tensão em cada uma é…',o:['1,5 V','3 V','6 V'],w:'Em série a tensão se divide: lâmpadas iguais ficam com metade cada, 1,5 V. 3 V seria em paralelo; 6 V somaria em vez de dividir.'},
+     {q:'Por que as lâmpadas e tomadas de uma casa são ligadas em paralelo?',o:['Cada carga recebe a tensão inteira e funciona sozinha','A corrente fica igual nas cargas da casa','A tensão se divide e economiza energia na conta'],w:'Em paralelo, cada carga recebe a tensão nominal e liga ou desliga sem afetar as outras. Corrente igual é característica da série; dividir a tensão faria os aparelhos funcionarem mal.'}]},
+   full:{quadros:[
+     {fig:'serieLamp',t:'Série: Req = R1 + R2 + … ; corrente única e tensões que se somam: U = U1 + U2 (divisor de tensão: U1 = U × R1 ÷ Req).'},
+     {fig:'paraleloLamp',t:'Paralelo: 1 ÷ Req = 1 ÷ R1 + 1 ÷ R2; tensão única e correntes que se somam: I = I1 + I2 (divisor de corrente).'},
+     {fig:'serieQueima',t:'Em série, um elemento aberto leva I = 0 na malha, e a fem aparece inteira nos terminais dele.'},
+     {fig:'paraleloQueima',t:'Em paralelo, um ramo aberto só zera a própria corrente; com fonte real, a tensão nos outros ramos sobe um pouco (menos queda em r).'},
+     {fig:'pilhasArranjo',t:'Associação de fontes: série soma fem e resistências internas; paralelo de células iguais mantém a fem e divide r.'}],
+    checa:[
+     {q:'Duas lâmpadas de 10 Ω em paralelo, alimentadas por E = 3 V com r = 0,4 Ω. A tensão nos terminais fica perto de…',o:['2,78 V','3,00 V','2,94 V'],w:'Req = 10 ÷ 2 = 5 Ω; I = 3 ÷ (5 + 0,4) ≈ 0,556 A; U = E − r × I ≈ 2,78 V. 3,00 V ignora r; 2,94 V seria com uma lâmpada só.'},
+     {q:'Um resistor de 10 Ω em série com um de 20 Ω, ligados em 3 V. A tensão no de 20 Ω é…',o:['2 V','1 V','1,5 V'],w:'Divisor de tensão: U2 = U × R2 ÷ (R1 + R2) = 3 × 20 ÷ 30 = 2 V. 1 V é a do resistor de 10 Ω; 1,5 V dividiria igual, ignorando os valores.'},
+     {q:'Duas pilhas iguais (1,5 V; 0,2 Ω) em paralelo alimentam uma carga. Em relação a uma pilha só, o arranjo…',o:['Mantém a fem e reduz a resistência interna à metade','Dobra a fem para 3 V e mantém a resistência interna igual','Dobra a fem e também a resistência interna'],w:'Em paralelo, a fem fica 1,5 V e as resistências internas ficam em paralelo: 0,2 ÷ 2 = 0,1 Ω. Dobrar a fem é coisa da série, que também soma as resistências internas.'}]}
+  }},
+ {id:'parcc',nome:'Série ou Paralelo na Bancada',sub:'Duas lâmpadas fortes',kind:'bancada',tipo:'build',ic:'paralelo',cor:'#1f4f6e',cc:true,
+  card:{leve:'Cada lâmpada no seu caminho: as duas fortes e independentes.',moderado:'Paralelo: 3 V em cada lâmpada; o S1 no trecho comum comanda as duas.',full:'I = I1 + I2 na fonte; Req = 5 Ω com duas lâmpadas de 10 Ω.'},
+  dados:{
+   leve:{comps:pecasDuas(false),real:DUAS_REAL,goal:'Acenda as duas lâmpadas com brilho forte. Se uma queimar, a outra tem que continuar acesa.',check:paraleloCheck,sucesso:paraleloSucesso},
+   moderado:{comps:pecasDuas(true),real:DUAS_REAL,goal:'Monte L1 e L2 em paralelo nas pilhas em série (3 V), com o S1 comandando as duas.',check:paraleloCheck,sucesso:paraleloSucesso},
+   full:{comps:pecasDuas(true),real:DUAS_REAL,goal:'Associação paralela de L1 e L2 (3 V / 0,3 A cada) sob E = 3 V, com S1 no trecho comum. Confira I = I1 + I2.',check:paraleloCheck,sucesso:paraleloSucesso}}},
+ {id:'prevcc',nome:'Previsão na Bancada CC',sub:'O que acontece se…',kind:'bancada',tipo:'predict',ic:'previsao',cor:'#3a4a6e',cc:true,
+  card:{leve:'Em série, uma queimada apaga tudo. Em paralelo, não.',moderado:'Série: malha única. Paralelo: ramos independentes.',full:'Com fonte real, abrir um ramo eleva um pouco a tensão nos outros.'},
+  dados:{leve:PREV('leve'),moderado:PREV('moderado'),full:PREV('full')}},
+ {id:'kirchhoff',nome:'As Leis de Kirchhoff',sub:'Nós e malhas',kind:'aula',tipo:'aula',ic:'livro',cor:'#4a2a6e',
+  card:{leve:'O que entra num ponto sai dele; a força da pilha se divide pelo caminho.',moderado:'Nós: Σ I que entra = Σ I que sai. Malhas: fonte = soma das quedas.',full:'LCK: Σ I = 0 no nó. LTK: Σ U = 0 na malha, com sinal.'},
+  dados:{
+   leve:{quadros:[
+     {fig:'kirchNo',t:'Num ponto onde os fios se encontram, toda a corrente que chega tem que sair. Ela não some nem fica guardada ali.'},
+     {fig:'paraleloLamp',t:'No paralelo, a corrente sai das pilhas, se divide entre as lâmpadas e depois se junta de novo.'},
+     {fig:'kirchMalha',t:'Dando a volta no caminho, a força que as pilhas dão é usada nas lâmpadas: somando o que cada uma usa, dá a força das pilhas.'},
+     {fig:'serieLamp',t:'Com duas lâmpadas iguais em série, cada uma fica com metade: 1,5 V + 1,5 V = 3 V das pilhas.'},
+     {fig:'kirchNo',t:'Essas duas regras são as leis de Kirchhoff. Com elas, o eletricista confere se uma medição faz sentido.'}],
+    checa:[
+     {q:'Num ponto chegam 0,3 A por um fio e 0,3 A por outro. Quanto sai pelo terceiro fio?',o:['0,6 A','0,3 A','0 A'],w:'Tudo o que chega num ponto sai dele: 0,3 + 0,3 = 0,6 A. A corrente não some nem fica parada no ponto.'},
+     {q:'Duas lâmpadas em série nas pilhas de 3 V. Uma mede 1 V. Quanto mede a outra?',o:['2 V','3 V','4 V'],w:'Dando a volta, as tensões das lâmpadas somam a das pilhas: 1 + 2 = 3 V. 3 V seria se cada uma recebesse tudo; 4 V passaria da força das pilhas.'},
+     {q:'Por que a corrente que volta para a pilha é igual à que sai dela?',o:['A corrente não some pelo caminho; o que a lâmpada usa é a energia','A lâmpada acesa devolve para o fio a corrente que ela usou','A pilha puxa de volta a mesma quantidade que mandou'],w:'A carga elétrica não some: a mesma corrente sai e volta. O que a lâmpada usa é a energia, não a corrente.'}]},
+   moderado:{quadros:[
+     {fig:'kirchNo',t:'1ª lei de Kirchhoff (nós): a soma das correntes que entram num nó é igual à soma das que saem.'},
+     {fig:'paraleloLamp',t:'No paralelo da bancada, a corrente das pilhas se divide entre L1 e L2 e se soma de novo no retorno: I = I1 + I2.'},
+     {fig:'kirchMalha',t:'2ª lei (malhas): numa malha fechada, a soma das tensões das fontes é igual à soma das quedas nas cargas.'},
+     {fig:'serieLamp',t:'Na série: U(pilhas) = U(L1) + U(L2). Com lâmpadas iguais, cada uma fica com a metade.'},
+     {fig:'kirchMalha',t:'As leis servem para conferir medições: se a soma não fecha, há erro de leitura ou defeito no circuito.'}],
+    checa:[
+     {q:'Num nó entram 0,5 A e saem 0,2 A por um ramo. Quanto sai pelo outro ramo?',o:['0,3 A','0,7 A','0,5 A'],w:'Entra 0,5 A; saem 0,2 A + I. Então I = 0,3 A. 0,7 A soma em vez de subtrair; 0,5 A esquece o outro ramo.'},
+     {q:'Pilhas de 3 V em série com L1 e L2. O voltímetro mede 1,8 V em L1. Em L2, ele deve medir cerca de…',o:['1,2 V','1,8 V','3 V'],w:'Pela lei das malhas, 3 = 1,8 + U2, então U2 = 1,2 V (desprezando a resistência interna). 1,8 V seria com lâmpadas iguais; 3 V é a das pilhas.'},
+     {q:'Num circuito em série, você mede 1,5 V em L1, 1,5 V em L2 e 1,5 V nas pilhas. O que isso indica?',o:['A soma não fecha, então há erro de leitura ou defeito','O circuito está perfeito, as tensões são iguais','A lei das malhas não vale em corrente contínua'],w:'Em série, U(L1) + U(L2) tem que dar a tensão das pilhas: 1,5 + 1,5 = 3 V, e não 1,5 V. Se não fecha, algo está errado. A lei vale em CC e em CA.'}]},
+   full:{quadros:[
+     {fig:'kirchNo',t:'LCK (lei das correntes): Σ I = 0 em qualquer nó, consequência da conservação da carga.'},
+     {fig:'kirchMalha',t:'LTK (lei das tensões): Σ U = 0 ao longo de qualquer malha, com sinal: elevações (fem) positivas e quedas (R × I) negativas.'},
+     {fig:'serieLamp',t:'Malha da bancada: E − r × I − R1 × I − R2 × I = 0, logo I = E ÷ (r + R1 + R2).'},
+     {fig:'paraleloLamp',t:'Nó de saída do paralelo: I = I1 + I2, com I1 = U ÷ R1 e I2 = U ÷ R2 (mesma U nos ramos).'},
+     {fig:'kirchMalha',t:'Com as duas leis se monta um sistema de equações e se resolve qualquer circuito resistivo (análise nodal ou de malhas).'}],
+    checa:[
+     {q:'Na malha: E = 3 V, r = 0,4 Ω e L1 = L2 = 10 Ω em série. A corrente é de cerca de…',o:['0,147 A','0,3 A','0,294 A'],w:'LTK: 3 − 0,4 I − 10 I − 10 I = 0, logo I = 3 ÷ 20,4 ≈ 0,147 A. 0,3 A seria com uma lâmpada e fonte ideal; 0,294 A esquece uma das lâmpadas.'},
+     {q:'Num nó, I1 = 0,2 A entra, I2 = 0,5 A sai e I3 é desconhecida. Adotando I3 entrando, o valor dela é…',o:['+0,3 A','−0,3 A','+0,7 A'],w:'LCK: I1 + I3 − I2 = 0, logo I3 = 0,5 − 0,2 = +0,3 A (entra mesmo). O sinal negativo indicaria sentido adotado errado; 0,7 A soma em vez de subtrair.'},
+     {q:'Por que a soma das tensões medidas numa malha real pode diferir alguns milivolts de zero?',o:['Erro do instrumento e quedas nas conexões','A lei das tensões de Kirchhoff vale apenas em corrente alternada','A energia se perde no meio da malha'],w:'A LTK é exata; a diferença vem da incerteza do multímetro e de pequenas quedas em contatos e fios. Ela vale em CC e em CA.'}]}
+  }},
+ {id:'kirchcc',nome:'Kirchhoff na Bancada',sub:'Medir e conferir a malha',kind:'bancada',tipo:'medir',ic:'multimetro',cor:'#2a4a5e',cc:true,
+  card:{leve:'Somando as lâmpadas, dá a força das pilhas.',moderado:'U(pilhas) = U(L1) + U(L2) e a corrente é a mesma nas duas.',full:'Σ U = 0 na malha medida; I igual em toda a série.'},
+  dados:Object.fromEntries(['leve','moderado','full'].map(n=>[n,{real:DUAS_REAL,circuito:cenaSerieCC,tarefas:tarefasKirch(n)}]))},
+ {id:'emergencia',nome:'Lanterna de Emergência',sub:'Caça-defeito com o multímetro',kind:'bancada',tipo:'cacacc',ic:'multimetro',cor:'#6e2a2a',cc:true,
+  card:{leve:'Onde aparece a força inteira das pilhas, ali o caminho está aberto.',moderado:'Série aberta: a tensão da fonte aparece no ponto aberto.',full:'I = 0: só o elemento aberto apresenta U = E.'},
+  dados:Object.fromEntries(['leve','moderado','full'].map(n=>[n,dadosEmergencia(n)]))}
 ];
 /* Cenas antes das práticas (as aulas já são conduzidas pelo Mestre Chico) */
 const CAP1_CENAS={
+  parcc:[['chico','Duas lâmpadas na bancada, {nome}. Quero as duas fortes.'],['chico','E se uma queimar, a outra continua acesa. Como você liga?']],
+  prevcc:[['chico','Antes de mexer, a gente prevê. Eletricista bom sabe o que vai acontecer.']],
+  kirchcc:[['chico','Duas lâmpadas em série. Mede cada uma e mede as pilhas.'],['chico','A conta tem que fechar. Se não fechar, tem coisa errada.']],
+  emergencia:[['chico','A lanterna de emergência da escada não acende. É a sua primeira caça ao defeito.'],['chico','Não troca nada no chute: mede primeiro. O defeito sempre deixa pista no multímetro.']],
   medir:[['chico','A lanterna está montada. Agora quero ver você medir de verdade.'],['chico','Multímetro na posição V⎓. Lembra: ponta vermelha no +, preta no −.']],
   ohmcc:[['chico','Medir é metade do serviço, {nome}. A outra metade é fazer a conta.'],['chico','Mede, calcula e me diz quanto a lâmpada puxa e quanto a pilha perde.']],
   renovavel:[['chico','Você viu que a eletricidade das casas vem de usinas, e cada usina usa uma fonte.'],['chico','Umas a natureza repõe, outras acabam um dia. {nome}, separa pra mim.']],

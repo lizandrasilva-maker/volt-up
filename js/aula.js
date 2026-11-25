@@ -125,6 +125,19 @@ const FIG={
     fT(160,176,'amperímetro em paralelo: vira um curto',{c:'af-erro'}),
   ohmimetro:()=>fDefs+fLamp(110,78,false)+'<path d="M104 98 V132 H222 V97" class="af-fio vermelho"/><path d="M116 98 V120 H238 V97" class="af-fio"/>'+fMed(230,80,'Ω')+
     fEmo(262,36,'🔋',20)+'<path d="M250 22 l26 28 M276 22 l-26 28" class="af-seta af-erro"/>'+fT(160,176,'ohmímetro: peça sem energia (pilha fora)',{c:'af-sub'}),
+  /* ---- Ato 3: série, paralelo e Kirchhoff ---- */
+  serieLamp:()=>fDefs+fPilha(40,100,-90)+fFluxo('M40 70 V30 H290 V160 H40 V130',false)+fLamp(130,30,true)+fLamp(220,30,true)+fT(160,110,'a mesma corrente passa pelas duas',{c:'af-sub'})+fT(160,176,'série: um caminho só',{c:'af-sub'}),
+  serieQueima:()=>fDefs+fPilha(40,100,-90)+'<path d="M40 70 V30 H290 V160 H40 V130" class="af-fio"/>'+fLamp(130,30,false)+'<path d="M122 14 l7 7 l-5 4 l9 7" class="af-raio af-pisca"/>'+fLamp(220,30,false)+fT(160,176,'uma abre, as duas apagam',{c:'af-erro'}),
+  paraleloLamp:()=>fDefs+fPilha(40,100,-90)+fFluxo('M40 70 V30 H260',false)+fFluxo('M260 160 H40 V130',true)+fFluxo('M160 30 V75',false)+fFluxo('M160 115 V160',false)+fFluxo('M260 30 V75',false)+fFluxo('M260 115 V160',false)+
+    fLamp(160,95,true)+fLamp(260,95,true)+fT(160,176,'paralelo: um caminho para cada',{c:'af-sub'}),
+  paraleloQueima:()=>fDefs+fPilha(40,100,-90)+fFluxo('M40 70 V30 H260',false)+fFluxo('M260 160 H40 V130',true)+'<path d="M160 30 V75 M160 115 V160" class="af-fio"/>'+fFluxo('M260 30 V75',false)+fFluxo('M260 115 V160',false)+
+    fLamp(160,95,false)+'<path d="M152 79 l7 7 l-5 4 l9 7" class="af-raio af-pisca"/>'+fLamp(260,95,true)+fT(160,176,'uma abre, a outra continua',{c:'af-ok'}),
+  pilhasArranjo:()=>fDefs+fT(80,20,'série',{c:'af-tit'})+fT(240,20,'paralelo',{c:'af-tit'})+fPilha(80,62,0)+fPilha(80,104,0)+'<path d="M111 62 H120 V83 H44 V104 H54" class="af-fio"/>'+
+    fPilha(240,62,0)+fPilha(240,104,0)+'<path d="M214 62 H204 V104 H214 M266 62 H276 V104 H266" class="af-fio"/>'+fT(80,146,'1,5 + 1,5 = 3 V')+fT(240,146,'1,5 V, dura mais')+fT(160,176,'soma tensão · soma duração',{c:'af-sub'}),
+  kirchNo:()=>fDefs+'<circle cx="160" cy="90" r="7" class="af-metal"/>'+fSeta(50,50,150,84,'af-amb')+fSeta(50,130,150,96,'af-amb')+fSeta(170,90,280,90,'af-ok')+
+    fT(70,40,'I1 = 0,3 A',{a:'start'})+fT(70,150,'I2 = 0,3 A',{a:'start'})+fT(224,80,'I1 + I2 = 0,6 A',{c:'af-ok'})+fT(160,176,'tudo o que entra no nó sai dele',{c:'af-sub'}),
+  kirchMalha:()=>fDefs+fPilha(40,100,-90)+fFluxo('M40 70 V30 H290 V160 H40 V130',false)+fLamp(130,30,true)+fLamp(220,30,true)+
+    fT(56,104,'+3 V',{a:'start',c:'af-ok'})+fT(130,68,'−1,5 V',{c:'af-erro'})+fT(220,68,'−1,5 V',{c:'af-erro'})+fT(160,176,'volta na malha: +3 − 1,5 − 1,5 = 0',{c:'af-amb'}),
   /* ---- Ato 2: lei de Ohm e potência ---- */
   ohm:()=>fDefs+'<path d="M160 22 L74 152 H246 Z" class="af-cartao"/><line x1="104" y1="104" x2="216" y2="104" class="af-cota"/><line x1="160" y1="104" x2="160" y2="152" class="af-cota"/>'+
     fT(160,90,'U',{s:30,c:'af-amb'})+fT(126,138,'R',{s:26})+fT(194,138,'I',{s:26})+fT(160,174,'U = R × I · I = U ÷ R · R = U ÷ I',{c:'af-sub'}),
