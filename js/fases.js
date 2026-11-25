@@ -338,14 +338,24 @@ function runBuild(p,task){
 }
 
 /* ---------- Bancada: prever ---------- */
+/* contrato vazio: bancada só para olhar (previsão) */
+const CTL_VAZIO={tocouBorne(){},arrastouFio(){},acionou(){},tirouFio(){}};
 function runPredict(p,list){
-  let i=0,ok=0;const res=[];const zm=benchZoom();
+  let i=0,ok=0;const res=[];const zm=benchZoom(),bid=++BANCADA_ID;
   const render=()=>{
     const it=list[i],st=it.sc(),opts=shuffle(it.o.map((t,k)=>({t,k})));
-    let after=false;
-    const draw=()=>{const r=solve(st.comps,st.wires);return benchWrap(board(st,{res:r,cls:after?'flash':'',real:vistaReal(),vb:zm.vb()}),'',zm)+statusChips(st,r,true)};
-    const bindBd=()=>{zm.bind(document.querySelector('#bd .bench'),app);
-      app.querySelectorAll('#bd [data-vista]').forEach(b=>b.onclick=()=>{setVista(b.dataset.vista==='real');after=false;document.getElementById('bd').innerHTML=draw();bindBd()})};
+    let after=false,ultimo=null;
+    /* a mesma bancada das fases de montar (3D ou 2D com as peças novas), só para olhar; sem WebGL, o desenho antigo */
+    const draw=()=>{const r=solve(st.comps,st.wires),p3=pode3D(st),v3=quer3D(st),aguarda=!v3&&p3&&VISTA3D.ligada&&VISTA3D.baixavel&&!VISTA3D.vista&&!VISTA3D.erro;
+      if(aguarda)carrega3D();ultimo={r,v3};const est=Object.values(r.lamp||{}).some(b=>b>.04)?'on':'';
+      return benchWrap(v3||aguarda?'':board(st,{res:r,cls:after?'flash':'',real:vistaReal(),vb:zm.vb()}),'',zm,false,v3||aguarda,p3,aguarda,est)+statusChips(st,r,true)};
+    const redesenha=()=>{document.getElementById('bd').innerHTML=draw();bindBd()};
+    const bindBd=()=>{VISTA3D.redesenha={id:bid,f:redesenha};
+      if(ultimo.v3)encaixa3D({st,res:ultimo.r,sel:null,curto:null,cor:'fase',editavel:false,ctl:CTL_VAZIO,bancada:'prev:'+bid+':'+i,girar:!VISTA3D.plano&&!!VISTA3D.girar,plano:!!VISTA3D.plano,cc:false,pontos:null,dica:'ponto'});
+      else if(document.querySelector('#bd .bench svg'))zm.bind(document.querySelector('#bd .bench'),app);
+      app.querySelectorAll('#bd [data-vista]').forEach(b=>b.onclick=()=>{setVista(b.dataset.vista==='real');after=false;redesenha()});
+      app.querySelectorAll('#bd [data-modo]').forEach(b=>b.onclick=()=>{const m=b.dataset.modo;escolheVista(m);if(m==='multi')setVista(false);if(VISTA3D.ligada&&!VISTA3D.vista)carrega3D();redesenha()});
+      app.querySelectorAll('#bd [data-girar]').forEach(b=>b.onclick=()=>{VISTA3D.girar=!VISTA3D.girar;redesenha()})};
     frame(p,progBar(list.length,i,res)+missao(it.acao,[['🔧','🏫','bancada de treino da oficina']],'','AÇÃO')+'<div id="bd">'+draw()+'</div>'+
       '<div class="qcard"><p class="q">'+it.q+'</p></div><div class="opts">'+opts.map(o=>'<button class="btn opt" data-k="'+o.k+'">'+o.t+'</button>').join('')+'</div><div id="fb" class="opts"></div>');
     bindBd();
