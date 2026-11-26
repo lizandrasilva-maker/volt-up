@@ -222,6 +222,33 @@ try{
     document.querySelector('[data-t="B.1"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));
     mm.duas=lcd();mm.encaixadas=document.querySelectorAll('.ponta.no-borne').length;
     R.multimetro=mm;}
+  // 8d) Caça-Defeito seguro: defeito sorteado sem repetir; desligar antes de testar/trocar; Técnico constata 0 V;
+  //     Profissional bloqueia e sinaliza com o cartão (vira carimbo) e só religa depois de tirar o bloqueio
+  {const cd={},pd=phaseById('defeito'),txt=()=>document.getElementById('app').textContent,cl=id=>document.getElementById(id).click();
+    const q=s=>document.querySelector(s),falha=()=>{const st=BANCADA.st,c=st.comps.find(x=>x.broken);if(c)return c.id;return 'w'+st.wires.findIndex(w=>w.broken)};
+    const alvo=f=>q(f[0]==='w'?'[data-w="'+f.slice(1)+'"]':'[data-c="'+f+'"]'),clica=el=>el.dispatchEvent(new MouseEvent('click',{bubbles:true}));
+    const desliga=f=>cl(f==='F'||f==='w1'?'qDG':'qF');
+    {let rep=0,ult=0;for(let i=0;i<40;i++){const u=[],ant=S.flags.diagUlt,a=sorteiaDefeito(pd.dados.full.cand,u),b=sorteiaDefeito(pd.dados.full.cand,u);if(a===b)rep++;if(a===ant)ult++;S.flags.diagUlt=b}
+     const vistos=new Set();for(let i=0;i<80;i++){S.flags.diagUlt='';vistos.add(sorteiaDefeito(pd.dados.full.cand,[]))}cd.sorteio=rep===0&&ult===0&&vistos.size===pd.dados.full.cand.length}
+    /* Leve: testador só sem energia; trocar ligado é barrado; desligou, troca, religa e a luz acende */
+    S.mode='leve';runDiag(pd,pd.dados.leve);let f=falha();
+    clica(q('[data-c="L1"]'));cd.leveTestaLigado=/Ainda tem energia/.test(txt());
+    cl('t2');clica(alvo(f));cd.leveTrocaLigado=/Pare!/.test(txt());
+    desliga(f);cl('t1');clica(alvo(f));cd.leveBip=/Sem bip/.test(txt());
+    cl('t2');clica(alvo(f));cd.leveTrocou=/Era /.test(txt());desliga(f);cd.leveAcendeu=/acendeu/.test(txt())&&!!document.getElementById('nx');
+    /* Técnico: desligou mas não constatou → barrado; mede 0 V → troca */
+    S.mode='moderado';runDiag(pd,pd.dados.moderado);f=falha();desliga(f);cl('t2');clica(alvo(f));cd.tecSemConstatar=/constate 0 V/.test(txt());
+    cl('t1');clica(q('[data-t="L1.0"]'));clica(q('[data-t="L1.1"]'));cd.tecConstatou=/constatado/.test(txt());
+    cl('t2');clica(alvo(f));cd.tecTrocou=/Era /.test(txt());
+    /* Profissional: sem bloqueio → barrado; cartão com motivo errado → recusado; certo → carimbo; religar travado até tirar */
+    S.mode='full';S.cartoes=[];runDiag(pd,pd.dados.full);f=falha();desliga(f);
+    cl('t1');clica(q('[data-t="L1.0"]'));clica(q('[data-t="L1.1"]'));cl('t2');clica(alvo(f));cd.proSemBloqueio=/ninguém impede/.test(txt());
+    cl('bloq');document.getElementById('cbMot').value='rotina';cl('cbOk');cd.proMotivoErrado=/motivo é o serviço/.test(txt())&&(S.cartoes||[]).length===0;
+    document.getElementById('cbMot').value='troca';cl('cbOk');cd.proCarimbo=(S.cartoes||[]).length===1&&/Carimbo/.test(txt());
+    cl('t2');clica(alvo(f));cd.proTrocou=/Era /.test(txt());
+    desliga(f);cd.proReligaTravado=/bloqueado/.test(txt());cl('desbloq');desliga(f);cd.proAcendeu=/acendeu/.test(txt());
+    cd.caderno=(()=>{showFicha();return /Caderno do eletricista · 1 carimbo/.test(txt())})();
+    R.cacaSegura=cd;}
   // 9) modo teste: "Montar pra mim" já aprova (vai direto para o Concluir), em toda fase de montar e nível
   {VOLT_TESTE_OK=true;entrarTeste(()=>{});const mt={};
     for(const md of ['leve','moderado','full'])for(const p of PHASES.filter(p=>p.tipo==='build')){S.mode=md;

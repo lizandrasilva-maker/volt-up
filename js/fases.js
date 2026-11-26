@@ -573,54 +573,124 @@ function runEletroima(p,d){
   render();
 }
 
-/* ---------- Bancada: caça-defeito ---------- */
-function diagCircuit(V){return withPE({comps:[BAT(),C('F','fuse',125,48,0,{lab:'DJ'}),C('S1','sw',225,48,0,{closed:true}),C('L1','lamp',300,140,1)],
-  wires:[W('B.0','F.0','v'),W('F.1','S1.0'),W('S1.1','L1.0','h'),W('L1.1','B.1','h')]})}
+/* ---------- Bancada: caça-defeito ----------
+   Quadro da casa com o disjuntor geral (DG) e o disjuntor da cozinha (DJ); circuito da cozinha DJ → S1 → L1 → neutro.
+   Fios: w0 rede → DG, w1 DG → DJ (entrada do DJ), w2 DJ → S1, w3 retorno S1 → L1, w4 neutro L1 → fonte.
+   O defeito é sorteado entre os candidatos do nível, sem repetir nos dois chamados nem o último da partida anterior.
+   Segurança (NR-10: desenergizar antes de intervir): só se testa com o testador de continuidade ou se troca uma peça
+   sem energia. O DJ desligado deixa sem energia o circuito depois dele; o próprio DJ e o fio de entrada dele só ficam
+   sem energia com o geral desligado. Técnico: depois de desligar, constatar 0 V com o multímetro antes de trocar.
+   Profissional: também bloquear (cadeado) e sinalizar (cartão com nome, motivo, data e hora) o disjuntor desligado; para
+   religar, tira o bloqueio. A ordem entre bloquear e constatar não é cobrada: a NR-10 vigente até 31/05/2027 põe o
+   impedimento antes da constatação (10.5.1), e a nova (10.13.1) depois. 3 pontos por chamado: diagnóstico sem trocar peça
+   boa, economia de medições e segurança. */
+function diagCircuit(V){return withPE({comps:[BAT(),C('DG','fuse',100,48,0,{lab:'DG'}),C('F','fuse',160,48,0,{lab:'DJ'}),C('S1','sw',235,48,0,{closed:true}),C('L1','lamp',300,140,1)],
+  wires:[W('B.0','DG.0','v'),W('DG.1','F.0'),W('F.1','S1.0'),W('S1.1','L1.0','h'),W('L1.1','B.1','h')]})}
+const DIAG_FIO=['o fio da rede que chega no geral','o fio do geral até a entrada do DJ','o fio do DJ até o interruptor','o retorno (interruptor → lâmpada)','o neutro da lâmpada'];
+const DIAG_MOTIVOS=[['troca','Manutenção: luz da cozinha não acende'],['rotina','Inspeção de rotina do quadro'],['economia','Desligar para economizar energia']];
+/* sorteio do defeito: sem repetir os já usados nesta partida nem o último chamado da partida anterior */
+function sorteiaDefeito(cand,usados){const ult=(S.flags&&S.flags.diagUlt)||'',livres=cand.filter(x=>!usados.includes(x)&&x!==ult);
+  const f=pick(livres.length?livres:cand.filter(x=>!usados.includes(x)).length?cand.filter(x=>!usados.includes(x)):cand);usados.push(f);return f}
 function runDiag(p,d){
-  const ROUNDS=2;let round=0,score=0;const zm=benchZoom();
+  const ROUNDS=2,usados=[];let round=0,score=0;const zm=benchZoom(),res=[];
   const startRound=()=>{let drawn=false;
-    const st=diagCircuit(d.V||rede().V);const fault=pick(d.cand);
+    const st=diagCircuit(d.V||rede().V),fault=sorteiaDefeito(d.cand,usados);S.flags.diagUlt=fault;save();
     if(fault[0]==='w')st.wires[+fault.slice(1)].broken=true;else st.comps.find(c=>c.id===fault).broken=true;
-    /* multímetro com as duas ponteiras: a medição conta quando as duas pontas estão em parafusos */
-    let tool=L()?'test':'meter',pt=novasPonteiras(),ultima=null,tags={},measures=0,wrong=0,fixed=false,msg=null,hint=false;
-    const mede=()=>{if(pt.r.t&&pt.k.t)measures++;msg=null};
+    const DG=st.comps.find(c=>c.id==='DG'),DJ=st.comps.find(c=>c.id==='F');BANCADA.st=st;
+    /* multímetro com as duas ponteiras: a medição de diagnóstico conta quando as duas pontas estão em parafusos com o circuito ligado */
+    let tool=L()?'test':'meter',pt=novasPonteiras(),ultima=null,tags={},measures=0,wrong=0,inseguro=0,fixed=false,acabou=false,msg=null,hint=false;
+    let constatado=null,bloq={},cartao=false;
+    const estado=()=>(DG.trip?'G':'')+(DJ.trip?'D':'');
+    /* peça sem energia: geral desligado, ou DJ desligado e a peça está depois dele */
+    const depoisDoDJ=id=>!['F','w1','w0','DG'].includes(id);
+    const semEnergia=id=>id!=='w0'&&id!=='DG'&&(DG.trip||(DJ.trip&&depoisDoDJ(id)));
+    const bloqueada=id=>!!(bloq.DG||(bloq.F&&depoisDoDJ(id)));
+    const nomeDe=id=>id[0]==='w'?DIAG_FIO[+id.slice(1)]:id==='F'?'o DJ (disjuntor da cozinha)':id==='DG'?'o geral':id==='S1'?'o interruptor S1':'a lâmpada L1';
+    const mede=()=>{msg=null;if(!(pt.r.t&&pt.k.t))return;const desl=DG.trip||DJ.trip;
+      if(!desl){measures++;return}
+      /* constatação: com algo desligado, as duas pontas em pontos diferentes do circuito (não as duas na fonte) e 0 V */
+      const r=solve(st.comps,st.wires),v=Math.abs(leituraPonteiras(st.comps,r,pt)||0),naFonte=t=>t.startsWith('B.');
+      if(pt.r.t!==pt.k.t&&!(naFonte(pt.r.t)&&naFonte(pt.k.t))&&v<1){constatado=estado();msg={t:L()?'':'✓ 0 V: ausência de tensão constatada neste ponto. Mantenha desligado até terminar.'}}
+      else if(v>=1)msg={bad:1,t:'Ainda tem '+Math.round(v)+' V aqui. Esse ponto continua energizado: desligue o que alimenta essa parte antes de mexer.'}};
+    const religa=c=>{if(bloq[c.id]){msg={bad:1,t:L()?'Esse disjuntor está com cadeado.':'O '+(c.id==='DG'?'geral':'DJ')+' está bloqueado. Primeiro termine o serviço e retire o cartão e o cadeado; só então religue.'};return}
+      c.trip=!c.trip;constatado=null;if(!c.trip&&fixed&&!acabou){const r=solve(st.comps,st.wires);if(!DG.trip&&!DJ.trip&&(r.lamp.L1||0)>0.04){acabou=true;msg={t:'💡 A luz da cozinha acendeu. Serviço concluído e conferido.'}}}};
     const render=()=>{
-      const r=solve(st.comps,st.wires);
-      const toolNames=L()?['test','🔍 Testar peça']:['meter','📏 Medir tensão'];
+      const r=solve(st.comps,st.wires),luz=(r.lamp.L1||0)>0.04;
+      const toolNames=L()?['test','🔍 Testador de continuidade']:['meter','📏 Multímetro'];
       const meter=L()?'':multimetroHTML(leituraPonteiras(st.comps,r,pt),dicaPonteiras(pt));
-      frame(p,progBar(ROUNDS,round,[score>=2])+
-        missao(L()?'A lâmpada da cozinha não acende. Teste as peças e troque só a que quebrou.':'Cliente relata: a lâmpada da cozinha não acende; o resto da casa funciona. Ache a falha com até '+d.limit+' medições.',
-          [['L1','💡','lâmpada da cozinha'],['S1','🔘','interruptor da cozinha'],['DJ','🎚','disjuntor da cozinha no quadro']],'','CHAMADO')+
+      const chipQ=(c,n)=>'<button class="btn" id="q'+c.id+'" aria-pressed="'+!c.trip+'">'+(bloq[c.id]?'🔒 ':c.trip?'⭘ ':'⚡ ')+n+': '+(c.trip?'desligado':'ligado')+'</button>';
+      const passos=(DG.trip||DJ.trip?'<span class="chip">⏻ desligado: '+[DG.trip?'geral':'',DJ.trip?'DJ':''].filter(Boolean).join(' e ')+'</span>':'<span class="chip">⚡ circuito ligado</span>')+
+        (S.mode==='full'?'<span class="chip">'+(Object.keys(bloq).length?'🔒 bloqueado e sinalizado':'🔓 sem bloqueio')+'</span>':'')+
+        (!L()?'<span class="chip">'+(constatado!==null&&constatado===estado()?'✓ 0 V constatado':'tensão não constatada')+'</span>':'');
+      frame(p,progBar(ROUNDS,round,res)+
+        missao(L()?'A lâmpada da cozinha não acende. Desligue o disjuntor, teste as peças e troque só a que quebrou. Depois religue e confira.':
+            'Cliente relata: a lâmpada da cozinha não acende; o resto da casa funciona. Ache a falha com até '+d.limit+' medições com o circuito ligado. Para trocar: desligar'+(S.mode==='full'?', bloquear e sinalizar':'')+' e constatar 0 V.',
+          [['L1','💡','lâmpada da cozinha'],['S1','🔘','interruptor da cozinha'],['DJ','🎚','disjuntor da cozinha no quadro'],['DG','🎚','disjuntor geral da casa']],'','CHAMADO')+
+        '<span class="eyebrow">Quadro da casa</span><div class="seg">'+chipQ(DG,'Geral')+chipQ(DJ,'DJ cozinha')+'</div>'+
+        (S.mode==='full'&&!acabou?(Object.keys(bloq).length?'<div class="row"><button class="btn ghost" id="desbloq">🔓 Retirar cadeado e cartão</button></div>':(DG.trip||DJ.trip)&&!cartao?'<div class="row"><button class="btn" id="bloq">🔒 Bloquear e sinalizar</button></div>':''):'')+
+        (cartao?cartaoHTML():'')+
         '<div class="seg"><button class="btn" id="t1" aria-pressed="'+(tool!=='fix')+'">'+toolNames[1]+'</button><button class="btn" id="t2" aria-pressed="'+(tool==='fix')+'">🔧 '+(S.mode==='full'?'Reparar':'Trocar')+'</button></div>'+
         (tool==='meter'?meter:'')+
         benchWrap(board(st,{res:r,ponteiras:tool==='meter'?pt:null,tags:tool==='test'||tool==='fix'?tags:null,real:vistaReal(),vb:zm.vb(),
-           pickTerm:tool==='meter'&&!fixed,pickComp:(tool==='test'||tool==='fix')&&!fixed,pickWire:tool==='fix'&&!fixed&&S.mode==='full'}),'',zm)+
-        '<div class="status"><span class="chip">'+(L()?'Testes: ':'Medições: ')+measures+(L()?'':' / '+d.limit)+'</span>'+(wrong?'<span class="chip">Trocas erradas: '+wrong+'</span>':'')+'</div>'+
-        (msg?'<div class="fb '+(fixed?'good':msg.bad?'bad':'info')+'">'+msg.t+'</div>':'<p class="help">'+(tool==='fix'?(S.mode==='full'?'Toque na peça ou no fio (conexão frouxa) com defeito.':'Toque na peça que você quer trocar.'):tool==='test'?'Toque numa peça para testar se a energia passa por ela.':'')+'</p>')+
-        (fixed?'<button class="btn main" id="nx">'+(round<ROUNDS-1?'Próximo chamado →':'Concluir')+'</button>':(!L()&&!hint&&measures>=2?'<button class="btn ghost sm" id="hint">💡 Dica</button>':'')));
+           pickTerm:tool==='meter'&&!acabou,pickComp:(tool==='test'||tool==='fix')&&!fixed,pickWire:(tool==='fix'||tool==='test')&&!fixed}),'',zm)+
+        '<div class="status">'+passos+'<span class="chip">'+(L()?'Testes: ':'Medições: ')+measures+' / '+d.limit+'</span>'+(wrong?'<span class="chip">Trocas erradas: '+wrong+'</span>':'')+(luz?'<span class="chip lit">💡 acesa</span>':'')+'</div>'+
+        (msg&&msg.t?'<div class="fb '+(msg.bad?'bad':fixed?'good':'info')+'">'+msg.t+'</div>':'<p class="help">'+(fixed&&!acabou?(S.mode==='full'?'Retire o bloqueio e religue para conferir.':'Religue para conferir se a luz acende.'):tool==='fix'?'Toque na peça ou no fio que você quer '+(S.mode==='full'?'reparar':'trocar')+'.':tool==='test'?'Com o circuito desligado, toque numa peça ou num fio: o testador apita se a corrente passa.':'')+'</p>')+
+        (acabou?'<button class="btn main" id="nx">'+(round<ROUNDS-1?'Próximo chamado →':'Concluir')+'</button>':(!L()&&!hint&&measures>=2&&!fixed?'<button class="btn ghost sm" id="hint">💡 Dica</button>':'')));
       keepScroll(drawn);drawn=true;
       const svg=app.querySelector('.bench svg');
       zm.bind(app.querySelector('.bench'),app);
       app.querySelectorAll('[data-vista]').forEach(b=>b.onclick=()=>{setVista(b.dataset.vista==='real');render()});
+      document.getElementById('qDG').onclick=()=>{if(acabou)return;msg=null;religa(DG);render()};
+      document.getElementById('qF').onclick=()=>{if(acabou)return;msg=null;religa(DJ);render()};
       document.getElementById('t1').onclick=()=>{tool=L()?'test':'meter';msg=null;render()};
       document.getElementById('t2').onclick=()=>{tool='fix';msg=null;render()};
+      const bb=document.getElementById('bloq');if(bb)bb.onclick=()=>{cartao=true;msg=null;render()};
+      const db=document.getElementById('desbloq');if(db)db.onclick=()=>{bloq={};msg={t:'Cadeado e cartão retirados. Agora pode religar.'};render()};
+      if(cartao)ligaCartao();
       svg.querySelectorAll('[data-t]').forEach(h=>h.addEventListener('click',()=>{
         if(zm.busy())return;ultima=tocaPonteira(st.comps,pt,h.dataset.t,ultima);mede();render()}));
       if(tool==='meter')ligaPonteiras(svg,st.comps,pt,id=>{ultima=id;mede();render()},zm);
       svg.querySelectorAll('[data-c]').forEach(h=>h.addEventListener('click',()=>{
         if(zm.busy())return;const c=st.comps.find(x=>x.id===h.dataset.c);
-        if(tool==='test'){measures++;tags[c.id]=!c.broken;msg=null;speak(c.broken?'não passa':'passa');render();return}
-        tryFix(c.broken,()=>{c.broken=false},c.id+' ('+NAME[c.type]+')')}));
-      svg.querySelectorAll('[data-w]').forEach(h=>h.addEventListener('click',()=>{if(zm.busy())return;const w=st.wires[+h.dataset.w];tryFix(w.broken,()=>{w.broken=false},'a conexão do fio')}));
-      const nx=document.getElementById('nx');if(nx)nx.onclick=()=>{round++;round<ROUNDS?startRound():finish(p,score,ROUNDS*2)};
+        if(tool==='test'){testa(c.id,c);render();return}
+        tryFix(c.id,!!c.broken,()=>{c.broken=false})}));
+      svg.querySelectorAll('[data-w]').forEach(h=>h.addEventListener('click',()=>{if(zm.busy())return;const i=+h.dataset.w,w=st.wires[i];
+        if(tool==='test'){testa('w'+i,w);render();return}
+        tryFix('w'+i,!!w.broken,()=>{w.broken=false})}));
+      const nx=document.getElementById('nx');if(nx)nx.onclick=()=>{round++;round<ROUNDS?startRound():finish(p,score,ROUNDS*3)};
       const hb=document.getElementById('hint');if(hb)hb.onclick=()=>{hint=true;msg={t:'Num circuito série aberto, quase toda tensão aparece sobre o ponto aberto. Peças boas medem 0 V.'};render()};
     };
-    const tryFix=(isBad,repair,label)=>{
-      if(isBad){repair();fixed=true;const pts=(wrong===0?1:0)+(measures<=d.limit?1:0);score+=pts;S.xp+=10*pts+5;save();
-        msg={t:'Era '+label+'! '+(wrong===0&&measures<=d.limit?'Diagnóstico limpo.':wrong?'Funcionou, mas trocou peça boa antes.':'Achou, mas mediu mais que o necessário.')}}
-      else{wrong++;msg={bad:true,t:'Você '+(S.mode==='full'?'mexeu em':'trocou')+' '+label+', mas continua tudo apagado. Essa estava boa.'}}
+    /* testador de continuidade (Leve): só sem energia; apita se a corrente passa pela peça ou pelo fio */
+    const testa=(id,obj)=>{
+      if(id==='w0'||id==='DG'){msg={bad:1,t:'Antes do geral a energia vem direto da rua. Isso não é do circuito da cozinha: não se mexe aí.'};return}
+      if(!semEnergia(id)){msg={bad:1,t:'Ainda tem energia aí! O testador de continuidade só se usa com o circuito desligado. '+(id==='F'||id==='w1'?'O DJ recebe energia pela entrada: para testar o DJ, desligue o geral.':'Desligue o disjuntor da cozinha no quadro.')};return}
+      if(id==='F'&&DJ.trip){msg={bad:1,t:'Desligado, o disjuntor não deixa a corrente passar mesmo. Para testar o DJ: geral desligado e o DJ ligado.'};return}
+      measures++;const passa=!obj.broken;if(id[0]!=='w')tags[id]=passa;speak(passa?'bip':'não apitou');
+      msg={t:(passa?'🔊 Bip! ':'🔇 Sem bip. ')+nomeDe(id)[0].toUpperCase()+nomeDe(id).slice(1)+(passa?' deixa a corrente passar: está bom.':' não deixa a corrente passar.')}};
+    const tryFix=(id,isBad,repair)=>{
+      if(id==='w0'||id==='DG'){msg={bad:1,t:'Antes do geral a energia vem direto da rua. Isso não é do circuito da cozinha.'};render();return}
+      /* desligar antes de trocar; no Técnico e no Profissional, constatar 0 V; no Profissional, bloquear e sinalizar */
+      if(!semEnergia(id)){inseguro++;msg={bad:1,t:'⚠️ Pare! Ainda tem energia '+nomeDe(id).replace(/^o /,'no ').replace(/^a /,'na ')+'. '+(id==='F'||id==='w1'?'Para mexer no DJ ou no fio de entrada dele, desligue o geral.':'Desligue o disjuntor da cozinha antes de trocar.')+(L()?'':' (NR-10: desenergizar antes de intervir.)')};render();return}
+      if(S.mode==='full'&&!bloqueada(id)){inseguro++;msg={bad:1,t:'⚠️ Desligou, mas ninguém impede outra pessoa de religar. Bloqueie com cadeado e sinalize com o cartão o disjuntor que você desligou (impedimento de reenergização e sinalização, NR-10).'};render();return}
+      if(!L()&&constatado!==estado()){inseguro++;msg={bad:1,t:'⚠️ Desligar não basta: meça e constate 0 V no ponto de trabalho antes de pôr a mão. O disjuntor pode ser o errado, ou estar com defeito.'};render();return}
+      if(isBad){repair();fixed=true;const pts=(wrong===0?1:0)+(measures<=d.limit?1:0)+(inseguro===0?1:0);score+=pts;res[round]=pts===3;S.xp+=10*pts+5;save();
+        msg={t:'Era '+nomeDe(id)+'! '+(pts===3?'Diagnóstico limpo e seguro.':[wrong?'Trocou peça boa antes.':'',measures>d.limit?'Mediu mais que o necessário.':'',inseguro?'Tentou mexer sem completar a segurança.':''].filter(Boolean).join(' '))+' '+(S.mode==='full'?'Agora retire o bloqueio e religue para conferir.':'Agora religue para conferir.')}}
+      else{wrong++;msg={bad:true,t:'Você '+(S.mode==='full'?'mexeu em':'trocou')+' '+nomeDe(id)+', mas essa parte estava boa. O defeito continua.'}}
       render();
     };
+    /* cartão de bloqueio (Profissional): nome, motivo, data e hora. Válido, vira carimbo no caderno do eletricista. */
+    const cartaoHTML=()=>{const agora=new Date(),dt=agora.toLocaleDateString('pt-BR'),hr=agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+      return '<div class="cartao-bloq"><b>⚠️ PERIGO · NÃO LIGUE</b><small>Cartão de bloqueio · '+(DG.trip?'geral':'DJ da cozinha')+'</small>'+
+        '<label>Nome de quem bloqueou<input id="cbNome" maxlength="40" value="'+esc(S.name||charOf().nome)+'"></label>'+
+        '<label>Motivo<select id="cbMot"><option value="">Escolha…</option>'+shuffle(DIAG_MOTIVOS).map(([k,t])=>'<option value="'+k+'">'+t+'</option>').join('')+'</select></label>'+
+        '<p class="help">Data e hora: <b id="cbDt">'+dt+' · '+hr+'</b></p><div class="row"><button class="btn ghost" id="cbX">Cancelar</button><button class="btn main" id="cbOk">Pendurar cartão e cadeado</button></div></div>'};
+    const ligaCartao=()=>{document.getElementById('cbX').onclick=()=>{cartao=false;render()};
+      document.getElementById('cbOk').onclick=()=>{const nome=document.getElementById('cbNome').value.trim(),mot=document.getElementById('cbMot').value;
+        if(!nome){msg={bad:1,t:'O cartão precisa do nome de quem bloqueou: é essa pessoa que vai retirar.'};render();return}
+        if(mot!=='troca'){msg={bad:1,t:mot?'O motivo é o serviço que vai ser feito agora: aqui, a manutenção da luz da cozinha. Quem lê o cartão precisa saber por que o circuito está desligado.':'Escolha o motivo do bloqueio.'};render();return}
+        if(DG.trip)bloq.DG=1;if(DJ.trip)bloq.F=1;cartao=false;
+        const c={d:document.getElementById('cbDt').textContent,m:DIAG_MOTIVOS[0][1],n:nome.slice(0,40),onde:DG.trip?'geral':'DJ da cozinha'};
+        S.cartoes=(S.cartoes||[]).concat([c]).slice(-60);save();msg={t:'🔒 Bloqueado e sinalizado. Carimbo nº '+S.cartoes.length+' no seu caderno do eletricista.'};render()}};
     render();
   };
   startRound();

@@ -36,8 +36,14 @@ const ACH=[
   {id:'a9',e:'📋',n:'Plantonista',t:()=>(S.flags.plantao||0)>=1},
   {id:'a10',e:'🔥',n:'3 dias seguidos',t:()=>streak()>=3},
   {id:'a11',e:'🎖',n:'Eletricista',t:()=>S.xp>=400},
-  {id:'a12',e:'🃏',n:'Colecionador',t:()=>S.cards.length>=10}
+  {id:'a12',e:'🃏',n:'Colecionador',t:()=>S.cards.length>=10},
+  {id:'a13',e:'🔒',n:'Bloqueio em dia',t:()=>(S.cartoes||[]).length>=3}
 ];
+/* Caderno do eletricista: cada cartão de bloqueio preenchido certo (Caça-Defeito, Profissional) vira um carimbo */
+function cadernoHTML(){const cs=S.cartoes||[];
+  return '<div class="caderno"><span class="eyebrow">Caderno do eletricista · '+cs.length+' carimbo'+(cs.length===1?'':'s')+'</span>'+
+    (cs.length?'<ul>'+cs.slice(-5).reverse().map(c=>'<li><span class="carimbo">🔒</span><span><b>'+esc(c.d)+'</b> · '+esc(c.onde)+'<br><small>'+esc(c.m)+' · '+esc(c.n)+'</small></span></li>').join('')+'</ul>'
+      :'<p class="help">Bloqueie e sinalize direitinho no Caça-Defeito (nível Profissional) para ganhar o primeiro carimbo.</p>')+'</div>'}
 function checkAch(){const n=[];ACH.forEach(a=>{if(!S.ach.includes(a.id)&&a.t()){S.ach.push(a.id);n.push(a)}});return n}
 
 function showFicha(){
@@ -50,7 +56,7 @@ function showFicha(){
   '<p class="help" style="margin-top:6px">'+(rk.nx?'Faltam '+(rk.nx.xp-S.xp)+' XP para '+rk.nx.n+'.':'Topo da carreira. Parabéns!')+'</p></div>'+
   '<div class="tiles"><div class="tile"><small>Dias seguidos</small><b>🔥 '+streak()+'</b></div><div class="tile"><small>Fases feitas</small><b>'+done+'</b></div><div class="tile"><small>Cards</small><b>'+S.cards.length+'</b></div><div class="tile"><small>XP total</small><b>'+S.xp+'</b></div></div>'+
   '<span class="eyebrow">Competências</span><div class="attrs">'+Object.entries(ATTR).map(([k,a])=>{const v=S.attr[k]||0;return '<div class="attr" style="--c:'+a.c+'"><span class="ai">'+a.i+'</span><span class="an">'+a.n+'</span><b>'+v+'</b><span class="bar"><i style="width:'+Math.round(v/max*100)+'%"></i></span></div>'}).join('')+'</div>'+
-  melhorarHTML()+
+  melhorarHTML()+cadernoHTML()+
   (S.start?'<p class="help">Na bancada desde '+S.start.split('-').reverse().join('/')+'.</p>':'')+
   '<button class="btn main" id="bk">Voltar ao menu</button>';
   bindHud();window.scrollTo(0,0);document.getElementById('bk').onclick=showHome;

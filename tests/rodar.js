@@ -151,6 +151,13 @@ let pistas={};
      confere('Multímetro',m.temAparelho===true&&m.semLetras===true,'Caça-Defeito mostra o multímetro com as duas pontas e nenhuma letra nos parafusos');
      confere('Multímetro',m.antes==='– – –'&&m.umaPonta==='– – –','sem as duas pontas nos parafusos, o visor não mede',m.antes+' / '+m.umaPonta);
      confere('Multímetro',/^\d/.test(m.duas||'')&&m.encaixadas===2,'arrastando a vermelha e tocando no parafuso para a preta, as duas encaixam e o visor mede',m.duas+' ('+m.encaixadas+' encaixadas)');}
+    {const c=t.cacaSegura||{},C='Caça-Defeito seguro',J=JSON.stringify(c);
+     confere(C,c.sorteio===true,'defeito sorteado entre todos os candidatos, sem repetir nos dois chamados nem o último da partida anterior',J);
+     confere(C,c.leveTestaLigado===true&&c.leveTrocaLigado===true,'Leve: com energia, o testador de continuidade e a troca são barrados',J);
+     confere(C,c.leveBip===true&&c.leveTrocou===true&&c.leveAcendeu===true,'Leve: desligado, o testador acha a peça sem continuidade; troca, religa e a luz acende',J);
+     confere(C,c.tecSemConstatar===true&&c.tecConstatou===true&&c.tecTrocou===true,'Técnico: desligar não basta; constata 0 V com o multímetro e só então troca',J);
+     confere(C,c.proSemBloqueio===true&&c.proMotivoErrado===true&&c.proCarimbo===true,'Profissional: sem bloqueio é barrado; cartão com motivo errado é recusado; o certo vira carimbo',J);
+     confere(C,c.proTrocou===true&&c.proReligaTravado===true&&c.proAcendeu===true&&c.caderno===true,'Profissional: só religa depois de tirar cadeado e cartão; o carimbo aparece no caderno da ficha',J);}
     {const M=Object.entries(t.montar||{});
      confere('Modo teste',M.length>=27&&M.every(([,v])=>v==='aprovou'),'"Montar pra mim" monta e já aprova em todas as fases de montar (3 níveis)',M.filter(([,v])=>v!=='aprovou').map(([k,v])=>k+': '+v).join('; ')||M.length+' fases');}
     confere('Menu do usuário',JSON.stringify(t.ceu)==='["cap2","cap1","cap3"]','céu acompanha o capítulo (mapa e fase)',JSON.stringify(t.ceu));
