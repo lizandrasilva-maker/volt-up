@@ -38,7 +38,13 @@ const fLamp=(x,y,acesa)=>'<g transform="translate('+x+' '+y+')">'+(acesa?'<circl
   '<rect x="-9" y="11" width="18" height="9" rx="2" class="af-metal"/></g>';
 /* fluxo de pontos ao longo de um caminho (corrente) */
 const fFluxo=(d,rev,cls)=>'<path d="'+d+'" class="af-fio"/><path d="'+d+'" class="af-fluxo'+(rev?' rev':'')+(cls?' '+cls:'')+'"/>';
-const fCarga=(x,y,s,r)=>'<g transform="translate('+x+' '+y+')"><circle r="'+(r||8)+'" class="'+(s>0?'af-pos':'af-neg')+'"/><text y="4" class="af-t af-escuro" text-anchor="middle" style="font-size:'+((r||8)+3)+'px">'+(s>0?'+':'−')+'</text></g>';
+/* partícula com sinal e brilho: s > 0 próton/íon positivo, s < 0 elétron/íon negativo, s = 0 nêutron */
+const fCarga=(x,y,s,r)=>{r=r||8;return '<g transform="translate('+x+' '+y+')"><circle r="'+r+'" class="'+(s>0?'af-pos':s<0?'af-neg':'af-neu')+'"/>'+
+  '<ellipse cx="'+(-r*.35)+'" cy="'+(-r*.4)+'" rx="'+(r*.32)+'" ry="'+(r*.22)+'" class="af-brilho"/>'+
+  (s?'<text y="'+(r*.42).toFixed(1)+'" class="af-t af-escuro" text-anchor="middle" style="font-size:'+Math.round(r*1.35)+'px">'+(s>0?'+':'−')+'</text>':'')+'</g>'};
+/* círculo como caminho (para partículas que andam por offset-path) e partícula que percorre um caminho */
+const fCirc=(cx,cy,r)=>'M'+(cx+r)+' '+cy+' a'+r+' '+r+' 0 1 1 '+(-2*r)+' 0 a'+r+' '+r+' 0 1 1 '+(2*r)+' 0';
+const fAnda=(d,s,r,dur,atraso,cls)=>'<g class="'+(cls||'af-anda')+'" style="offset-path:path(\''+d+'\');animation-duration:'+dur+'s;animation-delay:'+(-atraso).toFixed(2)+'s">'+fCarga(0,0,s,r)+'</g>';
 
 /* medidor redondo com a letra da grandeza (V, A ou Ω) */
 const fMed=(x,y,l,cls)=>'<g transform="translate('+x+' '+y+')"><circle r="17" class="af-bola'+(cls?' '+cls:'')+'"/>'+fT(0,7,l,{s:18,c:'af-amb'})+'</g>';
@@ -60,15 +66,25 @@ const FIG={
     '<circle cx="160" cy="150" r="20" class="af-bola"/>'+fEmo(160,159,'⚡',22)+fT(160,178,'eletricidade',{c:'af-sub'})+
     fSeta(70,124,142,145,'af-ok')+fSeta(250,124,178,145,'af-erro'),
   /* elétrons correm pelas órbitas (CSS offset-path) */
-  atomo:()=>{const orb='M80 88 a80 24 0 1 0 160 0 a80 24 0 1 0 -160 0';
-    return fDefs+[0,60,-60].map((g,k)=>'<g transform="rotate('+g+' 160 88)"><ellipse cx="160" cy="88" rx="80" ry="24" class="af-orb"/>'+
-      '<circle r="7" class="af-neg af-eletron" style="offset-path:path(\''+orb+'\');animation-delay:'+(-k*1.3)+'s"/></g>').join('')+
-    fCarga(152,82,1,9)+'<circle cx="168" cy="84" r="9" class="af-neu"/>'+fCarga(160,97,1,9)+'<circle cx="149" cy="98" r="8" class="af-neu"/>'+
-    fT(160,174,'núcleo (+) e elétrons (−) em volta',{c:'af-sub'})},
-  atrito:()=>fDefs+'<g transform="translate(70 95)"><path d="M-40 -40 q10 -20 40 -18 q30 -2 40 18 q4 30 -4 52 h-72 q-8 -22 -4 -52z" class="af-cabelo"/></g>'+
-    '<rect x="170" y="70" width="110" height="16" rx="3" class="af-pente"/>'+Array.from({length:11},(_,k)=>'<rect x="'+(174+k*10)+'" y="86" width="4" height="22" class="af-pente"/>').join('')+
-    [0,1,2].map(k=>'<g class="af-pula" style="animation-delay:'+(k*.5)+'s">'+fCarga(115,70+k*14,-1,6)+'</g>').join('')+
-    fT(70,170,'cabelo: perdeu elétrons (+)',{c:'af-sub'})+fT(225,170,'pente: ganhou elétrons (−)',{c:'af-sub'}),
+  /* átomo (modelo de camadas, como o lítio): núcleo com prótons e nêutrons; elétrons girando devagar em duas camadas */
+  atomo:()=>{const cx=160,cy=80;
+    return fDefs+'<circle cx="'+cx+'" cy="'+cy+'" r="36" class="af-orb"/><circle cx="'+cx+'" cy="'+cy+'" r="62" class="af-orb"/>'+
+      '<circle cx="'+cx+'" cy="'+cy+'" r="24" class="af-nucleo"/>'+
+      [[-11,-6.5,1],[0,-6.5,0],[11,-6.5,1],[-11,6.5,0],[0,6.5,1],[11,6.5,0]].map(([x,y,s])=>fCarga(cx+x,cy+y,s,7)).join('')+
+      fAnda(fCirc(cx,cy,36),-1,7,7,0)+fAnda(fCirc(cx,cy,36),-1,7,7,3.5)+fAnda(fCirc(cx,cy,62),-1,7,12,4)+
+      fCarga(78,160,1,6)+fT(88,164,'próton',{a:'start',c:'af-sub'})+fCarga(146,160,0,6)+fT(156,164,'nêutron',{a:'start',c:'af-sub'})+
+      fCarga(222,160,-1,6)+fT(232,164,'elétron',{a:'start',c:'af-sub'})},
+  /* pente passado no cabelo: os fios ficam arrepiados na direção do pente e os elétrons saltam do cabelo para ele */
+  atrito:()=>{const fios=Array.from({length:9},(_,k)=>{const a=Math.PI*(1.12+k*0.095),x=96+38*Math.cos(a),y=118+38*Math.sin(a);
+      return '<path d="M'+x.toFixed(1)+' '+y.toFixed(1)+' C'+(x+4).toFixed(1)+' '+(y-26).toFixed(1)+' '+(x+34+k*3).toFixed(1)+' '+(y-34).toFixed(1)+' '+(x+52+k*5).toFixed(1)+' '+(y-48-k).toFixed(1)+'" class="af-fio-cabelo"/>'}).join('');
+    return fDefs+fios+'<circle cx="96" cy="118" r="38" class="af-pele"/>'+
+      '<path d="M60 110 Q62 82 96 80 Q130 82 132 110 Q114 96 96 96 Q78 96 60 110 Z" class="af-cabelo-topo"/>'+
+      '<path d="M82 124 q5 -4 10 0 M104 124 q5 -4 10 0" class="af-dobra"/><path d="M88 138 q8 7 16 0" class="af-dobra"/>'+
+      '<rect x="168" y="22" width="124" height="14" rx="4" class="af-pente"/>'+Array.from({length:14},(_,k)=>'<rect x="'+(172+k*8.6)+'" y="35" width="4" height="18" rx="1.5" class="af-pente"/>').join('')+
+      [[192,14],[222,14],[252,14],[280,14]].map(([x,y])=>fCarga(x,y,-1,5)).join('')+
+      [[70,94],[100,86],[124,96]].map(([x,y])=>fCarga(x,y,1,5)).join('')+
+      [0,1,2].map(k=>'<g class="af-salta" style="animation-delay:'+(k*.6)+'s">'+fCarga(150+k*12,72-k*4,-1,5)+'</g>').join('')+
+      fT(96,174,'cabelo: perdeu elétrons (+)',{c:'af-sub'})+fT(262,100,'pente: ganhou',{c:'af-sub'})+fT(262,114,'elétrons (−)',{c:'af-sub'})},
   forcas:()=>fDefs+'<g class="af-afasta">'+fCarga(110,55,1,12)+'</g><g class="af-afasta r">'+fCarga(210,55,1,12)+'</g>'+fSeta(92,55,62,55)+fSeta(228,55,258,55)+fT(160,90,'iguais se empurram')+
     '<g class="af-junta">'+fCarga(110,135,1,12)+'</g><g class="af-junta r">'+fCarga(210,135,-1,12)+'</g>'+fSeta(128,135,150,135)+fSeta(192,135,170,135)+fT(160,170,'diferentes se puxam'),
   /* mão apontando o dedo (saindo da manga) perto da maçaneta de alavanca de uma porta de madeira; a faísca salta no vão */
@@ -91,17 +107,29 @@ const FIG={
     ['af-raio-halo','af-raio'].map(c=>'<path d="M165 93 L172 80 L176 101 L183 78 L187 104 L192 84 L197 92" class="'+c+'"/>').join('')+
     '<path d="M178 70 l-4 -8 M186 112 l3 8 M170 108 l-5 6" class="af-raio fino"/></g>'+
     fT(70,54,'corpo com carga (−)',{c:'af-sub'})+fT(160,166,'a carga pula pelo ar: faísca',{c:'af-sub'}),
-  cobre:()=>fDefs+fT(160,22,'metal: elétrons livres',{c:'af-tit'})+
-    Array.from({length:15},(_,k)=>'<circle cx="'+(50+(k%5)*55)+'" cy="'+(60+Math.floor(k/5)*45)+'" r="11" class="af-neu"/>').join('')+
-    '<g class="af-deriva">'+Array.from({length:14},(_,k)=>'<circle cx="'+(30+((k*37)%260))+'" cy="'+(48+((k*29)%100))+'" r="4.5" class="af-neg"/>').join('')+'</g>'+fSeta(120,172,200,172,'af-info'),
-  borracha:()=>fDefs+fT(160,22,'plástico e borracha: elétrons presos',{c:'af-tit'})+
-    Array.from({length:15},(_,k)=>{const x=50+(k%5)*55,y=60+Math.floor(k/5)*45;return '<circle cx="'+x+'" cy="'+y+'" r="11" class="af-neu"/><g class="af-treme" style="animation-delay:'+(k*.07)+'s"><circle cx="'+(x+15)+'" cy="'+(y-6)+'" r="4.5" class="af-neg"/></g>'}).join(''),
+  /* metal: íons de cobre (+) fixos na rede cristalina e elétrons livres (−) passeando entre eles, todos para o mesmo lado */
+  cobre:()=>{const onda=y=>'M-14 '+y+Array.from({length:15},(_,k)=>' q12 '+(k%2?7:-7)+' 24 0').join('');
+    return fDefs+fT(160,20,'metal: íons fixos e elétrons livres',{c:'af-tit'})+
+      '<clipPath id="afClipCobre"><rect x="12" y="30" width="296" height="124" rx="8"/></clipPath>'+
+      '<rect x="12" y="30" width="296" height="124" rx="8" class="af-cristal"/>'+
+      [48,92,136].map(y=>[0,1,2,3,4,5].map(k=>'<g transform="translate('+(40+k*48)+' '+y+')"><circle r="12" class="af-ion-cobre"/><text y="5" class="af-t af-escuro" text-anchor="middle" style="font-size:15px">+</text></g>').join('')).join('')+
+      '<g clip-path="url(#afClipCobre)">'+[[70,0],[70,3.3],[70,6.6],[114,1.6],[114,5],[114,8.2],[34,4.2],[150,2.4]].map(([y,a])=>fAnda(onda(y),-1,5,10,a)).join('')+'</g>'+
+      fSeta(116,170,204,170,'af-info')+fT(110,174,'elétrons',{a:'end',c:'af-sub'})},
+  /* isolante: cada elétron gira preso ao seu átomo; não há elétron livre para andar */
+  borracha:()=>fDefs+fT(160,20,'isolante: cada elétron preso ao seu átomo',{c:'af-tit'})+
+    Array.from({length:15},(_,k)=>{const x=48+(k%5)*56,y=54+Math.floor(k/5)*44;
+      return '<circle cx="'+x+'" cy="'+y+'" r="15" class="af-orb"/>'+fCarga(x,y,1,8)+fAnda(fCirc(x,y,15),-1,4.5,3.2+(k%3)*.4,k*.37)}).join('')+
+    fT(160,174,'não sobra elétron livre para andar',{c:'af-sub'}),
   fio:()=>fDefs+'<circle cx="110" cy="92" r="62" class="af-capa"/><circle cx="110" cy="92" r="38" class="af-cobre"/>'+
     Array.from({length:7},(_,k)=>{const a=k*Math.PI/3;return '<circle cx="'+(110+(k?20*Math.cos(a):0))+'" cy="'+(92+(k?20*Math.sin(a):0))+'" r="11" class="af-cobre fio"/>'}).join('')+
     fSeta(220,60,152,80)+fT(226,56,'cobre: conduz',{a:'start'})+fSeta(220,130,168,118)+fT(226,140,'capa: isola',{a:'start'}),
-  agua:()=>fDefs+'<path d="M90 40 v110 q0 14 14 14 h112 q14 0 14 -14 v-110" class="af-copo"/><rect x="93" y="70" width="134" height="91" rx="10" class="af-agua"/>'+
-    '<g class="af-deriva">'+[[110,90,1],[150,120,-1],[185,95,1],[205,140,-1],[125,140,-1],[170,80,-1]].map(([x,y,s])=>fCarga(x,y,s,7)).join('')+'</g>'+
-    fT(160,24,'água com sais: os íons levam a corrente',{c:'af-sub'}),
+  /* água com sal entre dois eletrodos ligados a uma pilha: íons + vão para o eletrodo −, íons − vão para o eletrodo + */
+  agua:()=>fDefs+fPilha(160,24,0)+'<path d="M134 24 H108 V64" class="af-fio"/><path d="M191 24 H212 V64" class="af-fio"/>'+
+    '<path d="M84 46 v100 q0 14 14 14 h124 q14 0 14 -14 v-100" class="af-copo"/><rect x="87" y="70" width="146" height="87" rx="10" class="af-agua"/>'+
+    '<rect x="102" y="60" width="12" height="84" rx="3" class="af-metal"/><rect x="206" y="60" width="12" height="84" rx="3" class="af-metal"/>'+
+    fT(96,58,'−',{s:16})+fT(226,58,'+',{s:16})+
+    [[86,0,1],[104,2.1,1],[124,4.2,1],[96,3.2,-1],[116,1,-1],[136,5,-1]].map(([y,a,s])=>fAnda(s>0?'M200 '+y+' H120':'M120 '+y+' H200',s,6.5,6.3,a,'af-ion')).join('')+
+    fT(160,176,'íons + vão para o polo −; íons − vão para o +',{c:'af-sub'}),
   testador:(f)=>{const est=f.estado,on=est==='conduz';
     /* LED do testador: cúpula sobre a base, com as duas perninhas */
     const led='<g transform="translate(60 62)">'+(on?'<circle r="26" fill="url(#afBrilho)" class="af-pulsa"/>':'')+
