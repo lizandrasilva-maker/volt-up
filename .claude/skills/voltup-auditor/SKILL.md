@@ -38,8 +38,8 @@ de norma vai direto para ela, nunca para "a professora" como se fosse outra pess
 |---|---|---|
 | 1 | NR-10 com vigência declarada (10.13.1 nova a partir de 01/06/2027; 10.5.1 antiga) e distrator de Kirchhoff | ✅ PR #60 |
 | 1b | Citações da NBR 5410 conferidas na edição 2004; 5.5.5 corrigido; Fim de Turno sem Y-Δ/reversão; comando da Partida em 24 V (NR-12 12.4.13 b) | ✅ PR #61 |
-| 2 | Caça-Defeito: desligar antes de trocar; testador de continuidade no Leve; **defeito sorteado** (gamificação 1); **cartão de bloqueio colecionável** com data, hora, motivo e nome (NR-12 12.11.3 b; gamificação 5) | próxima |
-| 3 | Fase nova "ache o erro na foto" (gamificação 6): cena 3D com 2–3 erros de montagem/segurança | depois da 2 |
+| 2 | Caça-Defeito: desligar antes de trocar; testador de continuidade no Leve; **defeito sorteado** (gamificação 1); **cartão de bloqueio colecionável** com nome, motivo, data e hora (gamificação 5). Na cozinha vale a NR-10 (desenergizar, impedir reenergização, sinalizar, constatar); o cartão da NR-12 12.11.3 b é de máquinas e só inspirou os campos | ✅ PR da etapa 2 |
+| 3 | Fase nova "ache o erro na foto" (gamificação 6): cena 3D com 2–3 erros de montagem/segurança | próxima |
 | 4 | Aulas do Cap. 2 (A–G) com cenas da bancada realista | depois da 3 |
 | 5 | Multímetro completo (corrente, resistência, lei dos nós na prática) | depois da 4 |
 | 6 | Pré/pós-teste por capítulo (responde à pergunta 12 do critério de qualidade); grava respostas: **mudança no banco precisa de confirmação da Liz** | futura |

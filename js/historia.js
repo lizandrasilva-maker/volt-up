@@ -95,7 +95,7 @@ const SCENES={
   primeiro:[['chico','Antes de mexer na fiação dela, treina na bancada portátil. Ela é de {V} V, igual à rede da casa: fonte, interruptor e lâmpada.'],['chico','Na régua da fonte, L1 é a fase e N é o neutro. O neutro já chega aterrado pela fonte.'],['chico','A fonte não tem terra. Quando precisar, você crava a haste no chão e liga no BEP. E na obra, confira a fase com o instrumento antes de ligar.'],['chico','Ligue do jeito da NBR 5410: fase no interruptor, retorno até a lâmpada e neutro azul-claro direto no bocal.']],
   previsao:[['chico','Ainda na bancada: eletricista bom prevê o que vai acontecer antes de ligar. Topa um desafio?'],['eu','Topo! Vou pensar antes de responder.']],
   paralelo:[['fatima','Agora a minha sala: quero colocar duas lâmpadas lá.'],['fatima','E quero as duas bem fortes, viu?'],['chico','Cuidado, {nome}: tem um jeito de ligar que deixa as duas fraquinhas.']],
-  defeito:[['fatima','Mestre, a lâmpada da minha cozinha não acende mais! As outras luzes da casa estão funcionando.'],['chico','Se só a cozinha apagou, o problema está no circuito da cozinha. Vamos testar peça por peça: aqui não se troca nada no chute.']],
+  defeito:[['fatima','Mestre, a lâmpada da minha cozinha não acende mais! As outras luzes da casa estão funcionando.'],['chico','Se só a cozinha apagou, o problema está no circuito da cozinha. Vamos testar peça por peça: aqui não se troca nada no chute.'],['chico','E antes de pôr a mão em qualquer peça: desliga no quadro e confere que não tem tensão. Choque não dá segunda chance.']],
   seguranca:[['chico','A rede de {V} V machuca de verdade. Antes de mexer nela, a parte mais importante do ofício.'],['eu','Segurança primeiro!']],
   ohm:[['fatima','E por que a minha conta de luz vem tão alta?'],['chico','Hora de fazer conta: potência, tempo e consumo.']],
   /* Cap. 2 */
@@ -229,8 +229,9 @@ const PHASES=[
      check:st=>tableCheck(st,[{sw:{S0:1,S2:1},want:{L1:1,L2:1}},{sw:{S0:1,S2:0},want:{L1:1,L2:0}},{sw:{S0:0,S2:1},want:{L1:0,L2:0}},{sw:{S0:0,S2:0},want:{L1:0,L2:0}}],true)}
   }},
  {id:'defeito',nome:'Caça-Defeito',sub:'Cozinha da Dona Fátima',kind:'bancada',tipo:'diag',ic:'multimetro',cor:'#6b5512',
-  card:{leve:'Testar antes de trocar economiza peça.',moderado:'Circuito série aberto: a tensão toda aparece no ponto aberto.',full:'Diagnóstico eficiente: divida o circuito ao meio a cada medição.'},
-  dados:{leve:{cand:['F','S1','L1'],limit:3},moderado:{cand:['F','S1','L1'],limit:3},full:{cand:['F','S1','L1','w1','w3'],limit:3}}},
+  card:{leve:'Desligue antes de testar e de trocar. Testar antes economiza peça.',moderado:'Desligou? Meça de novo: só mexe com 0 V constatado.',full:'Desligar, bloquear, sinalizar, constatar 0 V: só então intervir.'},
+  /* defeitos possíveis (sorteados): peças F (DJ), S1, L1 e fios w1 (entrada do DJ), w2 (DJ → S1), w3 (retorno), w4 (neutro) */
+  dados:{leve:{cand:['F','S1','L1','w2','w3'],limit:4},moderado:{cand:['F','S1','L1','w2','w3','w4'],limit:3},full:{cand:['F','S1','L1','w1','w2','w3','w4'],limit:3}}},
  {id:'renovavel',nome:'Guardião Verde',sub:'Renovável ou não?',kind:'classificar',tipo:'sort',ic:'sol',cor:'#2d6a3a',
   card:{leve:'Lenha pode ser renovável, se replantar!',moderado:'A casca de castanha do Ceará vira energia (biomassa).',full:'Hidrogênio só é verde se a eletricidade da eletrólise for renovável.'},
   dados:{
