@@ -4,12 +4,15 @@ const BAT=()=>C('B','src',45,125,0,{fases:1});
 /* Aterramento das missões com massa metálica: haste cravada no solo e BEP (barramento de equipotencialização principal). */
 /* BEP e haste um pouco abaixo da fonte: deixa um corredor livre para os fios que saem dos bornes dela */
 const ATERRA=()=>[C('BEP','bep',100,200,0),C('H','haste',40,215,0)];
+/* fonte de comando 24 V⎓ dos painéis do Cap. 3: entre a contatora e o motor, abaixo das botoeiras */
+const FC_POS=[215,170];
 /* Liga o PE nas luminárias que têm borne de terra (pe:true, ex.: luminária metálica). O bocal simples não tem PE. */
 function withPE(st){const ls=st.comps.filter(c=>c.type==='lamp'&&c.pe===true);if(!ls.length)return autoColor(st);
   if(!st.comps.some(c=>c.type==='bep')){st.comps.push(...ATERRA());st.wires.push({a:'H.0',b:'BEP.0',cor:'terra'})}
   let prev='BEP.1';ls.forEach(l=>{st.wires.push({a:prev,b:l.id+'.2',e:'h',cor:'terra'});prev=l.id+'.2'});return autoColor(st)}
 /* Que condutor é cada rede: fase (qualquer fase da fonte), neutro, terra (haste/BEP) ou retorno. */
-const tipoRede=(r,n)=>r.ehFase(n)?'fase':n===r.N?'neutro':r.protecao.has(n)?'terra':'retorno';
+/* cmd = circuito de comando em 24 V⎓, que sai da fonte de comando (isolado da rede) */
+const tipoRede=(r,n)=>r.ehFase(n)?'fase':n===r.N?'neutro':r.protecao.has(n)?'terra':r.ehCmd&&r.ehCmd(n)?'cmd':'retorno';
 function autoColor(st){const r=solve(st.comps.map(c=>c.type==='sw'?Object.assign({},c,{closed:false}):c),st.wires);
   st.wires.forEach(w=>{if(w.cor)return;w.cor=tipoRede(r,r.net(w.a))});return st}
 function scSerie(){return withPE({comps:[BAT(),C('L1','lamp',170,45,0),C('L2','lamp',290,125,1)],wires:[W('B.0','L1.0','v'),W('L1.1','L2.0','h'),W('L2.1','B.1')]})}
@@ -49,7 +52,9 @@ function tableCheck(st,rows,strong){
 /* Cores de condutor (NBR 5410): neutro azul-claro; proteção (PE) verde-amarelo ou verde; fase e retorno em qualquer outra cor (no jogo: fase vermelha, retorno branco). */
 /* Na bancada de corrente contínua (pilhas), a convenção é vermelho no positivo e preto no negativo. */
 const CORES={fase:{n:'Fase',c:'var(--fase)'},neutro:{n:'Neutro',c:'var(--neutro)'},retorno:{n:'Retorno',c:'#d9dde3'},terra:{n:'Terra',c:'linear-gradient(90deg,var(--terra) 50%,#f2d22e 50%)'},
-  pos:{n:'Positivo (+)',c:'#d33a2c'},neg:{n:'Negativo (−)',c:'#1c1f24'}};
+  pos:{n:'Positivo (+)',c:'#d33a2c'},neg:{n:'Negativo (−)',c:'#1c1f24'},
+  /* comando em corrente contínua (fonte de comando 24 V⎓): azul-escuro, como no costume de painel da IEC 60204-1 */
+  cmd:{n:'Comando 24 V',c:'#2f5fd0'}};
 const coresDoNivel=()=>['fase','neutro','retorno','terra'];
 function palette(cur,lista){return '<div class="pal" role="group" aria-label="Cor do fio">'+(lista||coresDoNivel()).map(k=>'<button class="btn" data-cor="'+k+'" aria-pressed="'+(cur===k)+'"><span class="sw8" style="background:'+CORES[k].c+'"></span>'+CORES[k].n+'</button>').join('')+'</div>'}
 function colorCheck(st){
@@ -60,6 +65,8 @@ function colorCheck(st){
     if(kind==='neutro'&&w.cor!=='neutro')return L()?'O fio do neutro é azul-claro. Troque a cor.':'Neutro deve ser azul-claro (NBR 5410).';
     if((kind==='fase'||kind==='retorno')&&w.cor==='neutro')return 'Azul-claro é só do neutro. '+(kind==='fase'?'Esse fio é fase.':'Esse fio é retorno (entre interruptor e lâmpada).');
     if((kind==='fase'||kind==='retorno')&&w.cor==='terra')return 'Verde-amarelo é só do terra (PE). Esse fio leva corrente: é '+kind+'.';
+    if(kind==='cmd'&&(w.cor==='neutro'||w.cor==='terra'))return L()?'Esse fio é do comando de 24 V. Use o azul-escuro: azul-claro é do neutro e verde-amarelo é do terra.':'Fio do circuito de comando (24 V⎓) com a cor '+(w.cor==='neutro'?'do neutro (azul-claro)':'do PE (verde-amarelo)')+'. Essas cores são reservadas (NBR 5410); no comando use o azul-escuro.';
+    if((kind==='fase'||kind==='retorno')&&w.cor==='cmd')return 'Azul-escuro é do comando de 24 V. Esse fio está na rede: é '+kind+'.';
   }
   return null;
 }
@@ -148,12 +155,25 @@ function impulsoCheck(st,puls){
   return null;
 }
 /* Partida direta: liga pelo LIGA, segura pelo selo, para no DESLIGA e na sobrecarga (relé térmico). */
+/* Comando em 24 V (NR-12, 12.4.13 b): a fonte de comando T1 precisa estar na rede, a saída dela não se mistura com a
+   rede e a bobina de 24 V não pode receber a tensão da rede. Devolve a mensagem do problema ou null. */
+function comando24Check(r,kid){
+  const f=Object.keys(r.fc||{})[0];if(!f)return null;const e=r.fc[f];
+  if(r.sobre&&r.sobre[kid])return L()?'A bobina da contatora é de 24 V e está recebendo '+r.sobre[kid]+' V da rede: ela queimaria! Os botões e a bobina ficam no +24 e no 0V da fonte de comando.':'Bobina de 24 V⎓ submetida a '+r.sobre[kid]+' V: queimaria. O circuito de comando (botoeiras, 95-96, selo e A1-A2) é alimentado pelo +24 e pelo 0V de '+f+', não pela rede (NR-12, 12.4.13 b: interface de operação em extrabaixa tensão).';
+  if(e==='mistura')return L()?'A saída de 24 V da fonte de comando ficou ligada na rede. O +24 e o 0V só vão nos botões e na bobina.':'A saída de '+f+' (+24 / 0V) está ligada à fase, ao neutro ou ao terra. O circuito de comando em extrabaixa tensão fica separado da rede; a fonte se protege e não entrega os 24 V.';
+  if(e==='curto')return L()?'O +24 e o 0V da fonte de comando estão ligados direto: é um curto. A fonte se protege e desliga.':'Curto na saída de '+f+': +24 ligado ao 0V sem carga. A fonte de comando entra em proteção e o comando fica sem tensão.';
+  if(e==='off')return L()?'A fonte de comando está apagada (luz DC OK desligada). Ligue o L dela na fase e o N no neutro.':f+' sem alimentação (LED DC OK apagado): a entrada L-N da fonte de comando vai na rede.';
+  return null}
 function partidaCheck(st,temFT){
   const s=copia(st,{K:{on:false},BL:{pressed:false},BD:{pressed:false},FT:{trip:false}}),g=id=>s.comps.find(c=>c.id===id);
+  const cmd=s.comps.some(c=>c.type==='fc');
   const on=()=>{const r=solve(s.comps,s.wires);if(r.short)throw 0;return acesa(r,'M')};
   try{
     if(on())return L()?'O motor ligou sozinho! Ele só pode ligar quando apertar o botão verde.':'O motor não pode ligar sozinho: ele só liga pelo LIGA, através do contato 1-2 da contatora.';
-    g('BL').pressed=true;if(!on())return L()?'Apertei o botão verde e o motor não girou. O verde leva a fase até a bobina (A1); A2 vai no neutro; o 1-2 da contatora liga o motor.':'LIGA apertado e o motor não girou: a botoeira liga energiza a bobina (A1-A2) e o contato 1-2 alimenta o motor.';
+    g('BL').pressed=true;
+    if(cmd){const r=solve(s.comps,s.wires);if(r.short)throw 0;const m=comando24Check(r,'K');if(m)return m}
+    if(!on())return cmd?(L()?'Apertei o botão verde e o motor não girou. O +24 da fonte de comando passa pelo vermelho e pelo verde até a bobina (A1); o A2 volta no 0V; o 1-2 da contatora liga o motor na rede.':'LIGA apertado e o motor não girou: +24 → BD → BL → A1; A2 no 0V da fonte de comando; o contato 1-2 da contatora alimenta o motor pela rede.')
+      :(L()?'Apertei o botão verde e o motor não girou. O verde leva a fase até a bobina (A1); A2 vai no neutro; o 1-2 da contatora liga o motor.':'LIGA apertado e o motor não girou: a botoeira liga energiza a bobina (A1-A2) e o contato 1-2 alimenta o motor.');
     g('BL').pressed=false;if(!on())return L()?'Soltei o botão verde e o motor parou: falta o selo. Ligue o 13-14 da contatora junto com o botão verde.':'Soltei o LIGA e o motor parou: falta o selo. O contato 13-14 vai em paralelo com a botoeira liga.';
     g('BD').pressed=true;if(on())return L()?'Apertei o vermelho e o motor não parou. O vermelho fica antes do verde e do selo.':'DESLIGA apertado e o motor continuou: a botoeira desliga (NF) vai em série com a bobina, antes do LIGA e do selo.';
     g('BD').pressed=false;if(on())return 'Soltei o DESLIGA e o motor voltou sozinho: o selo tem que ficar depois do DESLIGA.';
@@ -167,6 +187,7 @@ function partidaCheck(st,temFT){
 function boiaCheck(st){
   const v=copia(st,{BO:{vazia:true},K:{on:false}}),rv=solve(v.comps,v.wires),c=copia(st,{BO:{vazia:false},K:{on:false}}),rc=solve(c.comps,c.wires);
   if(rv.short||rc.short)return CURTO();
+  {const m=comando24Check(rv,'K');if(m)return m}
   if(!acesa(rv,'M'))return L()?'Com a caixa vazia a bomba tem que ligar.':'Caixa vazia e a bomba parada: a boia fecha o comando'+(st.comps.some(x=>x.id==='K')?' da bobina da contatora, e o 1-2 alimenta a bomba.':' da bomba.');
   if(acesa(rc,'M'))return 'Com a caixa cheia a bomba tem que desligar: a boia corta o comando.';
   if(!semTensao(rc,'M'))return 'Com a bomba desligada ela ainda tem tensão: o contato tem que cortar a fase.';
@@ -175,8 +196,9 @@ function boiaCheck(st){
 /* Cenários da fase Sobrecarga! (prever): partida direta montada, com ou sem selo. */
 function scPartida(semSelo,estado){
   /* mesmo painel da Partida Direta: relé térmico embaixo da contatora; 95-96 logo antes da bobina */
-  const st={comps:[BAT(),C('K','kc',150,76,0),C('FT','ft',150,202,0),C('BD','btn',230,55,0,{nf:true}),C('BL','btn',295,55,0,{nf:false}),C('M','motor',285,190,0),...ATERRA()],
-    wires:[W('B.0','BD.0'),W('BD.1','BL.0'),W('BL.1','FT.2'),W('FT.3','K.0'),W('K.1','B.1'),W('B.0','K.2'),W('K.3','FT.0'),W('FT.1','M.0'),W('M.1','B.1'),W('M.2','BEP.1'),W('BEP.0','H.0')]};
+  /* comando em 24 V⎓ pela fonte de comando T1 (NR-12, 12.4.13 b); força pela rede */
+  const st={comps:[BAT(),C('K','kc',150,76,0,{vb:VCMD}),C('FT','ft',150,202,0),C('T1','fc',FC_POS[0],FC_POS[1],0),C('BD','btn',230,55,0,{nf:true}),C('BL','btn',295,55,0,{nf:false}),C('M','motor',285,190,0),...ATERRA()],
+    wires:[W('B.0','T1.0'),W('B.1','T1.1'),W('T1.2','BD.0'),W('BD.1','BL.0'),W('BL.1','FT.2'),W('FT.3','K.0'),W('K.1','T1.3'),W('B.0','K.2'),W('K.3','FT.0'),W('FT.1','M.0'),W('M.1','B.1'),W('M.2','BEP.1'),W('BEP.0','H.0')]};
   if(!semSelo)st.wires.push(W('BD.1','K.4'),W('K.5','FT.2'));
   autoColor(st);
   st.comps.forEach(c=>Object.assign(c,(estado||{})[c.id]||{}));

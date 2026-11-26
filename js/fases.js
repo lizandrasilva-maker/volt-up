@@ -92,7 +92,7 @@ try{const v=localStorage.getItem('volt-vista');VISTA3D.ligada=v!=='multi';VISTA3
 function escolheVista(m){VISTA3D.ligada=m!=='multi';VISTA3D.plano=m==='plano';try{if(m==='3d')localStorage.removeItem('volt-vista');else localStorage.setItem('volt-vista',m)}catch(e){}}
 /* peças que a vista 3D já desenha: fonte 1F+N, disjuntor, DR e lâmpada sem PE (Laboratório 3D e Quadro Novo).
    As outras bancadas ficam no SVG. */
-VISTA3D.suporta=st=>st.comps.every(c=>c.type==='src'||c.type==='fuse'||c.type==='dr'||c.type==='btn'||c.type==='kc'||c.type==='ft'||c.type==='sw'||c.type==='sw3'||c.type==='sw4'||c.type==='foto'||c.type==='ri'||c.type==='pilha'||c.type==='motor'||c.type==='bep'||c.type==='haste'||c.type==='boia'||(c.type==='lamp'&&c.pe!==true));
+VISTA3D.suporta=st=>st.comps.every(c=>c.type==='src'||c.type==='fuse'||c.type==='dr'||c.type==='btn'||c.type==='kc'||c.type==='ft'||c.type==='sw'||c.type==='sw3'||c.type==='sw4'||c.type==='foto'||c.type==='ri'||c.type==='pilha'||c.type==='motor'||c.type==='bep'||c.type==='haste'||c.type==='boia'||c.type==='fc'||(c.type==='lamp'&&c.pe!==true));
 /* o botão 🧊 3D aparece em toda bancada cujas peças já existem em 3D, com ou sem ?3d=1 (o flag só abre direto em 3D
    e mostra os laboratórios). O Three.js é baixado no primeiro toque no botão. */
 function quer3D(st){return !!(VISTA3D.ligada&&VISTA3D.vista&&VISTA3D.vista.aceita(st))}
@@ -302,7 +302,7 @@ function runBuild(p,task){
     frame(p,missao(task.goal,task.real)+
       /* fases com projeto: a planta de fiação abre e fecha acima da bancada */
       (pl?'<button class="btn planta-btn" id="vplanta" aria-expanded="'+verPlanta+'">📄 '+(verPlanta?'Fechar a planta':'Ver a planta do projeto')+'</button>'+(verPlanta?plantaHTML(pl):''):'')+
-      (won?'':palette(cor,cc?['pos','neg']:null))+benchWrap(v3||aguarda?'':board(st,{res:r,sel,pickTerm:!won,pickWire:!won,toggle:true,real:R,vb:zm.vb(),curto}),'',zm,cc,v3||aguarda,p3,aguarda,estRede)+(cc?chipsCC(st,r):statusChips(st,r))+
+      (won?'':palette(cor,cc?['pos','neg']:st.comps.some(c=>c.type==='fc')?coresDoNivel().concat('cmd'):null))+benchWrap(v3||aguarda?'':board(st,{res:r,sel,pickTerm:!won,pickWire:!won,toggle:true,real:R,vb:zm.vb(),curto}),'',zm,cc,v3||aguarda,p3,aguarda,estRede)+(cc?chipsCC(st,r):statusChips(st,r))+
       (msg?'<div class="fb '+(won?'good':'bad')+'">'+(won?pick(PRAISE[S.mode])+' ':'')+msg+(won&&L()&&!cc?'<br><small>Na vida real, só eletricista mexe na rede, e com tudo desligado.</small>':'')+'</div>':st.wires.length?'':'<p class="help">'+help+'</p>')+
       (won?'<button class="btn main" id="end">Concluir ⚡</button>':'<div class="row">'+botoesHist(hist)+'<button class="btn ghost" id="clr">Limpar fios</button><button class="btn main" id="chk">Verificar</button></div>'));
     const curtoAgora=curto,drawnAntes=drawn;keepScroll(drawn);drawn=true;curto=null;/* a animação do curto roda uma vez só */

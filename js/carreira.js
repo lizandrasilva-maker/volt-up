@@ -8,7 +8,7 @@ const ATTR={
 };
 const PH_ATTR={energia:'conceito',carga:'conceito',macaneta:'conceito',condutor:'conceito',continuidade:'diagnostico',grandezas:'conceito',lanterna:'montagem',medicao:'conceito',medir:'diagnostico',leiohm:'calculo',ohmcc:'calculo',seriepar:'conceito',parcc:'montagem',prevcc:'diagnostico',kirchhoff:'conceito',kirchcc:'calculo',emergencia:'diagnostico',capacitor:'conceito',capbanc:'diagnostico',imabobina:'conceito',eletroima:'montagem',ccca:'conceito',ccouca:'conceito',entrada:'conceito',faisca:'conceito',renovavel:'conceito',primeiro:'montagem',paralelo:'montagem',previsao:'diagnostico',defeito:'diagnostico',seguranca:'seguranca',ohm:'calculo',
   quadro:'conceito',quadronovo:'montagem',escada:'montagem',corredor:'montagem',garagem:'montagem',impulso:'montagem',surto:'seguranca',
-  turno:'seguranca',partida:'montagem',sobrecarga:'diagnostico',caixa:'montagem',fimturno:'calculo'};
+  turno:'seguranca',partida:'montagem',sobrecarga:'diagnostico',caixa:'montagem',fimturno:'seguranca'};
 const KLASS={conceito:'Mente Teórica',montagem:'Mão na Massa',diagnostico:'Detetive de Falhas',seguranca:'Guardião da Segurança',calculo:'Calculista'};
 const RANKS=[{n:'Aprendiz',xp:0},{n:'Ajudante',xp:150},{n:'Eletricista',xp:400},{n:'Eletricista Sênior',xp:800},{n:'Responsável Técnico',xp:1400}];
 function rankOf(){let i=0;RANKS.forEach((r,k)=>{if(S.xp>=r.xp)i=k});const nx=RANKS[i+1];return{i,r:RANKS[i],nx,p:nx?(S.xp-RANKS[i].xp)/(nx.xp-RANKS[i].xp):1}}

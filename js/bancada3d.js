@@ -17,12 +17,12 @@ const cssVar=(n,padrao)=>{try{return getComputedStyle(document.documentElement).
 /* ---------- bornes: posição local de cada borne, com os MESMOS índices de terms(c) no motor.js ----------
    O construtor de cada peça lê esta tabela para pôr os parafusos; nenhuma peça define borne por conta própria. */
 const DIN={W:2.4,H:8,D:4.6,z0:.75};/* módulo DIN estilizado (1 módulo = 2,4) sobre o trilho de 0,75 */
-const LARG_DIN={fuse:DIN.W,dr:2*DIN.W,kc:3*DIN.W,ft:2*DIN.W,ri:2*DIN.W};/* largura de cada peça de trilho: disjuntor 1 módulo, DR e relé térmico 2, contatora 3 */
+const LARG_DIN={fuse:DIN.W,dr:2*DIN.W,kc:3*DIN.W,ft:2*DIN.W,ri:2*DIN.W,fc:2*DIN.W};/* largura de cada peça de trilho: disjuntor 1 módulo, DR e relé térmico 2, contatora 3 */
 /* contatora e relé térmico em 3 níveis (skill cadesimu-industrial-panel-builder): base com trava DIN, degraus dos bornes
    a 65% da profundidade e frontal elevado. São um pouco mais altos que o módulo comum, para caber a serigrafia. */
 const ALT3N=9,DEGRAU=DIN.z0+DIN.D*.65,FAIXA_BORNE=2.4;
 /* peças de trilho: o fio entra pelo topo/base do nicho do borne (atrás do parafuso), com terminal tubular */
-const VERTICAL={fuse:1,dr:1,kc:1,ft:1,ri:1,btn:1,motor:1,pilha:1};/* + botoeira (bloco de contato) e motor (caixa de ligação aberta) */
+const VERTICAL={fuse:1,dr:1,kc:1,ft:1,ri:1,btn:1,motor:1,pilha:1,fc:1};/* + botoeira (bloco de contato) e motor (caixa de ligação aberta) */
 const FRENTE=DIN.z0+DIN.D;/* face frontal dos módulos DIN */
 const TERM3D={
   /* fonte: índices do motor.js .0 = L1, .1 = N, .2 = L2, .3 = L3; na régua, da esquerda para a direita, L1 L2 L3 N (como no 2D) */
@@ -49,7 +49,9 @@ const TERM3D={
   /* fotocélula: régua embaixo, .0 = L (fase), .1 = N, .2 = C (carga) */
   foto:()=>[[-1.1,-3.2,1.0],[0,-3.2,1.0],[1.1,-3.2,1.0]],
   /* relé de impulso: .0/.1 = A1/A2 (bobina, à esquerda), .2/.3 = 1-2 (contato, à direita) */
-  ri:()=>[[-1.2,3,DEGRAU+.05],[-1.2,-3,DEGRAU+.05],[1.2,3,DEGRAU+.05],[1.2,-3,DEGRAU+.05]]
+  ri:()=>[[-1.2,3,DEGRAU+.05],[-1.2,-3,DEGRAU+.05],[1.2,3,DEGRAU+.05],[1.2,-3,DEGRAU+.05]],
+  /* fonte de comando: .0 = L e .1 = N (entrada, em cima), .2 = +24 e .3 = 0V (saída, embaixo) */
+  fc:()=>[[-1.2,3,DEGRAU+.05],[1.2,3,DEGRAU+.05],[-1.2,-3,DEGRAU+.05],[1.2,-3,DEGRAU+.05]]
 };
 const bornesDe=c=>(TERM3D[c.type]?TERM3D[c.type](c):[]).map(p=>new THREE.Vector3(...p));
 
@@ -62,7 +64,7 @@ const PAL={corpoDIN:0xE6E9EF,frenteDIN:0xD5DAE2,trilho:0x9AA5B4,cavidade:0x1F293
   ceuDia:0xBFE0F7,ceuNoite:0x1B2740,sol:0xF4C430,lua:0xF2E6A0,estrela:0xFFFFFF,corpoFoto:0x8C96A3,placaFoto:0xD6DBE1,baseFoto:0x59616B,sensor:0xC0392B,
   suportePilha:0x2B3036,pilha:0x3B4252,rotuloPilha:0x1C7ED6,pilhaQuente:0xC0392B,polo:0xC9A227,
   fioPreto:0x1A1D21,fioBranco:0xEEF1F4,fioVermelho:0xC0392B,riOff:0x94A3B8,riOn:0xF97316,
-  base3n:0x1F2328,poco:0x2B3036,serig:'#111315',tagBorda:'#22252A',ponteira:{fase:0xC92A2A,neutro:0x1C7ED6,retorno:0xE9ECEF,terra:0xFCC419,pos:0xC92A2A,neg:0x1F2328},
+  base3n:0x1F2328,poco:0x2B3036,serig:'#111315',tagBorda:'#22252A',ponteira:{fase:0xC92A2A,neutro:0x1C7ED6,retorno:0xE9ECEF,terra:0xFCC419,pos:0xC92A2A,neg:0x1F2328,cmd:0x1C3FAA},
   caixaAgua:0x1F4F86,tampa:0x2A66A8,agua:0x5AA9E6,aguaCorte:0x8CC8F2,pera:0xEEF3F7,caboBoia:0x1F2328};
 
 /* ---------- cache compartilhado (materiais e texturas estáticos) ----------
@@ -101,7 +103,7 @@ function texturaBrilho(k,cor){const C=cache();if(C.tex.has(k))return C.tex.get(k
 function sprite(tex,esc){const m=semContorno(new THREE.SpriteMaterial({map:tex,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending}));cache().unicos.push(m);const s=new THREE.Sprite(m);s.scale.setScalar(esc);return s}
 
 /* ---------- cores dos fios: da tabela CORES do 2D (js/conteudo.js), resolvendo var(--x) pelo CSS ---------- */
-const PADRAO_FIO={fase:'#e24c3f',neutro:'#6bb9e8',retorno:'#d9dde3',terra:'#43b05c',pos:'#d33a2c',neg:'#1c1f24'};
+const PADRAO_FIO={fase:'#e24c3f',neutro:'#6bb9e8',retorno:'#d9dde3',terra:'#43b05c',pos:'#d33a2c',neg:'#1c1f24',cmd:'#2f5fd0'};
 function coresDoFio(k){const v=(typeof CORES!=='undefined'&&CORES[k]&&CORES[k].c)||PADRAO_FIO[k]||PADRAO_FIO.fase;
   return (v.match(/var\(--[\w-]+\)|#[0-9a-f]{3,8}\b/gi)||[PADRAO_FIO[k]||PADRAO_FIO.fase]).map(x=>x.startsWith('var(')?cssVar(x.slice(4,-1),PADRAO_FIO[k]||'#888'):x)}
 /* fio terra: listras nas duas cores de CORES.terra (verde e amarelo), repetidas ao longo do tubo pelas UVs */
@@ -242,7 +244,7 @@ function contatora(c){const g=new THREE.Group(),bornes=bornesDe(c),W=LARG_DIN.kc
   const embolo=new THREE.Mesh(new THREE.BoxGeometry(1.1,.8,.5),mat(PAL.emboloOff));embolo.position.set(-.9,.45,EMBOLO.z);g.add(embolo);
   const io=rotulo('I    O',2.1,.5,{cor:PAL.serig,esc:.8});io.position.set(-.9,1.5,FRENTE+.02);g.add(io);
   tag(g,c.lab||c.id,1.9,.75,FRENTE+.02);
-  const bob=rotulo('AC-3 · bobina '+(typeof rede==='function'?rede().V:220)+' V~',W*.86,.5,{cor:PAL.serig,esc:.72});bob.position.set(0,-.75,FRENTE+.02);g.add(bob);
+  const bob=rotulo('AC-3 · bobina '+(c.vb?c.vb+' V⎓':(typeof rede==='function'?rede().V:220)+' V~'),W*.86,.5,{cor:PAL.serig,esc:.72});bob.position.set(0,-.75,FRENTE+.02);g.add(bob);
   const norma=rotulo('IEC 60947-4-1',3,.42,{cor:'#4a515a',esc:.72});norma.position.set(0,-1.45,FRENTE+.02);g.add(norma);
   poeParafusos(g,bornes);
   const marca=['A1','A2','1L1','2T1','13NO','14NO'];
@@ -426,7 +428,22 @@ function releImpulso(c){const g=new THREE.Group(),bornes=bornesDe(c),W=LARG_DIN.
   poeParafusos(g,bornes);
   bornes.forEach((b,k)=>serigrafia(g,nomeBorne(c,k),nomeBorne(c,k),b.x,b.y+Math.sign(b.y)*.98));
   return {g,bornes,corpo:[...mal,alav,ponta,visor],extra:{pino,visor}}}
-const CONSTRUTOR={src:fonte,fuse:disjuntor,lamp:lampada,dr,btn:botoeira,kc:contatora,ft:reletermico,sw:interruptor,sw3:interruptor,sw4:interruptor,motor:motorEl,bep,haste,boia:boiaEl,foto:fotocelula,ri:releImpulso,pilha:pilhaEl};
+/* Fonte de comando 24 V⎓ (2 módulos, 3 níveis): entrada L/N da rede em cima, saída +24/0V isolada embaixo. No frontal,
+   a tensão de saída, o LED verde "DC OK" (aceso com c.on, calculado pelo solver) e o trimpot de ajuste. Não é acionável.
+   NR-12, 12.4.13 b: botoeiras e comandos que o operador toca em extrabaixa tensão. */
+function fonteComando(c){const g=new THREE.Group(),bornes=bornesDe(c),W=LARG_DIN.fc,mal=carcaca3(g,W,bornes);
+  const v=rotulo('24 V⎓','auto',.75,{cor:PAL.serig,esc:.72});v.position.set(0,1.55,FRENTE+.02);g.add(v);
+  const ent=rotulo((typeof rede==='function'?rede().V:220)+' V~ → 24 V⎓','auto',.42,{cor:'#4a515a',esc:.72});ent.position.set(0,.85,FRENTE+.02);g.add(ent);
+  const led=new THREE.Mesh(new THREE.SphereGeometry(.3,16,12),matUnico(0x2a3038,{emissive:0x000000}));led.position.set(-1,.05,FRENTE+.12);g.add(led);
+  const ok=rotulo('DC OK','auto',.38,{cor:PAL.serig,esc:.72});ok.position.set(-1,-.5,FRENTE+.02);g.add(ok);
+  const trim=new THREE.Mesh(new THREE.CylinderGeometry(.32,.32,.2,18),mat(PAL.zinco));trim.rotation.x=Math.PI/2;trim.position.set(1,.05,FRENTE+.1);g.add(trim);
+  const fendaT=new THREE.Mesh(new THREE.BoxGeometry(.42,.08,.06),mat(PAL.fenda));fendaT.position.set(1,.05,FRENTE+.22);g.add(fendaT);
+  const adj=rotulo('ADJ','auto',.38,{cor:PAL.serig,esc:.72});adj.position.set(1,-.5,FRENTE+.02);g.add(adj);
+  tag(g,(c.lab||c.id)+' · fonte',0,-1.45,FRENTE+.02);
+  poeParafusos(g,bornes);
+  bornes.forEach((b,k)=>serigrafia(g,nomeBorne(c,k),nomeBorne(c,k),b.x,b.y+Math.sign(b.y)*.98));
+  return {g,bornes,corpo:[...mal,led,trim],extra:{led}}}
+const CONSTRUTOR={src:fonte,fuse:disjuntor,lamp:lampada,dr,btn:botoeira,kc:contatora,ft:reletermico,sw:interruptor,sw3:interruptor,sw4:interruptor,motor:motorEl,bep,haste,boia:boiaEl,foto:fotocelula,ri:releImpulso,pilha:pilhaEl,fc:fonteComando};
 
 /* ---------- estado da cena (uma bancada 3D por vez) ---------- */
 let E=null;
@@ -717,6 +734,7 @@ function atualizar(ctx){
       e.visor.material.color.setHex(on?PAL.riOn:PAL.riOff);e.visor.material.emissive.setHex(on?0x7a3a0a:0x000000)}
     if(c.type==='sw'||c.type==='sw3'||c.type==='sw4'){const alvo=(c.type==='sw'?c.closed:c.pos)?TECLA.on:TECLA.off;if(p.tec!==alvo){const pi=p.extra.pino,de=p.tec===undefined?alvo:pi.rotation.x;p.tec=alvo;anima(120,k=>{pi.rotation.x=de+(alvo-de)*k})}}
     if(c.type==='btn'){const alvo=c.pressed?BOTAO.afunda:0;if(p.emb!==alvo){const de=p.extra.embolo.position.z,para=BOTAO.z+alvo;p.emb=alvo;anima(90,k=>{p.extra.embolo.position.z=de+(para-de)*k})}}
+    if(c.type==='fc'){const on=!!c.on;p.extra.led.material.color.setHex(on?0x43b05c:0x2a3038);p.extra.led.material.emissive.setHex(on?0x1f7a36:0x000000)}
     if(c.type==='dr'){p.extra.visor.material.color.setHex(c.trip?PAL.desarmado:PAL.armado);p.extra.visor.material.emissive.setHex(c.trip?0x6b1a12:0x0f4a24)}
     if(c.type==='src'){p.extra.led.material.color.setHex(c.trip?0xe24c3f:0x43b05c);p.extra.led.material.emissive.setHex(c.trip?0x7a1d12:0x1f7a36);
       const r=typeof rede==='function'?rede():{V:220,FF:380};trocaTexto(p.extra.visor,c.trip?'PROT':(nFases(c)>1?r.V+'/'+r.FF:r.V)+' V~')}

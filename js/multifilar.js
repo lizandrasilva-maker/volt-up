@@ -7,7 +7,7 @@
 
 /* Corpo de cada símbolo [x0,y0,x1,y1] em relação ao centro (peças que giram: sw, fuse, lamp). */
 const SYM_BOX={pilha:[-14,-14,14,14],src:[-18,-20,18,20],haste:[-12,-16,12,14],bep:[-24,-8,24,8],lamp:[-12,-12,12,12],sw:[-14,-15,14,6],fuse:[-14,-14,14,6],sw2:[-14,-17,14,17],sw3:[-14,-17,14,17],sw4:[-14,-17,14,17],
-  dr:[-21,-16,21,16],dps:[-9,-13,9,13],foto:[-17,-13,17,13],ri:[-22,-15,22,15],kc:[-40,-15,38,15],ft:[-21,-13,23,13],btn:[-14,-17,14,6],motor:[-15,-15,15,15],boia:[-14,-17,14,6]};
+  dr:[-21,-16,21,16],dps:[-9,-13,9,13],foto:[-17,-13,17,13],ri:[-22,-15,22,15],kc:[-40,-15,38,15],ft:[-21,-13,23,13],btn:[-14,-17,14,6],motor:[-15,-15,15,15],boia:[-14,-17,14,6],fc:[-18,-16,18,16]};
 const GIRA={sw:1,fuse:1,lamp:1};
 function symBounds(c,pad){pad=pad||0;const o=SYM_BOX[c.type];
   /* peça girada 90°: (x,y) vira (-y,x) */
@@ -82,6 +82,11 @@ function multiSym(c,b,o){
         elo(0,fechado?0:-6,0,-13)+'<path d="M-6 -13 H6 M-6 -13 v-3 M6 -13 v-3" class="ms"/>'+(c.nf?'<path d="M10 0 V-7" class="ms"/>':'');break}
     case 'motor':s=ln(-26,0,-15,0)+ln(15,0,26,0)+ln(0,15,0,26)+'<circle r="15" class="mbody" style="'+(on?'fill:color-mix(in srgb,var(--amber) 40%,var(--panel2))':'')+'"/>'+
       '<text y="-1" text-anchor="middle" class="mtx" style="font-size:11px">M</text><text y="9" text-anchor="middle" class="mtx">1~</text>';break;
+    /* fonte de comando: conversor CA/CC (quadrado com diagonal, ~ na entrada e = na saída) */
+    case 'fc':s=ln(-12,-30,-12,-16)+ln(12,-30,12,-16)+ln(-12,16,-12,30)+ln(12,16,12,30)+
+      '<rect x="-16" y="-16" width="32" height="32" rx="1" class="mbody" style="'+(c.on?'fill:color-mix(in srgb,var(--terra) 30%,var(--panel2))':'')+'"/>'+ln(-16,16,16,-16)+
+      '<text x="-8" y="-5" text-anchor="middle" class="mtx">~</text><text x="8" y="11" text-anchor="middle" class="mtx">=</text>'+
+      '<text x="9" y="-6" text-anchor="middle" class="mtx" style="font-size:6px">24V</text>';break;
     case 'boia':s=ln(-26,0,-12,0)+ln(12,0,26,0)+pto(-12,0)+pto(12,0)+contato(-12,0,12,0,!!c.vazia)+elo(0,c.vazia?0:-6,0,-12)+
       '<circle cy="-15" r="3.5" class="ms" style="fill:none"/>';break;
   }
