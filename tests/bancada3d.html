@@ -381,6 +381,15 @@ const coresDoFioCSS=k=>(CORES[k].c.match(/var\(--[\w-]+\)|#[0-9a-f]{3,8}\b/gi)).
    pv.em3d=!!document.querySelector('.bench3d canvas')&&!document.querySelector('#bd .bench svg');pv.girando=D.motorGira('M')>0.5;
    document.querySelector('.opt[data-k="0"]').click();pv.parou=D.motorGira('M')<0.05&&D.visorFT('FT')==='disparado'&&!!document.querySelector('.bench3d canvas');
    S.mode='moderado';}
+  /* ---- Medir (Cap. 1) na bancada nova: pontas do multímetro na cena 3D, leitura igual à do desenho ---- */
+  {const me=R.medir3d={},p=phaseById('medir');S.mode='moderado';escolheVista('3d');VISTA3D.girar=false;const d=comARede(p.dados.moderado);runMedir(p,d);
+   me.em3d=!!document.querySelector('.bench3d canvas')&&!document.querySelector('.bench svg');
+   const T=d.tarefas.find(t=>t.entre);toque(T.entre[0]);toque(T.entre[1]);
+   me.pontas=J(D.pontas())===J(['r:'+T.entre[0],'k:'+T.entre[1]]);me.visor=(document.querySelector('.mm-visor,.multimetro')||{}).textContent||'';
+   document.getElementById('reg').click();me.registrou=!!document.querySelector('.fb.good')||!!document.querySelector('.qcard');
+   me.outras=['ohmcc','kirchcc'].map(id=>{const q=phaseById(id);runMedir(q,comARede(q.dados.moderado));return id+':'+!!document.querySelector('.bench3d canvas')}).join(' ');
+   const q=phaseById('emergencia');runCacaCC(q,comARede(q.dados.moderado));me.caca=!!document.querySelector('.bench3d canvas');
+   S.mode='moderado';}
   /* sair da bancada libera o WebGL */
   showMap();await new Promise(r=>setTimeout(r,0));R.liberou=VISTA3D.no===null;
 }catch(e){R.ERRO=e.message+' '+(e.stack||'')}

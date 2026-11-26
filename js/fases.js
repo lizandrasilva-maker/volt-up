@@ -405,10 +405,18 @@ function tocaPonteira(comps,pt,t,ultima){const id=!pt.r.t?'r':!pt.k.t?'k':ultima
    d.circuito() monta a bancada; d.tarefas: {id, t, entre:[+,−], estado?(st), antes?, ok(v), dica} para medir ou
    {q:(medidas,res)=>({q,o,w})} para perguntar (a opção 0 é a certa). Pontas invertidas: leitura negativa, refazer. */
 const fmtV=v=>(v<0?'−':'')+Math.abs(v).toFixed(2).replace('.',',');
+function dica3D(pt){return !pt.r.t&&!pt.k.t?'Toque num parafuso para a <b style="color:#ff6b5e">ponta vermelha</b> e em outro para a <b>ponta preta</b>.'
+  :!(pt.r.t&&pt.k.t)?'Agora toque no parafuso da outra ponta.':'Medindo a tensão contínua entre as pontas. Toque em outro parafuso para mudar uma ponta de lugar.'}
 function dicaCC(pt){return !pt.r.t&&!pt.k.t?'Arraste a <b style="color:#ff6b5e">ponta vermelha</b> e a <b>ponta preta</b> até dois parafusos (ou toque nos parafusos).'
   :!(pt.r.t&&pt.k.t)?'Agora leve a outra ponta a um parafuso.':'Medindo a tensão contínua entre os dois pontos. Ponta vermelha no + dá leitura positiva.'}
+/* bancada das práticas com multímetro: a nova (3D/2D, pontas na cena) ou, sem WebGL, o desenho antigo com as ponteiras */
+function benchMedir(st,rb,pt,zm,ativo){const p3=pode3D(st),v3=quer3D(st),aguarda=!v3&&p3&&VISTA3D.ligada&&VISTA3D.baixavel&&!VISTA3D.vista&&!VISTA3D.erro;if(aguarda)carrega3D();
+  return {v3,html:benchWrap(v3||aguarda?'':board(st,{res:rb,ponteiras:pt,real:true,vb:zm.vb(),pickTerm:ativo,toggle:ativo}),'',zm,true,v3||aguarda,p3,aguarda,'')}}
+function ligaMedir3D(st,rb,pt,bid,ctl){encaixa3D({st,res:rb,sel:null,curto:null,cor:'pos',editavel:true,ctl,bancada:bid,girar:!VISTA3D.plano&&!!VISTA3D.girar,plano:!!VISTA3D.plano,cc:true,pontos:null,dica:'ponto',ponteiras:{r:pt.r.t,k:pt.k.t}})}
+function ligaVistas(render){app.querySelectorAll('[data-modo]').forEach(b=>b.onclick=()=>{const m=b.dataset.modo;escolheVista(m);if(m==='multi')setVista(false);if(VISTA3D.ligada&&!VISTA3D.vista)carrega3D();render()});
+  app.querySelectorAll('[data-girar]').forEach(b=>b.onclick=()=>{VISTA3D.girar=!VISTA3D.girar;render()})}
 function runMedir(p,d){
-  const st=d.circuito(),tarefas=d.tarefas,medidas={},res=[],zm=benchZoom();
+  const st=d.circuito(),tarefas=d.tarefas,medidas={},res=[],zm=benchZoom(),bid='medir:'+(++BANCADA_ID);
   let i=0,ok=0,errou=false,pt=novasPonteiras(),ultima=null,msg=null,drawn=false,resp=null;
   const sim=()=>CC.resolver(st.comps,st.wires);
   const avanca=()=>{res[i]=!errou;if(!errou)ok++;i++;errou=false;resp=null;if(i>=tarefas.length){finish(p,ok,tarefas.length);return false}return true};
@@ -423,16 +431,18 @@ function runMedir(p,d){
           document.getElementById('nx').onclick=()=>{if(avanca())render()}}
         else{errou=true;b.classList.add('wrong','shake');b.disabled=true;fb.innerHTML='<div class="fb bad">Quase! Olhe de novo os valores que você mediu.</div>'}});
       return}
-    frame(p,progBar(tarefas.length,i,res)+missao(T.t,d.real||[],null,'TAREFA')+multimetroHTML(v,dicaCC(pt),{cc:true})+
-      benchWrap(board(st,{res:rb,ponteiras:pt,real:true,vb:zm.vb(),pickTerm:true,toggle:true}),'',zm,true)+
+    const bm=benchMedir(st,rb,pt,zm,true);VISTA3D.redesenha={id:BANCADA_ID,f:render};
+    frame(p,progBar(tarefas.length,i,res)+missao(T.t,d.real||[],null,'TAREFA')+multimetroHTML(v,bm.v3?dica3D(pt):dicaCC(pt),{cc:true})+bm.html+
       (msg?'<div class="fb '+(msg.bad?'bad':'good')+'">'+msg.t+'</div>':'')+
       '<div class="row"><button class="btn main" id="reg"'+(v===null?' disabled':'')+'>📏 Registrar medição</button></div>');
-    keepScroll(drawn);drawn=true;
-    const svg=app.querySelector('.bench svg');zm.bind(app.querySelector('.bench'),app);
-    svg.querySelectorAll('[data-t]').forEach(h=>h.addEventListener('click',()=>{if(zm.busy())return;ultima=tocaPonteira(st.comps,pt,h.dataset.t,ultima);msg=null;render()}));
+    keepScroll(drawn);drawn=true;ligaVistas(render);
+    const toca=t=>{ultima=tocaPonteira(st.comps,pt,t,ultima);msg=null;render()},aciona=id=>{const c=st.comps.find(x=>x.id===id);if(c&&c.type==='sw'){acionarPeca(c,0);msg=null;render()}};
+    if(bm.v3)ligaMedir3D(st,rb,pt,bid,{tocouBorne:toca,arrastouFio:()=>render(),acionou:aciona,tirouFio(){}});
+    const svg=app.querySelector('.bench svg');if(svg){zm.bind(app.querySelector('.bench'),app);
+    svg.querySelectorAll('[data-t]').forEach(h=>h.addEventListener('click',()=>{if(zm.busy())return;toca(h.dataset.t)}));
     ligaPonteiras(svg,st.comps,pt,id=>{ultima=id;msg=null;render()},zm);
     /* tocar no interruptor abre e fecha (para medir com o circuito aberto) */
-    svg.querySelectorAll('[data-sw]').forEach(h=>h.addEventListener('click',()=>{if(zm.busy())return;const c=st.comps.find(x=>x.id===h.dataset.sw);if(c){acionarPeca(c,0);msg=null;render()}}));
+    svg.querySelectorAll('[data-sw]').forEach(h=>h.addEventListener('click',()=>{if(zm.busy())return;aciona(h.dataset.sw)}))}
     document.getElementById('reg').onclick=()=>{
       if(T.estado&&!T.estado(st)){msg={bad:1,t:T.antes};render();return}
       const n=r.net,a=n(pt.r.t),b=n(pt.k.t),A=n(T.entre[0]),B=n(T.entre[1]);
@@ -447,25 +457,27 @@ function runMedir(p,d){
    rompido). O aluno mede com o multímetro (cada leitura anotada vira uma linha) e aponta onde está o defeito.
    2 chamados, com defeitos diferentes; ponto por acertar de primeira e por não passar do limite de medições. */
 function nomePonto(st,t){const [id,k]=t.split('.'),c=st.comps.find(x=>x.id===id),T=c&&typeof REAL_TERMS!=='undefined'&&REAL_TERMS[c.type];return id+' '+((T&&T[+k]&&T[+k].n)||k)}
-function runCacaCC(p,d){const ROUNDS=2,zm=benchZoom(),res=[],usados=[];let round=0,score=0;
+function runCacaCC(p,d){const ROUNDS=2,zm=benchZoom(),res=[],usados=[];let round=0,score=0;const bid0=++BANCADA_ID;
   const start=()=>{const st=d.circuito(),livres=d.cand.filter(x=>!usados.includes(x)),f=pick(livres.length?livres:d.cand);usados.push(f);
     if(f==='P2')st.comps.find(c=>c.id==='P2').fem=0.2;else if(f==='fio')st.wires[1].broken=true;else st.comps.find(c=>c.id===f).broken=true;
     let pt=novasPonteiras(),ultima=null,log=[],msg=null,errado=0,feito=false,drawn=false;
     const render=()=>{const r=CC.resolver(st.comps,st.wires),rb=CC.paraBancada(r),v=pt.r.t&&pt.k.t?r.v(pt.r.t)-r.v(pt.k.t):null;
-      frame(p,progBar(ROUNDS,round,res)+missao(d.chamado,d.real||[],null,'CHAMADO')+multimetroHTML(v,dicaCC(pt),{cc:true})+
-        benchWrap(board(st,{res:rb,ponteiras:pt,real:true,vb:zm.vb(),pickTerm:!feito,toggle:!feito}),'',zm,true)+
+      const bm=benchMedir(st,rb,pt,zm,!feito);VISTA3D.redesenha={id:BANCADA_ID,f:render};
+      frame(p,progBar(ROUNDS,round,res)+missao(d.chamado,d.real||[],null,'CHAMADO')+multimetroHTML(v,bm.v3?dica3D(pt):dicaCC(pt),{cc:true})+bm.html+
         '<div class="status"><span class="chip">Medições anotadas: '+log.length+(L()?'':' / '+d.limite)+'</span></div>'+
         (log.length?'<ul class="medidas">'+log.map(x=>'<li>'+x+'</li>').join('')+'</ul>':'')+
         (msg?'<div class="fb '+(msg.bad?'bad':'good')+'">'+msg.t+'</div>':'')+
         (feito?'<button class="btn main" id="nx">'+(round<ROUNDS-1?'Próximo chamado →':'Concluir')+'</button>':
           '<div class="row"><button class="btn" id="reg"'+(v===null?' disabled':'')+'>📏 Anotar medição</button></div>'+
           '<span class="eyebrow">Onde está o defeito?</span><div class="seg3 defeitos">'+d.opcoes.map(([k,t])=>'<button class="btn" data-def="'+k+'">'+t+'</button>').join('')+'</div>'));
-      keepScroll(drawn);drawn=true;
+      keepScroll(drawn);drawn=true;ligaVistas(render);
+      const toca=t=>{if(feito)return;ultima=tocaPonteira(st.comps,pt,t,ultima);msg=null;render()},aciona=id=>{const c=st.comps.find(x=>x.id===id);if(!feito&&c&&c.type==='sw'){acionarPeca(c,0);msg=null;render()}};
+      if(bm.v3)ligaMedir3D(st,rb,pt,'caca:'+bid0+':'+round,{tocouBorne:toca,arrastouFio:()=>render(),acionou:aciona,tirouFio(){}});
       if(feito){document.getElementById('nx').onclick=()=>{round++;round<ROUNDS?start():finish(p,score,ROUNDS*2)};return}
-      const svg=app.querySelector('.bench svg');zm.bind(app.querySelector('.bench'),app);
-      svg.querySelectorAll('[data-t]').forEach(h=>h.addEventListener('click',()=>{if(zm.busy())return;ultima=tocaPonteira(st.comps,pt,h.dataset.t,ultima);msg=null;render()}));
+      const svg=app.querySelector('.bench svg');if(svg){zm.bind(app.querySelector('.bench'),app);
+      svg.querySelectorAll('[data-t]').forEach(h=>h.addEventListener('click',()=>{if(zm.busy())return;toca(h.dataset.t)}));
       ligaPonteiras(svg,st.comps,pt,id=>{ultima=id;msg=null;render()},zm);
-      svg.querySelectorAll('[data-sw]').forEach(h=>h.addEventListener('click',()=>{if(zm.busy())return;const c=st.comps.find(x=>x.id===h.dataset.sw);if(c){acionarPeca(c,0);msg=null;render()}}));
+      svg.querySelectorAll('[data-sw]').forEach(h=>h.addEventListener('click',()=>{if(zm.busy())return;aciona(h.dataset.sw)}))}
       document.getElementById('reg').onclick=()=>{log.push(nomePonto(st,pt.r.t)+' → '+nomePonto(st,pt.k.t)+(st.comps.find(c=>c.id==='S1').closed?' (S1 fechado)':' (S1 aberto)')+': '+fmtV(v)+' V');msg=null;render()};
       app.querySelectorAll('[data-def]').forEach(b=>b.onclick=()=>{const k=b.dataset.def;
         if(k===f){feito=true;const pts=(errado===0?1:0)+(log.length<=d.limite?1:0);score+=pts;res[round]=pts===2;S.xp+=10*pts+5;save();msg={t:d.explica[f]}}
