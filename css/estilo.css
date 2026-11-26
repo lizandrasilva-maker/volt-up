@@ -718,6 +718,18 @@ svg.curto{animation:shake .32s 2}
 .af-pos{fill:#ff8a7a;stroke:var(--contorno);stroke-width:1.5}.af-neg{fill:#7cc4ff;stroke:var(--contorno);stroke-width:1.5}.af-neu{fill:#8a96a6;stroke:var(--contorno);stroke-width:1.5}
 .af-orb{fill:none;stroke:color-mix(in srgb,var(--info) 45%,transparent);stroke-width:1.5}
 .af-eletron{offset-rotate:0deg;animation:afOrbita 3.9s linear infinite}
+/* partículas das aulas: brilho, núcleo, rede cristalina, íons e partículas que andam por um caminho (offset-path) */
+.af-brilho{fill:#fff;opacity:.5;pointer-events:none}
+.af-nucleo{fill:color-mix(in srgb,var(--amber) 18%,transparent);stroke:none}
+.af-cristal{fill:color-mix(in srgb,#c87533 12%,transparent);stroke:color-mix(in srgb,#c87533 45%,transparent);stroke-width:1.5}
+.af-ion-cobre{fill:#d98a45;stroke:var(--contorno);stroke-width:1.5}
+.af-anda{offset-rotate:0deg;animation:afOrbita linear infinite}
+.af-ion{offset-rotate:0deg;animation:afIon linear infinite}
+@keyframes afIon{0%{offset-distance:0%;opacity:0}12%,85%{opacity:1}100%{offset-distance:100%;opacity:0}}
+.af-fio-cabelo{fill:none;stroke:#a8743f;stroke-width:3.5;stroke-linecap:round}
+.af-cabelo-topo{fill:#a8743f;stroke:#5e3a17;stroke-width:2;stroke-linejoin:round}
+.af-salta{opacity:0;animation:afSalta 1.8s ease-in-out infinite}
+@keyframes afSalta{0%{transform:translate(-8px,10px);opacity:0}25%{opacity:1}100%{transform:translate(34px,-34px);opacity:0}}
 @keyframes afOrbita{from{offset-distance:0%}to{offset-distance:100%}}
 .af-cabelo{fill:#3b2a1e;stroke:#20150e;stroke-width:2}.af-pente{fill:#e24c3f}
 .af-pula{animation:afPula 1.5s ease-in-out infinite}
