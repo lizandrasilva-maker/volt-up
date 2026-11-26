@@ -22,7 +22,7 @@ const LARG_DIN={fuse:DIN.W,dr:2*DIN.W,kc:3*DIN.W,ft:2*DIN.W,ri:2*DIN.W};/* largu
    a 65% da profundidade e frontal elevado. São um pouco mais altos que o módulo comum, para caber a serigrafia. */
 const ALT3N=9,DEGRAU=DIN.z0+DIN.D*.65,FAIXA_BORNE=2.4;
 /* peças de trilho: o fio entra pelo topo/base do nicho do borne (atrás do parafuso), com terminal tubular */
-const VERTICAL={fuse:1,dr:1,kc:1,ft:1,ri:1,btn:1,motor:1};/* + botoeira (bloco de contato) e motor (caixa de ligação aberta) */
+const VERTICAL={fuse:1,dr:1,kc:1,ft:1,ri:1,btn:1,motor:1,pilha:1};/* + botoeira (bloco de contato) e motor (caixa de ligação aberta) */
 const FRENTE=DIN.z0+DIN.D;/* face frontal dos módulos DIN */
 const TERM3D={
   /* fonte: índices do motor.js .0 = L1, .1 = N, .2 = L2, .3 = L3; na régua, da esquerda para a direita, L1 L2 L3 N (como no 2D) */
@@ -60,7 +60,7 @@ const PAL={corpoDIN:0xE6E9EF,frenteDIN:0xD5DAE2,trilho:0x9AA5B4,cavidade:0x1F293
   botoeiraBase:0x334155,liga:0x2B8A3E,desliga:0xC92A2A,anelBot:0xADB5BD,blocoContato:0xE6E9EF,latao:0xD99B26,barraBEP:0xD98A2B,isoladorBEP:0xE8590C,janela:0x1F2933,emboloOff:0x94A3B8,emboloOn:0xF97316,rearme:0x3182CE,dial:0x2F4A6E,espelho:0xF1F3F6,tecla:0xE6E9EF,marca:0x2F855A,wago:0xCED4DA,alavancaWago:0xF76707,
   motor:0x1864AB,motorTampa:0x245A94,eixo:0xCBD5E1,faixaEixo:0xECC94B,cobre:0xC87533,isolador:0x2A2F36,solo:0x6B4A2E,
   ceuDia:0xBFE0F7,ceuNoite:0x1B2740,sol:0xF4C430,lua:0xF2E6A0,estrela:0xFFFFFF,corpoFoto:0x8C96A3,placaFoto:0xD6DBE1,baseFoto:0x59616B,sensor:0xC0392B,
-  suportePilha:0x2B3036,pilha:0x3B4252,pilhaQuente:0xC0392B,polo:0xC9A227,
+  suportePilha:0x2B3036,pilha:0x3B4252,rotuloPilha:0x1C7ED6,pilhaQuente:0xC0392B,polo:0xC9A227,
   fioPreto:0x1A1D21,fioBranco:0xEEF1F4,fioVermelho:0xC0392B,riOff:0x94A3B8,riOn:0xF97316,
   base3n:0x1F2328,poco:0x2B3036,serig:'#111315',tagBorda:'#22252A',ponteira:{fase:0xC92A2A,neutro:0x1C7ED6,retorno:0xE9ECEF,terra:0xFCC419,pos:0xC92A2A,neg:0x1F2328},
   caixaAgua:0x1F4F86,tampa:0x2A66A8,agua:0x5AA9E6,aguaCorte:0x8CC8F2,pera:0xEEF3F7,caboBoia:0x1F2328};
@@ -358,22 +358,30 @@ function poeNivel(p,nivel,inclina){const e=p.extra,{fundo,topo}=CAIXA;e.agua.sca
   const yPera=Math.max(fundo+1.5,fundo+.25+nivel-.1),ponto=new THREE.Vector3(.9,topo-.1,.6),fim=new THREE.Vector3(.9,yPera,.9);
   e.pera.position.copy(fim);e.pera.rotation.z=inclina;
   const dir=fim.clone().sub(ponto),comp=dir.length();e.cabo.scale.y=comp;e.cabo.position.copy(ponto).addScaledVector(dir,.5);e.cabo.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.normalize())}
-/* Pilha AA (1,5 V) deitada no suporte preto, com o polo + (faixa dourada e o "botão") à esquerda, sobre o borne +.
-   Embaixo, a régua com os bornes + e −. Em curto (corrente acima de CC.I_CURTO, do simulador CC em ctx.res.cc)
-   o corpo fica vermelho e sobe um brilho de calor. Não é acionada à mão. */
+/* Pilha AA (1,5 V) num porta-pilha de painel: base antracite com chanfro, chapa de contato no polo + (esquerda) e
+   mola no polo −, pilha com rótulo; embaixo, a régua de bornes com divisória e marcação impressa (+ vermelho, − preto).
+   O fio entra por baixo, com ponteira. Em curto (corrente acima de CC.I_CURTO, do simulador CC em ctx.res.cc) a
+   pilha fica vermelha e sobe um brilho de calor. Não é acionada à mão. */
 function pilhaEl(c){const g=new THREE.Group(),bornes=bornesDe(c);
-  const suporte=new THREE.Mesh(new THREE.BoxGeometry(5.2,3.8,.8),mat(PAL.suportePilha));suporte.position.set(0,.5,.4);g.add(suporte);
-  [-2.15,2.15].forEach(x=>{const m=new THREE.Mesh(new THREE.BoxGeometry(.4,2,.5),mat(PAL.zinco));m.position.set(x,.6,1);g.add(m)});
-  const celula=new THREE.Mesh(new THREE.CylinderGeometry(.9,.9,3.4,24),mat(PAL.pilha));celula.rotation.z=Math.PI/2;celula.position.set(.2,.6,1.6);g.add(celula);
-  const polo=new THREE.Mesh(new THREE.CylinderGeometry(.92,.92,.95,24),mat(PAL.polo));polo.rotation.z=Math.PI/2;polo.position.set(-1.05,.6,1.6);g.add(polo);
-  const botao=new THREE.Mesh(new THREE.CylinderGeometry(.32,.32,.3,16),mat(PAL.zinco));botao.rotation.z=Math.PI/2;botao.position.set(-1.65,.6,1.6);g.add(botao);
-  const mais=rotulo('+',.6,.6,{cor:'#1c1f24'});mais.position.set(-1.05,.6,2.53);g.add(mais);
-  const tensao=rotulo((typeof ccN==='function'?ccN(c.V||1.5):String(c.V||1.5))+'V',1.5,.55,{cor:'#eef2f7'});tensao.position.set(.75,.6,2.51);g.add(tensao);
-  const adesivo=rotulo((c.lab||c.id)+' · pilha',2.8,.7,{fundo:'#2f4a6e',cor:'#f8fafc',esc:.6});adesivo.position.set(0,2.95,.82);g.add(adesivo);
+  const suporte=new THREE.Mesh(new RoundedBoxGeometry(5.8,3.9,1,2,.2),mat(PAL.base3n));suporte.position.set(0,.65,.5);g.add(suporte);
+  const canal=new THREE.Mesh(new THREE.BoxGeometry(4.6,2.3,.2),mat(PAL.poco));canal.position.set(0,.6,1.02);g.add(canal);
+  const chapa=new THREE.Mesh(new THREE.BoxGeometry(.18,1.7,.9),mat(PAL.zinco));chapa.position.set(-2.32,.6,1.5);g.add(chapa);
+  for(let k=0;k<5;k++){const e=new THREE.Mesh(new THREE.TorusGeometry(.42,.07,6,16),mat(PAL.zinco));e.rotation.y=Math.PI/2;e.position.set(1.72+k*.13,.6,1.6);g.add(e)}/* mola do polo − */
+  const celula=new THREE.Mesh(new THREE.CylinderGeometry(.85,.85,3.5,28),mat(PAL.pilha));celula.rotation.z=Math.PI/2;celula.position.set(-.1,.6,1.6);g.add(celula);
+  const rotuloPilha=new THREE.Mesh(new THREE.CylinderGeometry(.87,.87,1.9,28,1,true),mat(PAL.rotuloPilha));rotuloPilha.rotation.z=Math.PI/2;rotuloPilha.position.set(.35,.6,1.6);g.add(rotuloPilha);
+  const polo=new THREE.Mesh(new THREE.CylinderGeometry(.87,.87,.7,28),mat(PAL.polo));polo.rotation.z=Math.PI/2;polo.position.set(-1.5,.6,1.6);g.add(polo);
+  const botao=new THREE.Mesh(new THREE.CylinderGeometry(.3,.3,.3,16),mat(PAL.zinco));botao.rotation.z=Math.PI/2;botao.position.set(-2.0,.6,1.6);g.add(botao);
+  const mais=rotulo('+',.55,.55,{cor:'#1c1f24'});mais.position.set(-1.5,.6,2.48);g.add(mais);
+  const tensao=rotulo('AA · '+(typeof ccN==='function'?ccN(c.V||1.5):String(c.V||1.5))+' V','auto',.5,{cor:'#f8fafc',esc:.7});tensao.position.set(.35,.6,2.48);g.add(tensao);
+  tag(g,c.lab||c.id,-2.05,2.15,1.02);
   const calor=sprite(texturaBrilho('calor',['rgba(255,150,70,.95)','rgba(255,60,30,0)']),4);calor.position.set(.2,1.9,1.8);calor.visible=false;g.add(calor);
-  const regua=new THREE.Mesh(new THREE.BoxGeometry(3.6,1.2,.9),mat(PAL.cavidade));regua.position.set(0,-2.6,.45);g.add(regua);
+  /* fios internos: da chapa (+) e da mola (−) até a régua */
+  [[-2.32,PAL.fioVermelho],[2.3,PAL.fioPreto]].forEach(([x,cor])=>{const f=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,1.2,6),mat(cor));f.position.set(x,-.9,1.06);g.add(f)});
+  /* régua de bornes: degrau claro, divisória e marcação impressa acima de cada parafuso */
+  const regua=new THREE.Mesh(new RoundedBoxGeometry(5.4,2.2,1,2,.12),mat(PAL.corpoDIN));regua.position.set(0,-2.5,.5);g.add(regua);
+  const div=new THREE.Mesh(new THREE.BoxGeometry(.13,2,.45),mat(PAL.frenteDIN));div.position.set(0,-2.5,1.2);g.add(div);
   poeParafusos(g,bornes);
-  bornes.forEach((b,k)=>plaqueta(g,nomeBorne(c,k),b.x,-3.8,.55));
+  bornes.forEach((b,k)=>{const m=rotulo(nomeBorne(c,k),'auto',.7,{cor:k===0?'#C92A2A':'#111315',esc:.8});m.position.set(b.x,-1.78,1.02);m.userData.plaqueta=nomeBorne(c,k);g.add(m)});
   return {g,bornes,corpo:[suporte,celula,polo,regua],extra:{celula,calor}}}
 /* Fotocélula (relé fotoelétrico): corpo cinza com cúpula e a janela do sensor, preso numa placa; os 3 fios
    (preto = L, branco = N, vermelho = C) descem até a régua. O céu atrás mostra se é dia (sol) ou noite (lua e
@@ -519,6 +527,16 @@ const FIO={raio:.13,toque:.5,canto:.45,frente:.45,margem:.35,pista:.45,prof:.09,
    certo, laranja quando tem fio a mais. Nos níveis leve e moderado, um contador "ligados/esperados" ao lado. */
 const DICA={falta:0x5CE1E6,ok:0x43B05C,sobra:0xFF6B3D};
 function matDica(est){const C=cache(),k='dica:'+est;if(!C.mat.has(k))C.mat.set(k,semContorno(new THREE.MeshBasicMaterial({color:DICA[est]})));return C.mat.get(k)}
+/* ponteiras do multímetro (práticas de medir): ponta metálica no parafuso e o cabo de prova subindo na diagonal,
+   vermelha (VΩ) e preta (COM). ctx.ponteiras = {r: borne, k: borne} */
+function poePonteiras(ctx){(E.pontas||[]).forEach(g=>E.scene.remove(g));E.pontas=[];const P=ctx.ponteiras;if(!P)return;
+  const G=E.geoPonta||(E.geoPonta={ponta:new THREE.CylinderGeometry(.11,.03,1,8),cabo:new THREE.CylinderGeometry(.34,.3,3,14),anel:new THREE.CylinderGeometry(.5,.5,.2,16),faixa:new THREE.CylinderGeometry(.36,.36,.3,14)});
+  /* a ponta vem da frente (do lado do aluno), um pouco para baixo e para fora, para não cobrir a peça */
+  [['r',0xD33A2C,-.7],['k',0x2E333B,.7]].forEach(([id,cor,lado])=>{const t=P[id],B=t&&E.bornes[t];if(!B)return;
+    const g=new THREE.Group(),dir=new THREE.Vector3(lado,-.6,1.2).normalize(),q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,-1,0),dir.clone().negate());
+    const em=(geo,cor,d)=>{const m=new THREE.Mesh(geo,mat(cor));m.position.copy(dir).multiplyScalar(d);m.quaternion.copy(q);g.add(m)};
+    em(G.ponta,PAL.zinco,.5);em(G.anel,cor,1.05);em(G.cabo,cor,2.65);em(G.faixa,0xF1F3F5,1.6);/* faixa clara: a ponta preta aparece no fundo escuro */
+    g.position.copy(B).add(new THREE.Vector3(0,0,.25));g.userData.ponta=id+':'+t;E.scene.add(g);E.pontas.push(g)})}
 function poeDicas(ctx){(E.dicas||[]).forEach(m=>{E.scene.remove(m);if(m.userData.propria)m.geometry.dispose()});E.dicas=[];E.estadoDicas={};
   const esp=ctx.pontos;if(!esp||ctx.editavel===false)return;
   if(!E.geoDica)E.geoDica=new THREE.TorusGeometry(.64,.075,8,28);/* justo no poço do parafuso: anéis vizinhos não se encostam */
@@ -708,7 +726,7 @@ function atualizar(ctx){
     if(c.type==='lamp'){const b=Math.max(0,Math.min(1,res.lamp[c.id]||0));p.brilho=b;p.queimada=!!c.broken;
       p.extra.bulbo.material.color.setHex(c.broken?0x2d2f33:b>.04?0xfff2a8:0x5a6b7d);p.extra.bulbo.material.emissive.setRGB(1*b,.85*b,.3*b);
       p.extra.brilho.visible=b>.04;p.extra.brilho.material.opacity=b;p.extra.brilho.scale.setScalar(5+5*b)}});
-  desenhaFios(st);poeDicas(ctx);
+  desenhaFios(st);poeDicas(ctx);poePonteiras(ctx);
   /* realce do ponto elétrico: com um borne selecionado, só os fios do mesmo potencial ficam cheios */
   const ponto=ctx.sel&&res.net?res.net(ctx.sel):null;E.realce=ponto;
   if(!(ctx.curto&&ctx.curto.fios))E.fios.forEach(f=>{f.material=!ponto||res.net(f.userData.a)===ponto?matFio(f.userData.cor):matFioApagado(f.userData.cor)});
@@ -845,6 +863,7 @@ const debug={
   visorDR:id=>E.pecas[id].extra.visor.material.color.getHex()===PAL.desarmado?'desarmado':'armado',
   emboloAlvo:id=>E.pecas[id].emb||0,
   dicas:()=>E.estadoDicas||{},
+  pontas:()=>(E.pontas||[]).map(g=>g.userData.ponta),
   wagos:()=>(E.wagos||[]).map(w=>w.userData.wago+':'+w.userData.vias).sort(),
   seletorFases:()=>E.seletor,
   camera:()=>E.camera.position.toArray().map(v=>+v.toFixed(2)),

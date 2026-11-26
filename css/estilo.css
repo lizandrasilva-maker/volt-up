@@ -694,10 +694,10 @@ svg.curto{animation:shake .32s 2}
 .af-fil{fill:none;stroke:#8a96a6;stroke-width:2}.af-fil.on{stroke:#ff9d2e}
 .af-fio{fill:none;stroke:#d9894a;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
 .af-fio.vermelho{stroke:var(--erro)}
-.af-fluxo{fill:none;stroke:#fff3a8;stroke-width:4;stroke-linecap:round;stroke-dasharray:0 14;animation:afFlui .7s linear infinite}
+.af-fluxo{fill:none;stroke:#fff3a8;stroke-width:2.4;stroke-linecap:round;stroke-dasharray:0 24;opacity:.8;animation:afFlui 1.5s linear infinite}
 .af-fluxo.rev{animation-direction:reverse}.af-fluxo.parado{display:none}
 .af-fluxo.agua{stroke:#bfe6ff}.af-fluxo.fina{animation-duration:1.4s}
-@keyframes afFlui{to{stroke-dashoffset:-14}}
+@keyframes afFlui{to{stroke-dashoffset:-24}}
 .af-cano{fill:none;stroke:#7c858f;stroke-width:12}.af-cano.fino{stroke-width:5}
 .af-caixa{fill:#24415f;stroke:#c9cfd8;stroke-width:2}.af-agua{fill:#3d8fd1;opacity:.75}
 .af-cota{stroke:var(--amber);stroke-width:2;stroke-dasharray:4 3}
