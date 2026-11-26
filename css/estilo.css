@@ -726,9 +726,17 @@ svg.curto{animation:shake .32s 2}
 @keyframes afAfasta{to{transform:translateX(-14px)}}@keyframes afAfastaR{to{transform:translateX(14px)}}
 .af-junta{animation:afJunta 1.6s ease-in-out infinite alternate}.af-junta.r{animation-name:afJuntaR}
 @keyframes afJunta{to{transform:translateX(12px)}}@keyframes afJuntaR{to{transform:translateX(-12px)}}
-.af-mao{fill:#c58b62;stroke:#7a4e33;stroke-width:2}.af-porta{fill:#7a4a1f}
+.af-porta{fill:#8a5a2b;stroke:#4e2f12;stroke-width:2}.af-porta-almofada{fill:none;stroke:#5e3a17;stroke-width:2.5}
+.af-fechadura{fill:#2a2f36}.af-reflexo{fill:none;stroke:#ffffff;stroke-width:2;stroke-linecap:round;opacity:.7}
+.af-pele{fill:#e8b48c;stroke:#7a4e33;stroke-width:2;stroke-linejoin:round}.af-unha{fill:#f7d9c3;stroke:#b07a55;stroke-width:1}
+.af-dobra{fill:none;stroke:#9a6440;stroke-width:1.6;stroke-linecap:round}
+.af-manga{fill:#3a6ea5;stroke:var(--contorno);stroke-width:2}.af-punho{fill:#2c5585;stroke:var(--contorno);stroke-width:2}
 .af-raio{fill:none;stroke:#fff3a8;stroke-width:3;stroke-linejoin:round}
 .af-pisca{animation:afPisca 1.2s steps(1) infinite}
+.af-raio-halo{fill:none;stroke:#ffd84d;stroke-width:9;stroke-linejoin:round;stroke-linecap:round;opacity:.5}
+.af-faisca .af-raio{stroke-width:3.5;stroke:#fffbe0;stroke-linecap:round}.af-faisca .af-raio.fino{stroke-width:2;stroke:#ffd84d}
+.af-faisca{animation:afFaisca 1.6s steps(1) infinite}
+@keyframes afFaisca{0%,62%{opacity:1}64%{opacity:.15}70%{opacity:1}76%{opacity:.3}82%,100%{opacity:1}}
 @keyframes afPisca{0%,60%{opacity:0}61%,80%{opacity:1}81%{opacity:.2}90%{opacity:1}}
 .af-deriva{animation:afDeriva 2.4s linear infinite}
 @keyframes afDeriva{from{transform:translateX(-10px)}to{transform:translateX(10px)}}

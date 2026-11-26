@@ -71,10 +71,26 @@ const FIG={
     fT(70,170,'cabelo: perdeu elétrons (+)',{c:'af-sub'})+fT(225,170,'pente: ganhou elétrons (−)',{c:'af-sub'}),
   forcas:()=>fDefs+'<g class="af-afasta">'+fCarga(110,55,1,12)+'</g><g class="af-afasta r">'+fCarga(210,55,1,12)+'</g>'+fSeta(92,55,62,55)+fSeta(228,55,258,55)+fT(160,90,'iguais se empurram')+
     '<g class="af-junta">'+fCarga(110,135,1,12)+'</g><g class="af-junta r">'+fCarga(210,135,-1,12)+'</g>'+fSeta(128,135,150,135)+fSeta(192,135,170,135)+fT(160,170,'diferentes se puxam'),
-  macaneta:()=>fDefs+'<path d="M20 60 q40 -10 90 20 l20 14 q6 8 -2 12 l-30 -6 q-50 10 -78 -10z" class="af-mao"/>'+
-    [0,1,2,3].map(k=>fCarga(40+k*18,74+(k%2)*8,-1,5)).join('')+
-    '<rect x="230" y="20" width="20" height="150" class="af-porta"/><circle cx="210" cy="96" r="14" class="af-metal"/><rect x="210" y="90" width="22" height="12" class="af-metal"/>'+
-    '<path d="M135 98 l18 -8 l-4 10 l20 -6 l-6 8 l26 -4" class="af-raio af-pisca"/>'+fT(160,150,'a carga pula pelo ar: faísca',{c:'af-sub'}),
+  /* mão apontando o dedo (saindo da manga) perto da maçaneta de alavanca de uma porta de madeira; a faísca salta no vão */
+  macaneta:()=>fDefs+
+    /* porta: folha de madeira com almofada, espelho metálico e maçaneta de alavanca */
+    '<rect x="224" y="-4" width="100" height="188" rx="3" class="af-porta"/><rect x="262" y="18" width="48" height="60" rx="3" class="af-porta-almofada"/><rect x="262" y="112" width="48" height="56" rx="3" class="af-porta-almofada"/>'+
+    '<rect x="234" y="66" width="20" height="62" rx="6" class="af-metal"/><circle cx="244" cy="116" r="3.5" class="af-fechadura"/>'+
+    '<rect x="196" y="85" width="52" height="13" rx="6.5" class="af-metal"/><path d="M202 88 H240" class="af-reflexo"/><circle cx="244" cy="91.5" r="9" class="af-metal"/>'+
+    /* manga da camisa e punho */
+    '<rect x="-6" y="72" width="66" height="60" rx="10" class="af-manga"/><rect x="50" y="74" width="12" height="56" rx="4" class="af-punho"/>'+
+    /* mão: dorso, dedo indicador esticado e os outros dobrados; polegar por cima */
+    '<path d="M60 82 C72 75 94 75 108 81 L150 83 C159 83 165 87 165 93 C165 99 159 102 150 102 L120 102 C127 105 127 113 118 114 C125 117 123 125 113 125 C118 129 114 135 104 134 C90 136 72 132 60 124 Z" class="af-pele"/>'+
+    '<path d="M150 87 q8 0 9 6 q-1 5 -9 5" class="af-unha"/>'+
+    '<path d="M108 106 q6 1 9 -1 M104 118 q6 1 9 -2 M98 128 q5 1 8 -2" class="af-dobra"/>'+
+    '<path d="M92 82 C100 71 118 69 128 75 C134 79 130 86 121 86 L106 88 C100 88 95 86 92 82 Z" class="af-pele"/>'+
+    /* carga negativa acumulada no corpo */
+    [[24,88],[38,112],[78,92],[94,116],[130,92]].map(([x,y])=>fCarga(x,y,-1,5)).join('')+
+    /* faísca no vão entre a ponta do dedo e a maçaneta */
+    '<g class="af-faisca"><circle cx="181" cy="92" r="26" fill="url(#afBrilho)"/>'+
+    ['af-raio-halo','af-raio'].map(c=>'<path d="M165 93 L172 80 L176 101 L183 78 L187 104 L192 84 L197 92" class="'+c+'"/>').join('')+
+    '<path d="M178 70 l-4 -8 M186 112 l3 8 M170 108 l-5 6" class="af-raio fino"/></g>'+
+    fT(70,54,'corpo com carga (−)',{c:'af-sub'})+fT(160,166,'a carga pula pelo ar: faísca',{c:'af-sub'}),
   cobre:()=>fDefs+fT(160,22,'metal: elétrons livres',{c:'af-tit'})+
     Array.from({length:15},(_,k)=>'<circle cx="'+(50+(k%5)*55)+'" cy="'+(60+Math.floor(k/5)*45)+'" r="11" class="af-neu"/>').join('')+
     '<g class="af-deriva">'+Array.from({length:14},(_,k)=>'<circle cx="'+(30+((k*37)%260))+'" cy="'+(48+((k*29)%100))+'" r="4.5" class="af-neg"/>').join('')+'</g>'+fSeta(120,172,200,172,'af-info'),
