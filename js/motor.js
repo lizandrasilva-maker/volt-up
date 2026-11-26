@@ -3,7 +3,7 @@
    Análise nodal resolve as tensões; brilho = potência relativa a 1 lâmpada sozinha na fonte. */
 const C=(id,type,x,y,v,ex)=>Object.assign({id,type,x,y,v:!!v},ex||{});
 const W=(a,b,e)=>({a,b,e});
-const NAME={src:'fonte',haste:'haste de aterramento',bep:'BEP',pilha:'pilha',lamp:'luminária',sw:'interruptor',fuse:'disjuntor',sw2:'interruptor duplo',sw3:'interruptor paralelo',sw4:'interruptor intermediário',dr:'DR',dps:'DPS',foto:'fotocélula',ri:'relé de impulso',boia:'boia de nível',motor:'motor',kc:'contatora',ft:'relé térmico',btn:'botoeira'};
+const NAME={src:'fonte',haste:'haste de aterramento',bep:'BEP',pilha:'pilha',lamp:'luminária',sw:'interruptor',fuse:'disjuntor',sw2:'interruptor duplo',sw3:'interruptor paralelo',sw4:'interruptor intermediário',dr:'DR',dps:'DPS',foto:'fotocélula',ri:'relé de impulso',boia:'boia de nível',motor:'motor',kc:'contatora',ft:'relé térmico',btn:'botoeira',fc:'fonte de comando 24 V'};
 /* Posição dos bornes. Na vista real (GEOM_REAL, ligada por board()) cada peça tem os bornes onde o
    equipamento tem (js/bancada-real.js). O cálculo só usa o número do borne, então é o mesmo nas duas vistas.
    A lâmpada é bocal com 2 bornes (X1/X2), sem PE; só uma luminária com pe:true teria o 3º borne.
@@ -15,13 +15,17 @@ const NAME={src:'fonte',haste:'haste de aterramento',bep:'BEP',pilha:'pilha',lam
      sw4 intermediário (four-way): 1, 2 (de um lado), 3, 4 (do outro); direto 1-3/2-4 ou cruzado 1-4/2-3
      dps: L (linha) e PE; não conduz em serviço normal          foto fotocélula: L (fase), N, C (carga); de noite liga L em C
      ri relé de impulso: A1, A2 (bobina), 1, 2 (contato); cada pulso na bobina inverte o contato
+     fc fonte de comando 24 V⎓ (módulo DIN): L, N (entrada, da rede), +24, 0V (saída isolada da rede).
+        NR-12, 12.4.13 b: botoeiras e comandos que o operador toca em extrabaixa tensão (até 25 VCA ou 60 VCC).
+        Contatora com c.vb (tensão da bobina, ex.: 24) só puxa com essa tensão; sem c.vb a bobina é da rede.
    Fonte (src): L1, N, L2, L3 (c.fases = 1, 2 ou 3; sempre com neutro). Não tem PE: o neutro chega aterrado
    pela própria fonte (esquema TT) e o terra da instalação é criado pela haste.
      haste de aterramento: 1 borne (conector no topo)       bep (barramento de equipotencialização principal): 4 bornes unidos */
 /* pilha (bancada CC): borne 0 = +, borne 1 = − */
 const SYM_TERMS={pilha:[[-26,0],[26,0]],haste:[[0,-26]],bep:[[-18,16],[-6,16],[6,16],[18,16]],sw2:[[-26,0],[26,-14],[26,14]],sw3:[[-26,0],[26,-14],[26,14]],dr:[[-12,-30],[12,-30],[-12,30],[12,30]],
   boia:[[-26,0],[26,0]],sw4:[[-26,-12],[-26,12],[26,-12],[26,12]],dps:[[0,-26],[0,26]],foto:[[-26,0],[0,26],[26,0]],ri:[[-12,-30],[-12,30],[12,-30],[12,30]],
-  motor:[[-26,0],[26,0],[0,26]],kc:[[-30,-30],[-30,30],[0,-30],[0,30],[30,-30],[30,30]],ft:[[-12,-30],[-12,30],[14,-30],[14,30]],btn:[[-26,0],[26,0]]};
+  motor:[[-26,0],[26,0],[0,26]],kc:[[-30,-30],[-30,30],[0,-30],[0,30],[30,-30],[30,30]],ft:[[-12,-30],[-12,30],[14,-30],[14,30]],btn:[[-26,0],[26,0]],
+  fc:[[-12,-30],[12,-30],[-12,30],[12,30]]};
 let GEOM_REAL=false;
 function terms(c){const d=26;
   if(GEOM_REAL&&typeof realTerms==='function')return realTerms(c).map(t=>t.p);
@@ -61,7 +65,10 @@ const CPX={add:(a,b)=>[a[0]+b[0],a[1]+b[1]],sub:(a,b)=>[a[0]-b[0],a[1]-b[1]],mul
   div:(a,b)=>{const d=b[0]*b[0]+b[1]*b[1];return [(a[0]*b[0]+a[1]*b[1])/d,(a[1]*b[0]-a[0]*b[1])/d]},abs:a=>Math.hypot(a[0],a[1])};
 /* Cargas: [borne A, borne B]. Lâmpada, motor e bobinas (contatora, relé de impulso) são resistores (1 Ω no modelo). */
 const BOBINA={kc:1,ri:1};
-const loadsOf=c=>c.broken?[]:(c.type==='lamp'||c.type==='motor'||BOBINA[c.type])?[[0,1]]:[];
+/* fonte de comando: a entrada L-N é uma carga leve na rede (10 Ω no modelo); a saída é uma fonte isolada de 24 V */
+const VCMD=24;
+const loadsOf=c=>c.broken?[]:(c.type==='lamp'||c.type==='motor'||BOBINA[c.type]||c.type==='fc')?[[0,1]]:[];
+const resist=l=>l.R||(l.type==='fc'?10:1);
 function solveOnce(comps,wires){
   const u=UF();
   comps.forEach(c=>{terms(c).forEach((_,k)=>u.find(c.id+'.'+k));links(c).forEach(([a,b])=>u.union(c.id+'.'+a,c.id+'.'+b))});
@@ -74,28 +81,50 @@ function solveOnce(comps,wires){
   const PE=terra.size?[...terra][0]:null;
   const protecao=new Set([...terra,...comps.filter(c=>c.type==='bep').map(c=>u.find(c.id+'.0'))]);
   const short=new Set(fases).size<fases.length||fases.some(f=>f===N||terra.has(f));
-  const out={V,short,lamp:{},coil:{},P,N,PE,fases,terra,protecao,net:t=>u.find(t),ehFase:n=>fases.includes(n)};
+  const out={V,short,lamp:{},coil:{},fc:{},fcIn:{},sobre:{},cmd:new Set(),P,N,PE,fases,terra,protecao,net:t=>u.find(t),ehFase:n=>fases.includes(n)};
+  out.ehCmd=n=>out.cmd.has(n);
   const cargas=comps.filter(c=>loadsOf(c).length||c.type==='lamp'||c.type==='motor'||BOBINA[c.type]);
-  const setPow=(c,v)=>{if(BOBINA[c.type])out.coil[c.id]=v;else out.lamp[c.id]=v};
-  /* fonte com a proteção desarmada (depois de um curto): nada tem tensão até religar */
-  if(src.trip){cargas.forEach(c=>setPow(c,0));out.short=false;out.desligada=true;out.vAt=()=>0;out.vDiff=()=>0;return out}
-  if(out.short){cargas.forEach(c=>setPow(c,0));out.vAt=()=>0;out.vDiff=()=>0;return out}
+  const setPow=(c,v)=>{if(BOBINA[c.type])out.coil[c.id]=v;else if(c.type==='fc')out.fcIn[c.id]=v;else out.lamp[c.id]=v};
   /* tensão conhecida: cada fase com o seu ângulo; neutro e terra em 0 V */
-  const known=n=>{const i=fases.indexOf(n);if(i>=0)return [V*Math.cos(FASE_ANG[i]),V*Math.sin(FASE_ANG[i])];return (n===N||terra.has(n))?[0,0]:null};
-  const nets=[...new Set(cargas.flatMap(c=>[u.find(c.id+'.0'),u.find(c.id+'.1')]))].filter(n=>known(n)===null);
-  const idx={};nets.forEach((n,i)=>idx[n]=i);const m=nets.length;
-  const G=Array.from({length:m},(_,i)=>{const r=Array.from({length:m+1},()=>[0,0]);r[i]=[1e-9,0];return r});
-  cargas.forEach(l=>loadsOf(l).forEach(([ka,kb])=>{
-    const a=u.find(l.id+'.'+ka),b=u.find(l.id+'.'+kb),g=1/(l.R||1);
-    [[a,b],[b,a]].forEach(([x,y])=>{if(known(x)!==null)return;const i=idx[x];G[i][i][0]+=g;const ky=known(y);
-      if(ky!==null)G[i][m]=CPX.add(G[i][m],[g*ky[0],g*ky[1]]);else G[i][idx[y]][0]-=g})}));
-  for(let c=0;c<m;c++){let p=c;for(let r=c+1;r<m;r++)if(CPX.abs(G[r][c])>CPX.abs(G[p][c]))p=r;[G[c],G[p]]=[G[p],G[c]];const d=G[c][c];if(CPX.abs(d)<1e-15)continue;
-    for(let r=0;r<m;r++){if(r===c)continue;const k=CPX.div(G[r][c],d);if(k[0]||k[1])for(let j=c;j<=m;j++)G[r][j]=CPX.sub(G[r][j],CPX.mul(k,G[c][j]))}}
-  const vn=n=>{const k=known(n);if(k!==null)return k;const i=idx[n];if(i===undefined)return [0,0];return CPX.abs(G[i][i])?CPX.div(G[i][m],G[i][i]):[0,0]};
+  const known0=n=>{const i=fases.indexOf(n);if(i>=0)return [V*Math.cos(FASE_ANG[i]),V*Math.sin(FASE_ANG[i])];return (n===N||terra.has(n))?[0,0]:null};
+  /* circuito de comando de cada fonte de comando: os pontos ligados à saída dela (+24 e 0V) passando só por cargas
+     (bobinas, botoeiras fechadas já são o mesmo ponto), sem entrar na rede. Serve para a cor do fio e para a conferência. */
+  const fcs=comps.filter(c=>c.type==='fc');
+  if(fcs.length){const viz=new Map(),liga=(a,b)=>{if(!viz.has(a))viz.set(a,[]);viz.get(a).push(b)};
+    cargas.forEach(l=>{if(l.type==='fc')return;loadsOf(l).forEach(([ka,kb])=>{const a=u.find(l.id+'.'+ka),b=u.find(l.id+'.'+kb);liga(a,b);liga(b,a)})});
+    fcs.forEach(f=>{const fila=[u.find(f.id+'.2'),u.find(f.id+'.3')].filter(n=>known0(n)===null);
+      while(fila.length){const n=fila.pop();if(out.cmd.has(n))continue;out.cmd.add(n);(viz.get(n)||[]).forEach(x=>{if(known0(x)===null&&!out.cmd.has(x))fila.push(x)})}})}
+  /* fonte com a proteção desarmada (depois de um curto): nada tem tensão até religar */
+  if(src.trip){cargas.forEach(c=>setPow(c,0));fcs.forEach(f=>out.fc[f.id]='off');out.short=false;out.desligada=true;out.vAt=()=>0;out.vDiff=()=>0;return out}
+  if(out.short){cargas.forEach(c=>setPow(c,0));fcs.forEach(f=>out.fc[f.id]='off');out.vAt=()=>0;out.vDiff=()=>0;return out}
+  /* análise nodal com as tensões conhecidas (kn); devolve a tensão (fasor) de cada ponto */
+  const nodal=kn=>{
+    const nets=[...new Set(cargas.flatMap(c=>[u.find(c.id+'.0'),u.find(c.id+'.1')]))].filter(n=>kn(n)===null);
+    const idx={};nets.forEach((n,i)=>idx[n]=i);const m=nets.length;
+    const G=Array.from({length:m},(_,i)=>{const r=Array.from({length:m+1},()=>[0,0]);r[i]=[1e-9,0];return r});
+    cargas.forEach(l=>loadsOf(l).forEach(([ka,kb])=>{
+      const a=u.find(l.id+'.'+ka),b=u.find(l.id+'.'+kb),g=1/resist(l);
+      [[a,b],[b,a]].forEach(([x,y])=>{if(kn(x)!==null)return;const i=idx[x];G[i][i][0]+=g;const ky=kn(y);
+        if(ky!==null)G[i][m]=CPX.add(G[i][m],[g*ky[0],g*ky[1]]);else G[i][idx[y]][0]-=g})}));
+    for(let c=0;c<m;c++){let p=c;for(let r=c+1;r<m;r++)if(CPX.abs(G[r][c])>CPX.abs(G[p][c]))p=r;[G[c],G[p]]=[G[p],G[c]];const d=G[c][c];if(CPX.abs(d)<1e-15)continue;
+      for(let r=0;r<m;r++){if(r===c)continue;const k=CPX.div(G[r][c],d);if(k[0]||k[1])for(let j=c;j<=m;j++)G[r][j]=CPX.sub(G[r][j],CPX.mul(k,G[c][j]))}}
+    return n=>{const k=kn(n);if(k!==null)return k;const i=idx[n];if(i===undefined)return [0,0];return CPX.abs(G[i][i])?CPX.div(G[i][m],G[i][i]):[0,0]}};
+  let vn=nodal(known0);
+  /* fonte de comando: com a entrada na rede (L-N com tensão), a saída vira uma fonte de 24 V isolada.
+     Saída em curto (+24 no 0V) ou misturada com a rede (fase, neutro; o +24 no terra) = a fonte se protege e não entrega tensão. */
+  if(fcs.length){const vd=(a,b)=>CPX.abs(CPX.sub(vn(u.find(a)),vn(u.find(b)))),extra=new Map();
+    fcs.forEach(f=>{const p=u.find(f.id+'.2'),z=u.find(f.id+'.3');let e='off';
+      if(!f.broken&&vd(f.id+'.0',f.id+'.1')>=0.6*V)e=p===z?'curto':(known0(p)!==null||(known0(z)!==null&&!terra.has(z))||extra.has(p)||extra.has(z))?'mistura':'ok';
+      out.fc[f.id]=e;if(e==='ok'){extra.set(p,[VCMD,0]);extra.set(z,[0,0])}});
+    if(extra.size)vn=nodal(n=>extra.has(n)?extra.get(n):known0(n))}
   /* vAt: tensão do ponto em relação ao neutro (valor eficaz); vDiff: tensão entre dois pontos (o que o multímetro mede) */
   out.vAt=t=>CPX.abs(vn(u.find(t)));
   out.vDiff=(a,b)=>CPX.abs(CPX.sub(vn(u.find(a)),vn(u.find(b))));
-  cargas.forEach(l=>{if(l.broken){setPow(l,0);return}const dv=out.vDiff(l.id+'.0',l.id+'.1');setPow(l,Math.min(1,dv*dv/(l.R||1)/(V*V)))});
+  /* potência relativa à nominal: a bobina com c.vb compara com a tensão dela; o resto, com a rede.
+     sobre[id] = bobina recebendo bem mais que a nominal (ex.: bobina de 24 V ligada na rede): queimaria. */
+  cargas.forEach(l=>{if(l.broken){setPow(l,0);return}const dv=out.vDiff(l.id+'.0',l.id+'.1'),vn0=(BOBINA[l.type]&&l.vb)||V;
+    if(BOBINA[l.type]&&l.vb&&dv>1.5*l.vb)out.sobre[l.id]=Math.round(dv);
+    setPow(l,Math.min(1,dv*dv/resist(l)/(vn0*vn0)))});
   return out;
 }
 /* Resolve o circuito com a lógica de comando:
@@ -113,6 +142,8 @@ function solve(comps,wires,_fundo){
       if(c.type==='ri'){if(en&&!c.pulso){c.on=!c.on;mudou=true}c.pulso=en}});
     if(!mudou)break;
   }
+  /* LED "DC OK" da fonte de comando (só desenho: não muda o cálculo) */
+  comps.forEach(c=>{if(c.type==='fc')c.on=out.fc[c.id]==='ok'});
   if((_fundo||0)<3&&!out.short)for(const d of comps.filter(c=>c.type==='dr'&&!c.trip)){
     if(out.vAt(d.id+'.0')<1)continue;
     const aberto=solveOnce(comps.map(x=>x===d?Object.assign({},x,{trip:true}):x),wires);
@@ -158,11 +189,11 @@ function wirePath(comps,w){const [x1,y1]=tpos(comps,w.a),[x2,y2]=tpos(comps,w.b)
 /* Símbolo das peças da Oficina (Diagrama): caixa com a letra de identificação e os condutores até os bornes. */
 /* peças que o aluno aciona com um toque (interruptores, botoeiras, DR/relé em teste, fotocélula, boia) */
 const ACION={sw:1,sw2:1,sw3:1,sw4:1,btn:1,dr:1,ft:1,foto:1,boia:1,fuse:1};
-const SYM_TXT={pilha:'1,5V',haste:'⏚',bep:'BEP',boia:'BÓIA',sw2:'S 2×',sw3:'S ⇅',sw4:'S ⤨',dr:'DR',dps:'DPS',foto:'FC',ri:'RI',motor:'M',kc:'K',ft:'FT',btn:'B'};
+const SYM_TXT={pilha:'1,5V',haste:'⏚',bep:'BEP',boia:'BÓIA',sw2:'S 2×',sw3:'S ⇅',sw4:'S ⤨',dr:'DR',dps:'DPS',foto:'FC',ri:'RI',motor:'M',kc:'K',ft:'FT',btn:'B',fc:'24V⎓'};
 function symGeneric(c,b,o){
-  const hw=c.type==='kc'?22:c.type==='motor'?14:16,hh=c.type==='kc'||c.type==='dr'||c.type==='ft'||c.type==='ri'?18:12;
+  const hw=c.type==='kc'?22:c.type==='motor'?14:16,hh=c.type==='kc'||c.type==='dr'||c.type==='ft'||c.type==='ri'||c.type==='fc'?18:12;
   let s=SYM_TERMS[c.type].map(([x,y])=>{const ex=Math.max(-hw,Math.min(hw,x)),ey=Math.max(-hh,Math.min(hh,y));return '<line class="sym" x1="'+x+'" y1="'+y+'" x2="'+ex+'" y2="'+ey+'"/>'}).join('');
-  const ativo=c.type==='motor'?b>0.04:c.type==='kc'||c.type==='ri'?!!c.on:c.type==='foto'?!!c.noite:c.type==='boia'?!!c.vazia:c.type==='dps'?false:c.type==='dr'||c.type==='ft'?!c.trip:c.type==='btn'?!!c.pressed:c.type==='sw2'?(c.a||c.b):!!c.pos;
+  const ativo=c.type==='motor'?b>0.04:c.type==='kc'||c.type==='ri'||c.type==='fc'?!!c.on:c.type==='foto'?!!c.noite:c.type==='boia'?!!c.vazia:c.type==='dps'?false:c.type==='dr'||c.type==='ft'?!c.trip:c.type==='btn'?!!c.pressed:c.type==='sw2'?(c.a||c.b):!!c.pos;
   const shape=c.type==='motor'?'<circle r="'+hw+'" style="fill:'+(ativo?'color-mix(in srgb,var(--amber) 35%,var(--panel2))':'var(--panel2)')+';stroke:var(--ink)" stroke-width="2.5"/>'
     :'<rect x="'+(-hw)+'" y="'+(-hh)+'" width="'+2*hw+'" height="'+2*hh+'" rx="3" style="fill:'+(ativo?'color-mix(in srgb,var(--terra) 30%,var(--panel2))':'var(--panel2)')+';stroke:var(--ink)" stroke-width="2"/>';
   const txt=c.type==='btn'?(c.nf?'B NF':'B NA'):SYM_TXT[c.type];

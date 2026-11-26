@@ -136,7 +136,7 @@ const coresDoFioCSS=k=>(CORES[k].c.match(/var\(--[\w-]+\)|#[0-9a-f]{3,8}\b/gi)).
   {const t=R.traçado={};VISTA3D.ligada=true;
    S.mode='leve';const p1=phaseById('primeiro');S.seen['leve:primeiro:cena']=1;runBuild(p1,comARede(p1.dados.leve));let ca='';testeSol('primeiro').forEach(w=>{if(w.cor!==ca){cor(w.cor);ca=w.cor}toque(w.a);toque(w.b)});t.primeiro=D.semAtravessar();
    const pq=phaseById('quadronovo');S.seen['leve:quadronovo:cena']=1;runBuild(pq,comARede(pq.dados.leve));ca='';testeSol('quadronovo').forEach(w=>{if(w.cor!==ca){cor(w.cor);ca=w.cor}toque(w.a);toque(w.b)});t.quadro=D.semAtravessar();
-   S.mode='moderado';const pp=phaseById('partida');runBuild(pp,comARede(pp.dados.moderado));ca='';testeSol('partida').forEach(w=>{if(w.cor!==ca){cor(w.cor);ca=w.cor}toque(w.a);toque(w.b)});t.partida=D.semAtravessar();t.quais=D.atravessados();t.rotaK1=D.rotaDe('K.1','B.1');
+   S.mode='moderado';const pp=phaseById('partida');runBuild(pp,comARede(pp.dados.moderado));ca='';testeSol('partida').forEach(w=>{if(w.cor!==ca){cor(w.cor);ca=w.cor}toque(w.a);toque(w.b)});t.partida=D.semAtravessar();t.quais=D.atravessados();t.rotaK1=D.rotaDe('K.1','T1.3');
    /* nenhum par de fios corre colado (trechos paralelos a menos de 0,55) em todos os gabaritos das fases */
    t.colados=[];Object.keys(TESTE_SOL).forEach(k=>{const [fid,md]=k.split(':'),p=phaseById(fid);if(!p||!p.dados[md])return;S.mode=md;S.seen[md+':'+fid+':cena']=1;
      runBuild(p,comARede(p.dados[md]));if(!document.querySelector('.bench3d canvas'))return;let c2='';testeSol(fid).forEach(w=>{if(w.cor!==c2){cor(w.cor);c2=w.cor}toque(w.a);toque(w.b)});

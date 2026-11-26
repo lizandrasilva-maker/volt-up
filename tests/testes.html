@@ -28,7 +28,10 @@ try{
     impulso_semRele:(()=>{S.mode='leve';return verifica('impulso','leve',W2([['B.0','P1.0','fase'],['P1.1','L1.0','retorno'],['L1.1','B.1','neutro']]))})(),
     partida_semSelo:sem('partida','moderado',w=>w.a==='BD.1'&&w.b==='K.4'),
     partida_semPEmotor:sem('partida','moderado',w=>w.a==='M.2'),
-    partida_95_96_fora:(()=>{S.mode='moderado';const s=testeSol('partida').filter(w=>!(w.a==='B.0'&&w.b==='FT.2')&&!(w.a==='FT.3'));s.push(Object.assign(W('B.0','BD.0'),{cor:'fase'}));return verifica('partida','moderado',s)})(),
+    partida_95_96_fora:(()=>{S.mode='moderado';const s=testeSol('partida').filter(w=>w.a!=='FT.3').map(w=>w.b==='FT.2'?Object.assign(W(w.a,'K.0'),{cor:w.cor}):w);return verifica('partida','moderado',s)})(),
+    /* NR-12: comando em 24 V. Bobina de 24 V ligada direto na rede e fonte de comando sem a rede na entrada */
+    partida_bobinaNaRede:(()=>{S.mode='moderado';const s=testeSol('partida').filter(w=>!/^T1\./.test(w.a)&&!/^T1\./.test(w.b));s.push(Object.assign(W('B.0','BD.0'),{cor:'fase'}),Object.assign(W('K.1','B.1'),{cor:'neutro'}));return verifica('partida','moderado',s)})(),
+    partida_fonteSemRede:sem('partida','leve',w=>w.b==='T1.0'),
     caixa_boiaNoNeutro:(()=>{S.mode='leve';return verifica('caixa','leve',W2([['B.0','M.0','fase'],['M.1','BO.0','neutro'],['BO.1','B.1','neutro'],['M.2','BEP.1','terra'],['BEP.0','H.0','terra']]))})()
   };
   // 3) previsões: a resposta certa (opção 0) bate com o que acontece

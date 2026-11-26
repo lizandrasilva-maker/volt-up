@@ -32,12 +32,14 @@ const REAL_TERMS={
   dps:[{p:[0,-26],d:[0,-1],n:'L'},{p:[0,26],d:[0,1],n:'⏚'}],
   foto:[{p:[-20,26],d:[0,1],n:'L'},{p:[0,26],d:[0,1],n:'N'},{p:[20,26],d:[0,1],n:'C'}],
   boia:[{p:[-10,26],d:[0,1],n:'1'},{p:[10,26],d:[0,1],n:'2'}],
-  ri:[{p:[-10,-26],d:[0,-1],n:'A1'},{p:[-10,26],d:[0,1],n:'A2'},{p:[10,-26],d:[0,-1],n:'1'},{p:[10,26],d:[0,1],n:'2'}]
+  ri:[{p:[-10,-26],d:[0,-1],n:'A1'},{p:[-10,26],d:[0,1],n:'A2'},{p:[10,-26],d:[0,-1],n:'1'},{p:[10,26],d:[0,1],n:'2'}],
+  /* fonte de comando: entrada L/N em cima, saída +24/0V embaixo */
+  fc:[{p:[-10,-26],d:[0,-1],n:'L'},{p:[10,-26],d:[0,-1],n:'N'},{p:[-10,26],d:[0,1],n:'+24'},{p:[10,26],d:[0,1],n:'0V'}]
 };
 /* Retângulo do corpo de cada peça [x0,y0,x1,y1]: usado para o fio desviar e para a área de toque. */
 const REAL_BOX={pilha:[-26,-20,26,33],src:[-30,-30,30,33],haste:[-12,-26,12,30],bep:[-27,-12,27,14],fuse:[-14,-36,14,36],sw:[-17,-29,17,33],lamp:[-14,-28,14,34],
   sw2:[-26,-29,26,33],sw3:[-26,-29,26,33],dr:[-21,-36,21,36],motor:[-41,-30,33,34],kc:[-29,-36,29,36],ft:[-23,-36,23,36],btn:[-17,-29,17,33],
-  sw4:[-17,-41,17,33],dps:[-14,-36,14,36],foto:[-26,-29,26,33],ri:[-21,-36,21,36],boia:[-22,-34,22,33]};
+  sw4:[-17,-41,17,33],dps:[-14,-36,14,36],foto:[-26,-29,26,33],ri:[-21,-36,21,36],boia:[-22,-34,22,33],fc:[-21,-36,21,36]};
 
 /* Posição da peça na vista real. As fases foram posicionadas para o diagrama; as peças reais são mais altas
    e os fios saem por baixo, então a altura fica entre 46 e 184 para sobrar canaleta em cima e embaixo. */
@@ -315,7 +317,16 @@ function realComp(c,b,o){
       '<rect x="-6.5" y="'+(on?-2.2:-5.4)+'" width="13" height="4" rx=".8" class="embolo" style="fill:'+(on?'#f39c12':'#6b747e')+'"/>'+
       '<text x="0" y="'+(on?0.9:-2.3)+'" text-anchor="middle" class="ltxt" style="font-size:3.6px">'+(on?'I':'O')+'</text>'+
       '<path d="M-18 -5.5 V5.5 M-15.5 -5.5 V5.5 M15.5 -5.5 V5.5 M18 -5.5 V5.5" style="stroke:#aeb6bf" stroke-width="1"/>'+
-      '<text x="0" y="6.4" text-anchor="middle" class="rtxt" style="font-size:3.2px">'+rede().V+'V~</text>'}
+      '<text x="0" y="6.4" text-anchor="middle" class="rtxt" style="font-size:3.2px">'+(c.vb?c.vb+'V⎓':rede().V+'V~')+'</text>'}
+  if(c.type==='fc'){/* fonte de comando 24 V⎓ (genérica, sem marca): módulo DIN com a entrada da rede em cima e a saída
+       isolada embaixo, LED verde "DC OK" aceso quando entrega tensão e o trimpot de ajuste fino (ADJ) */
+    const on=!!c.on;
+    s=din(21)+'<text x="0" y="-4" text-anchor="middle" class="rtxt" style="font-size:5px">24V⎓</text>'+
+      '<text x="0" y="1" text-anchor="middle" class="rtxt" style="font-size:2.8px">'+rede().V+'V~ → 24V⎓</text>'+
+      '<circle cx="-13" cy="7.5" r="2.1" style="fill:'+(on?'#43b05c':'#2a3038')+';stroke:#14181c" stroke-width=".5"/>'+(on?'<circle cx="-13.5" cy="6.9" r=".7" style="fill:#fff;opacity:.55"/>':'')+
+      '<text x="-10.2" y="8.4" class="rtxt" style="font-size:2.6px">DC OK</text>'+
+      '<circle cx="6" cy="7.5" r="2.2" style="fill:#d6dbe1;stroke:#7e8791" stroke-width=".6"/><path d="M4.7 7.5 H7.3" style="stroke:#1c2025;stroke-width:.8"/>'+
+      '<text x="9" y="8.4" class="rtxt" style="font-size:2.6px">ADJ</text>'}
   if(c.type==='ft'){/* relé térmico (genérico): dial de ajuste de corrente com escala, botão azul de rearme (R),
        botão vermelho de teste/desliga, janela do indicador de disparo (verde = normal, laranja = disparado) */
     const trip=!!c.trip;
@@ -423,7 +434,7 @@ function realBorneLab(c,k,text){
   if(c.type==='sw2'||c.type==='sw3')/* 3 bornes embaixo: nome impresso na placa, acima de cada parafuso */
     return '<text class="lab bn bnd" x="'+x+'" y="'+(y-11)+'" text-anchor="middle">'+n+'</text>';
   if(c.type==='motor')return '<text class="lab bn" x="'+x+'" y="'+(y-11)+'" text-anchor="middle">'+n+'</text>';
-  if(c.type==='dr'||c.type==='kc'||c.type==='ft'||c.type==='ri')/* módulo DIN de vários polos: marcação impressa no corpo, junto do borne */
+  if(c.type==='dr'||c.type==='kc'||c.type==='ft'||c.type==='ri'||c.type==='fc')/* módulo DIN de vários polos: marcação impressa no corpo, junto do borne */
     return '<text class="lab bn bnd" x="'+x+'" y="'+(RP(c)[1]+(d[1]<0?-11:15))+'" text-anchor="middle">'+n+'</text>';
   if(c.type==='sw'||c.type==='lamp'||c.type==='btn'||c.type==='sw4'||c.type==='boia'||c.type==='pilha')/* pares de bornes: nome por fora de cada parafuso */
     return '<text class="lab bn"'+st+' x="'+(k%2===0?x-9:x+9)+'" y="'+(y+3)+'" text-anchor="'+(k%2===0?'end':'start')+'">'+n+'</text>';

@@ -88,12 +88,13 @@ Object.assign(TESTE_SOL,{
   'impulso:leve':[['B.0','P1.0','fase'],['P1.1','RI.0','retorno'],['RI.1','B.1','neutro'],['B.0','RI.2','fase'],['RI.3','L1.0','retorno'],['L1.1','B.1','neutro']],
   'impulso:moderado':[['B.0','P1.0','fase'],['B.0','P2.0','fase'],['P1.1','RI.0','retorno'],['P2.1','RI.0','retorno'],['RI.1','B.1','neutro'],['B.0','RI.2','fase'],['RI.3','L1.0','retorno'],['L1.1','B.1','neutro']],
   /* capítulo 3 */
-  /* comando: DESLIGA → LIGA (com o selo 13-14 em paralelo) → [95-96] → A1; força: contatora → [relé térmico] → motor */
-  'partida:leve':[['B.0','BD.0','fase'],['BD.1','BL.0','fase'],['BL.1','K.0','retorno'],['K.1','B.1','neutro'],['BD.1','K.4','fase'],['K.5','K.0','retorno'],['B.0','K.2','fase'],['K.3','M.0','retorno'],['M.1','B.1','neutro'],['M.2','BEP.1','terra'],['BEP.0','H.0','terra']],
-  'partida:moderado':[['B.0','BD.0','fase'],['BD.1','BL.0','fase'],['BD.1','K.4','fase'],['BL.1','FT.2','retorno'],['K.5','FT.2','retorno'],['FT.3','K.0','retorno'],['K.1','B.1','neutro'],['B.0','K.2','fase'],['K.3','FT.0','retorno'],['FT.1','M.0','retorno'],['M.1','B.1','neutro'],['M.2','BEP.1','terra'],['BEP.0','H.0','terra']],
-  'partida:full':[['B.0','DJ.0','fase'],['DJ.1','BD.0','fase'],['BD.1','BL.0','fase'],['BD.1','K.4','fase'],['BL.1','FT.2','retorno'],['K.5','FT.2','retorno'],['FT.3','K.0','retorno'],['K.1','B.1','neutro'],['DJ.1','K.2','fase'],['K.3','FT.0','retorno'],['FT.1','M.0','retorno'],['M.1','B.1','neutro'],['M.2','BEP.1','terra'],['BEP.0','H.0','terra']],
+  /* comando em 24 V⎓ (fonte de comando T1, NR-12 12.4.13 b): +24 → DESLIGA → LIGA (com o selo 13-14 em paralelo) → [95-96] → A1;
+     A2 → 0V. Força pela rede: contatora → [relé térmico] → motor */
+  'partida:leve':[['B.0','T1.0','fase'],['B.1','T1.1','neutro'],['T1.2','BD.0','cmd'],['BD.1','BL.0','cmd'],['BL.1','K.0','cmd'],['K.1','T1.3','cmd'],['BD.1','K.4','cmd'],['K.5','K.0','cmd'],['B.0','K.2','fase'],['K.3','M.0','retorno'],['M.1','B.1','neutro'],['M.2','BEP.1','terra'],['BEP.0','H.0','terra']],
+  'partida:moderado':[['B.0','T1.0','fase'],['B.1','T1.1','neutro'],['T1.2','BD.0','cmd'],['BD.1','BL.0','cmd'],['BD.1','K.4','cmd'],['BL.1','FT.2','cmd'],['K.5','FT.2','cmd'],['FT.3','K.0','cmd'],['K.1','T1.3','cmd'],['B.0','K.2','fase'],['K.3','FT.0','retorno'],['FT.1','M.0','retorno'],['M.1','B.1','neutro'],['M.2','BEP.1','terra'],['BEP.0','H.0','terra']],
+  'partida:full':[['B.0','DJ.0','fase'],['DJ.1','T1.0','fase'],['B.1','T1.1','neutro'],['T1.2','BD.0','cmd'],['BD.1','BL.0','cmd'],['BD.1','K.4','cmd'],['BL.1','FT.2','cmd'],['K.5','FT.2','cmd'],['FT.3','K.0','cmd'],['K.1','T1.3','cmd'],['DJ.1','K.2','fase'],['K.3','FT.0','retorno'],['FT.1','M.0','retorno'],['M.1','B.1','neutro'],['M.2','BEP.1','terra'],['BEP.0','H.0','terra']],
   'caixa:leve':[['B.0','BO.0','fase'],['BO.1','M.0','retorno'],['M.1','B.1','neutro'],['M.2','BEP.1','terra'],['BEP.0','H.0','terra']],
-  'caixa:moderado':[['B.0','BO.0','fase'],['BO.1','K.0','retorno'],['K.1','B.1','neutro'],['B.0','K.2','fase'],['K.3','M.0','retorno'],['M.1','B.1','neutro'],['M.2','BEP.1','terra'],['BEP.0','H.0','terra']]
+  'caixa:moderado':[['B.0','T1.0','fase'],['B.1','T1.1','neutro'],['T1.2','BO.0','cmd'],['BO.1','K.0','cmd'],['K.1','T1.3','cmd'],['B.0','K.2','fase'],['K.3','M.0','retorno'],['M.1','B.1','neutro'],['M.2','BEP.1','terra'],['BEP.0','H.0','terra']]
 });
 ['escada','corredor','garagem'].forEach(f=>{TESTE_SOL[f+':moderado']=TESTE_SOL[f+':full']=TESTE_SOL[f+':leve']});
 TESTE_SOL['quadronovo:full']=TESTE_SOL['quadronovo:moderado'];TESTE_SOL['impulso:full']=TESTE_SOL['impulso:moderado'];TESTE_SOL['caixa:full']=TESTE_SOL['caixa:moderado'];

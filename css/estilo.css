@@ -571,6 +571,7 @@ svg.curto{animation:shake .32s 2}
 .ponta-ok{fill:none;stroke:#7dff9e;stroke-width:1.6;opacity:.9}
 
 /* fios da bancada CC: vermelho no positivo, preto (com contorno claro) no negativo */
+.w.cmd,.mw.cmd{stroke:#2f5fd0}/* comando em 24 V⎓ (fonte de comando): azul-escuro, diferente do azul-claro do neutro */
 .w.pos,.mw.pos{stroke:#d33a2c}.w.neg,.mw.neg{stroke:#2a2e35;filter:drop-shadow(0 0 .8px #c9d1db)}
 .pal .btn[data-cor="neg"] .sw8{outline:1.5px solid #c9d1db}
 

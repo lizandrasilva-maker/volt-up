@@ -113,6 +113,7 @@ Padroniza o visual e a construção das peças 3D da bancada (`js/bancada3d.js`)
 | Boia `boia` | `.0`/`.1` = 1-2 (fecha com a caixa vazia, `c.vazia`) |
 | Botoeira `btn` | `.0`/`.1`: NA 3-4 se `!c.nf` (BL), NF 1-2 se `c.nf` (BD) |
 | Motor `motor` (monofásico) | `.0`/`.1` = força, `.2` = PE (carcaça) |
+| Fonte de comando `fc` (24 V⎓, 2 módulos) | `.0` = L, `.1` = N (entrada da rede, em cima), `.2` = +24, `.3` = 0V (saída isolada, embaixo); LED "DC OK" segue `c.on` |
 
 Confira sempre a tabela contra os gabaritos (`TESTE_SOL` em `js/teste.js`) e os nomes do 2D (`REAL_TERMS`): na partida direta, `K.2`→`K.3` alimenta o motor e `K.4`/`K.5` faz o selo.
 
